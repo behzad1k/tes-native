@@ -1,0 +1,34 @@
+{
+  "name": "Tes",
+  "short_name": "Tes",
+  "description": "Online Road Management Service",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#c89dc7",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "./newLogo.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "./newLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./newLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "permissions": ["otp-credentials"],
+  "categories": ["beauty", "lifestyle"],
+  "lang": "fa-IR",
+  "dir": "rtl"
+}

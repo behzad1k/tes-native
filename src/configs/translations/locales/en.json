@@ -1,0 +1,29 @@
+{
+  "welcome": "Welcome",
+  "hello": "Hello {{name}}!",
+  "buttons": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "navigation": {
+    "home": "Home",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Operation completed successfully"
+  },
+  "general": {
+    "newOrder": "New Order",
+    "loading": "Loading",
+    "login": "Login",
+    "profile": "Profile"
+  },
+  "error": {
+    "phoneNumberInvalid": "Phone number is invalid",
+    "phoneNumberNotSet": "Phone number is not set"
+  }
+}
