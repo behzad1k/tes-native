@@ -1,5 +1,5 @@
-import { useAuth } from "@/src/components/contexts/AuthContext";
-import { useDrawer } from "@/src/components/contexts/DrawerContext";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { useDrawer } from "@/src/contexts/DrawerContext";
 import LoginDrawer from "@/src/features/auth/views/LoginDrawer";
 import { useLanguage } from "@/src/hooks/useLanguage";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
@@ -11,7 +11,7 @@ import { router, Tabs } from "expo-router";
 import { Clipboard, PlusCircle, User } from "phosphor-react-native";
 import React from "react";
 import { Dimensions, StyleSheet } from "react-native";
-import { useTheme } from "@/src/components/contexts/ThemeContext";
+import { useTheme } from "@/src/contexts/ThemeContext";
 
 export default function TabLayout() {
   const { t } = useLanguage();

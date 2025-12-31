@@ -1,4 +1,4 @@
-import { useTheme } from "@/src/components/contexts/ThemeContext";
+import { useTheme } from "@/src/contexts/ThemeContext";
 import TextView from "@/src/components/ui/TextView";
 import { colors } from "@/src/styles/theme/colors";
 import React from "react";

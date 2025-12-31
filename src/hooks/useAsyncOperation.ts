@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { useLoading } from "@/src/components/contexts/LoadingContext";
+import { useLoading } from "@/src/contexts/LoadingContext";
 
 interface UseAsyncOperationOptions {
 	useGlobalLoading?: boolean;

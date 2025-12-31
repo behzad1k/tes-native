@@ -1,4 +1,4 @@
-import { useTheme } from "@/src/components/contexts/ThemeContext";
+import { useTheme } from "@/src/contexts/ThemeContext";
 import { useLanguage } from "@/src/hooks/useLanguage";
 import { Typography, weightTransforms } from "@/src/styles/theme/typography";
 import React, { ReactNode } from "react";

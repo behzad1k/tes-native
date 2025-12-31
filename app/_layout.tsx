@@ -1,18 +1,12 @@
-import { AuthProvider, useAuth } from "@/src/components/contexts/AuthContext";
-import { DrawerProvider } from "@/src/components/contexts/DrawerContext";
+import { AuthProvider, useAuth } from "@/src/contexts/AuthContext";
+import { DrawerProvider } from "@/src/contexts/DrawerContext";
 import {
   LanguageProvider,
   useI18nContext,
-} from "@/src/components/contexts/LanguageContext";
-import { LoadingProvider } from "@/src/components/contexts/LoadingContext";
-import {
-  SplashProvider,
-  useSplash,
-} from "@/src/components/contexts/SplashContext";
-import {
-  ThemeProvider,
-  useTheme,
-} from "@/src/components/contexts/ThemeContext";
+} from "@/src/contexts/LanguageContext";
+import { LoadingProvider } from "@/src/contexts/LoadingContext";
+import { SplashProvider, useSplash } from "@/src/contexts/SplashContext";
+import { ThemeProvider, useTheme } from "@/src/contexts/ThemeContext";
 import Splash from "@/src/components/layouts/Splash";
 import { Drawer } from "@/src/components/ui/Drawer";
 import { LoadingGlobal } from "@/src/components/ui/LoadingGlobal";

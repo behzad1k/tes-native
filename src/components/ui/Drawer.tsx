@@ -1,4 +1,4 @@
-import { useDrawer } from "@/src/components/contexts/DrawerContext";
+import { useDrawer } from "@/src/contexts/DrawerContext";
 import { DrawerInstance } from "@/src/types/drawer";
 import {
   createTimingConfig,
