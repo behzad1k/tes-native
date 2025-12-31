@@ -4,13 +4,13 @@ export default {
     slug: "Tes",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./src/assets/images/newLogo.png",
+    icon: "./src/assets/images/logo.png",
     scheme: "tes",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     jsEngine: "hermes",
     splash: {
-      image: "./src/assets/images/newLogo.png",
+      image: "./src/assets/images/logo.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff",
     },
@@ -23,14 +23,13 @@ export default {
       package: "com.tes.app",
       edgeToEdgeEnabled: true,
       adaptiveIcon: {
-        foregroundImage: "./src/assets/images/newLogo.png",
+        foregroundImage: "./src/assets/images/logo.png",
         backgroundColor: "#FFFFFF",
       },
     },
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./src/assets/images/newLogo.png",
     },
     experiments: {
       typedRoutes: true,
@@ -41,12 +40,21 @@ export default {
       eas: {
         projectId: "e74d8537-a1e8-432b-acb0-0e6d62eddb89",
       },
+      API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
+      API_TIMEOUT: process.env.EXPO_PUBLIC_API_TIMEOUT,
+      APP_ENV: process.env.EXPO_PUBLIC_APP_ENV,
+      MODE: process.env.EXPO_PUBLIC_APP_ENV,
     },
   },
   plugins: [
-    "expo-router",
-    "@maplibre/maplibre-react-native",
+    [
+      "expo-router",
+      {
+        origin: "http://localhost:8081",
+      },
+    ],
     "expo-location",
+    "@nozbe/watermelondb/watermelondb-expo-plugin",
     {
       locationAlwaysAndWhenInUsePermission:
         "Allow $(PRODUCT_NAME) to use your location.",
@@ -60,7 +68,7 @@ export default {
     [
       "expo-splash-screen",
       {
-        image: "./src/assets/images/newLogo.png",
+        image: "./src/assets/images/logo.png",
         imageWidth: 200,
         resizeMode: "contain",
         backgroundColor: "#ffffff",

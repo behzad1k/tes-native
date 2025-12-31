@@ -1,16 +1,16 @@
+import { AxiosRequestConfig } from "axios";
+
 export interface ApiResponse<T = any> {
-  code: number;
-  data: T;
+	code: number;
+	data: T;
 }
 
 export interface ApiError {
-  code: number;
-  message: string;
-  data?: any;
+	code: number;
+	message: string;
+	data?: any;
 }
 
-export interface RequestConfig extends RequestInit {
-  skipAuth?: boolean;
-  baseURL?: string;
-  query?: string;
+export interface RequestConfig extends AxiosRequestConfig {
+	skipAuth?: boolean;
 }

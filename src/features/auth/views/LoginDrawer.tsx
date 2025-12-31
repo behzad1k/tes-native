@@ -1,5 +1,3 @@
-import { useAppDispatch } from "@/src/configs/redux/hooks";
-import { LoginForm, LoginState } from "@/src/features/auth/authTypes";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import React from "react";

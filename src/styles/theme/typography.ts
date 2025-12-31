@@ -1,99 +1,82 @@
 import { TextStyle } from "react-native";
-
-export const FontWeights = {
-	thin: "100",
-	light: "300",
-	medium: "500",
-	bold: "700",
-} as const;
-
-export const FontFamilies = {
-	poppins: {
-		thin: "",
-		light: "",
-		medium: "",
-		bold: "",
-	},
-} as const;
-
-export const FontSizes = {
-	xxs: 10,
-	xs: 12,
-	s: 14,
-	m: 16,
-	lg: 18,
-	xl: 22,
-	xxl: 26,
-} as const;
+import { FontFamilies, FontWeights, FontSizes, LineHeights } from "./fonts";
 
 export const Typography = {
 	variants: {
 		// Headings
 		h1: {
 			fontFamily: FontFamilies.poppins.bold,
-			fontSize: FontSizes.xxl,
-			lineHeight: 40,
+			fontSize: FontSizes["4xl"],
+			lineHeight: LineHeights["4xl"],
 			fontWeight: FontWeights.bold,
 		} as TextStyle,
 
 		h2: {
 			fontFamily: FontFamilies.poppins.bold,
-			fontSize: FontSizes.xl,
-			lineHeight: 36,
+			fontSize: FontSizes["3xl"],
+			lineHeight: LineHeights["3xl"],
 			fontWeight: FontWeights.bold,
 		} as TextStyle,
 
 		h3: {
-			fontFamily: FontFamilies.poppins.medium,
-			fontSize: FontSizes.lg,
-			lineHeight: 32,
-			fontWeight: FontWeights.medium,
+			fontFamily: FontFamilies.poppins.semiBold,
+			fontSize: FontSizes["2xl"],
+			lineHeight: LineHeights["2xl"],
+			fontWeight: FontWeights.semiBold,
 		} as TextStyle,
 
 		h4: {
-			fontFamily: FontFamilies.poppins.medium,
-			fontSize: FontSizes.m,
-			lineHeight: 28,
-			fontWeight: FontWeights.medium,
+			fontFamily: FontFamilies.poppins.semiBold,
+			fontSize: FontSizes.xl,
+			lineHeight: LineHeights.xl,
+			fontWeight: FontWeights.semiBold,
 		} as TextStyle,
 
 		// Body text
-		large: {
+		body: {
+			fontFamily: FontFamilies.poppins.regular,
+			fontSize: FontSizes.base,
+			lineHeight: LineHeights.base,
+			fontWeight: FontWeights.regular,
+		} as TextStyle,
+
+		bodyMedium: {
 			fontFamily: FontFamilies.poppins.medium,
-			fontSize: FontSizes.s,
-			lineHeight: 26,
+			fontSize: FontSizes.base,
+			lineHeight: LineHeights.base,
 			fontWeight: FontWeights.medium,
 		} as TextStyle,
 
-		medium: {
-			fontFamily: FontFamilies.poppins.medium,
-			fontSize: FontSizes.xs,
-			lineHeight: 24,
-			fontWeight: FontWeights.medium,
+		bodySmall: {
+			fontFamily: FontFamilies.poppins.regular,
+			fontSize: FontSizes.sm,
+			lineHeight: LineHeights.sm,
+			fontWeight: FontWeights.regular,
 		} as TextStyle,
 
-		small: {
-			fontFamily: FontFamilies.poppins.medium,
-			fontSize: FontSizes.xxs,
-			lineHeight: 20,
-			fontWeight: FontWeights.medium,
-		} as TextStyle,
-
-		// Special text styles
+		// Special
 		caption: {
-			fontFamily: FontFamilies.poppins.light,
-			fontSize: 12,
-			lineHeight: 16,
-			fontWeight: FontWeights.light,
+			fontFamily: FontFamilies.poppins.regular,
+			fontSize: FontSizes.xs,
+			lineHeight: LineHeights.xs,
+			fontWeight: FontWeights.regular,
 		} as TextStyle,
 
 		button: {
 			fontFamily: FontFamilies.poppins.medium,
-			fontSize: 16,
-			lineHeight: 20,
+			fontSize: FontSizes.base,
+			lineHeight: LineHeights.base,
+			fontWeight: FontWeights.medium,
+		} as TextStyle,
+
+		label: {
+			fontFamily: FontFamilies.poppins.medium,
+			fontSize: FontSizes.sm,
+			lineHeight: LineHeights.sm,
 			fontWeight: FontWeights.medium,
 		} as TextStyle,
 	},
+
 	weights: {
 		thin: {
 			fontFamily: FontFamilies.poppins.thin,
@@ -105,47 +88,27 @@ export const Typography = {
 			fontWeight: FontWeights.light,
 		} as TextStyle,
 
-		normal: {
+		regular: {
+			fontFamily: FontFamilies.poppins.regular,
+			fontWeight: FontWeights.regular,
+		} as TextStyle,
+
+		medium: {
 			fontFamily: FontFamilies.poppins.medium,
 			fontWeight: FontWeights.medium,
+		} as TextStyle,
+
+		semiBold: {
+			fontFamily: FontFamilies.poppins.semiBold,
+			fontWeight: FontWeights.semiBold,
 		} as TextStyle,
 
 		bold: {
 			fontFamily: FontFamilies.poppins.bold,
 			fontWeight: FontWeights.bold,
 		} as TextStyle,
-	} as FontWeight,
+	},
 };
 
-type FontTransform = {
-	[key: string]: keyof typeof Typography.weights;
-};
-
-type FontWeight = {
-	[key: string]: Partial<TextStyle>;
-};
-
-export const weightTransforms: FontTransform = {
-	normal: "normal",
-	bold: "bold",
-	"100": "thin",
-	"200": "thin",
-	"300": "light",
-	"400": "light",
-	"500": "light",
-	"600": "normal",
-	"700": "normal",
-	"800": "bold",
-	"900": "bold",
-	ultralight: "thin",
-	thin: "thin",
-	light: "light",
-	medium: "normal",
-	regular: "normal",
-	semibold: "normal",
-	condensedBold: "bold",
-	condensed: "bold",
-	heavy: "bold",
-	black: "bold",
-};
+export { FontFamilies, FontWeights, FontSizes, LineHeights };
 export default Typography;

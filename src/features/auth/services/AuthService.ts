@@ -1,8 +1,8 @@
 import ENDPOINTS from "@/src/configs/api/endpoints";
-import { translate as t } from "@/src/configs/translations/staticTranslations";
 import { LoginRequest, LoginResponse } from "@/src/features/auth/authTypes";
 import { ServiceDependencies } from "@/src/types/services";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuthStore } from "@/src/store/auth";
 
 export class AuthServiceError extends Error {
 	constructor(
@@ -14,52 +14,37 @@ export class AuthServiceError extends Error {
 	}
 }
 
-export type AuthEventType =
-	| "login"
-	| "logout"
-	| "tokenExpired"
-	| "authStateChanged";
-export type AuthEventCallback = (eventType: AuthEventType, data?: any) => void;
-
 export class AuthService {
-	private authEventListeners: AuthEventCallback[] = [];
-
 	constructor(private deps: ServiceDependencies) {}
-
-	onAuthStateChange(callback: AuthEventCallback): () => void {
-		this.authEventListeners.push(callback);
-
-		return () => {
-			const index = this.authEventListeners.indexOf(callback);
-			if (index > -1) {
-				this.authEventListeners.splice(index, 1);
-			}
-		};
-	}
-
-	private emitAuthEvent(eventType: AuthEventType, data?: any): void {
-		this.authEventListeners.forEach((callback) => {
-			try {
-				callback(eventType, data);
-			} catch (error) {
-				console.error("Error in auth event callback:", error);
-			}
-		});
-	}
 
 	async login(credentials: LoginRequest): Promise<boolean> {
 		if (!credentials.phoneNumber) {
-			throw new AuthServiceError(t("validation.phoneNumberNotSet"));
-		} else if (credentials.phoneNumber.length != 11) {
-			throw new AuthServiceError(t("validation.phoneNumberInvalid"));
+			throw new AuthServiceError("Phone number is required");
+		} else if (credentials.phoneNumber.length !== 11) {
+			throw new AuthServiceError("Phone number must be 11 digits");
 		}
+
 		try {
 			const response: LoginResponse = await this.deps.apiClient.post(
 				ENDPOINTS.AUTH.LOGIN,
 				credentials,
 				{ skipAuth: true },
 			);
-			return true;
+
+			if (response.token) {
+				await this.deps.storage.setItem("token", response.token);
+				// Store auth in Zustand
+				useAuthStore.getState().setAuth(response.token, {
+					id: "",
+					name: "",
+					lastName: "",
+					phoneNumber: credentials.phoneNumber,
+					role: "USER",
+				});
+				return true;
+			}
+
+			return false;
 		} catch (error) {
 			console.error("Login error:", error);
 			throw new AuthServiceError("Login failed");
@@ -69,10 +54,7 @@ export class AuthService {
 	async logout(): Promise<boolean> {
 		try {
 			await AsyncStorage.clear();
-
-			this.emitAuthEvent("logout");
-			this.emitAuthEvent("authStateChanged", { isAuthenticated: false });
-
+			useAuthStore.getState().clearAuth();
 			return true;
 		} catch (error) {
 			console.error("Logout error:", error);
@@ -83,20 +65,10 @@ export class AuthService {
 	async isAuthenticated(): Promise<boolean> {
 		try {
 			const token = await this.deps.storage.getItem("token");
-
-			if (!token) {
-				return false;
-			}
-
-			return true;
+			return !!token;
 		} catch (error) {
 			console.error("Error checking authentication:", error);
 			return false;
 		}
-	}
-
-	private async handleInvalidToken(): Promise<void> {
-		this.emitAuthEvent("tokenExpired");
-		this.emitAuthEvent("authStateChanged", { isAuthenticated: false });
 	}
 }

@@ -1,6 +1,5 @@
 import { useTheme } from "@/src/contexts/ThemeContext";
-import { useLanguage } from "@/src/hooks/useLanguage";
-import { Typography, weightTransforms } from "@/src/styles/theme/typography";
+import { Typography } from "@/src/styles/theme/typography";
 import React, { ReactNode } from "react";
 import { Text, TextProps, TextStyle } from "react-native";
 
@@ -31,9 +30,6 @@ const TextView: React.FC<TextViewProps> = ({
 
     baseStyle = {
       ...baseStyle,
-      ...Typography.weights[
-        weight || weightTransforms[(style as TextStyle)?.fontWeight || "normal"]
-      ],
     };
 
     baseStyle.color = theme.text;

@@ -4,7 +4,7 @@ import React from "react";
 
 import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 
-export default function NewOrder() {
+export default function HomePage() {
   const styles = useThemedStyles(createStyles);
 
   return (
