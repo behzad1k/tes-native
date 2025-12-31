@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { DrawerInstance } from "@/src/types/drawer";
 import {

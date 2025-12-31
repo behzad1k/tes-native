@@ -1,12 +1,21 @@
-import { Form, Step } from "@/src/features/order/types";
-import { User } from "@/src/features/user/types";
+export const SIGN_TYPES = {
+	STOP: "stop",
+	YIELD: "yield",
+	SPEED_LIMIT: "speed_limit",
+	NO_PARKING: "no_parking",
+	ONE_WAY: "one_way",
+	OTHER: "other",
+} as const;
 
-export const DEFAULT_USER: User = {
-	id: 0,
-	name: "",
-	lastName: "",
-	nationalCode: "",
-	phoneNumber: "",
-	role: "USER",
-	profilePic: { url: "" },
+export const SIGN_CONDITIONS = {
+	GOOD: "good",
+	FAIR: "fair",
+	POOR: "poor",
+	DAMAGED: "damaged",
+} as const;
+
+export const SYNC_STATUS = {
+	PENDING: "pending",
+	SYNCED: "synced",
+	FAILED: "failed",
 } as const;

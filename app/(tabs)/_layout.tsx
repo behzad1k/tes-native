@@ -8,7 +8,7 @@ import { colors } from "@/src/styles/theme/colors";
 import { spacing } from "@/src/styles/theme/spacing";
 import Typography from "@/src/styles/theme/typography";
 import { router, Tabs } from "expo-router";
-import { Clipboard, PlusCircle, User } from "phosphor-react-native";
+import { ListChecks, PlusCircle, User } from "phosphor-react-native";
 import React from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
@@ -35,13 +35,24 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="cart"
+        name="signs"
         options={{
-          title: t("general.orders"),
+          title: "Signs",
           tabBarLabelStyle: {
-            ...Typography.variants.large,
+            ...Typography.variants.label,
           },
-          tabBarIcon: ({ color }) => <Clipboard color={color} size={26} />,
+          tabBarIcon: ({ color }) => <ListChecks color={color} size={26} />,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            if (!isAuthenticated) {
+              openDrawer("login", <LoginDrawer />, {
+                position: "bottom",
+                drawerHeight: "auto",
+                drawerWidth: width,
+              });
+            }
+          },
         }}
       />
       <Tabs.Screen
@@ -49,15 +60,9 @@ export default function TabLayout() {
         options={{
           title: t("general.newOrder"),
           tabBarLabelStyle: {
-            ...Typography.variants.large,
+            ...Typography.variants.label,
           },
-          tabBarIcon: ({ color }) => (
-            <PlusCircle
-              // weight={isActive('NewOrder') ? 'fill' : 'regular'}
-              color={color}
-              size={26}
-            />
-          ),
+          tabBarIcon: ({ color }) => <PlusCircle color={color} size={26} />,
         }}
       />
       <Tabs.Screen
@@ -65,14 +70,12 @@ export default function TabLayout() {
         options={{
           title: isAuthenticated ? t("general.profile") : t("general.login"),
           tabBarLabelStyle: {
-            ...Typography.variants.large,
+            ...Typography.variants.label,
           },
           tabBarIcon: ({ color }) => <User color={color} size={26} />,
         }}
         listeners={{
           tabPress: (e) => {
-            e.preventDefault();
-
             if (isAuthenticated) {
               router.push("/profile");
             } else {
@@ -88,6 +91,7 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
 const { width } = Dimensions.get("window");
 
 const createStyles = (theme: Theme) =>
@@ -99,7 +103,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.background,
       height: 80,
       width: width,
-      position: "fixed",
+      position: "absolute" as any,
       bottom: 0,
       borderTopWidth: 0.5,
       borderTopColor: theme.border,
@@ -109,38 +113,5 @@ const createStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: spacing.xs,
-    },
-    tabText: {
-      color: colors.white,
-      marginTop: spacing.xs,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#fff",
-    },
-    loadingText: {
-      marginTop: 10,
-      fontSize: 16,
-      color: "#666",
-    },
-    errorContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#fff",
-      padding: 20,
-    },
-    errorText: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: "#ff0000",
-      marginBottom: 10,
-    },
-    errorDetail: {
-      fontSize: 14,
-      color: "#666",
-      textAlign: "center",
     },
   });

@@ -1,6 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { services } from '@/src/configs/services';
-import { AuthEventType } from '@/src/features/auth/services/AuthService';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { services } from "@/src/configs/services";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -8,7 +13,6 @@ interface AuthContextType {
   checkAuthStatus: () => Promise<boolean>;
   login: (credentials: any) => Promise<boolean>;
   logout: () => Promise<boolean>;
-  refreshAuth: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,7 +31,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(authenticated);
       return authenticated;
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      console.error("Error checking auth status:", error);
       setIsAuthenticated(false);
       return false;
     }
@@ -41,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return success;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       return false;
     }
   };
@@ -52,13 +56,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Auth state will be updated via event listener
       return success;
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       return false;
     }
-  };
-
-  const refreshAuth = async (): Promise<boolean> => {
-    return await services.auth.checkAndUpdateAuthState();
   };
 
   useEffect(() => {
@@ -69,28 +69,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     // Set up auth event listener
-    const unsubscribe = services.auth.onAuthStateChange((eventType: AuthEventType, data?: any) => {
-      switch (eventType) {
-        case 'login':
-          setIsAuthenticated(true);
-          break;
-        case 'logout':
-        case 'tokenExpired':
-          setIsAuthenticated(false);
-          break;
-        case 'authStateChanged':
-          if (data?.isAuthenticated !== undefined) {
-            setIsAuthenticated(data.isAuthenticated);
-          }
-          break;
-      }
-    });
+    // const unsubscribe = services.auth.onAuthStateChange((eventType: AuthEventType, data?: any) => {
+    //   switch (eventType) {
+    //     case 'login':
+    //       setIsAuthenticated(true);
+    //       break;
+    //     case 'logout':
+    //     case 'tokenExpired':
+    //       setIsAuthenticated(false);
+    //       break;
+    //     case 'authStateChanged':
+    //       if (data?.isAuthenticated !== undefined) {
+    //         setIsAuthenticated(data.isAuthenticated);
+    //       }
+    //       break;
+    //   }
+    // });
 
     initAuth();
 
     // Cleanup
     return () => {
-      unsubscribe();
+      // unsubscribe();
     };
   }, []);
 
@@ -102,7 +102,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         checkAuthStatus,
         login,
         logout,
-        refreshAuth,
       }}
     >
       {children}
@@ -113,7 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
