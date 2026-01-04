@@ -5,7 +5,6 @@ import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
 import TextView from "@/src/components/ui/TextView";
-import { useAuth } from "@/src/contexts/AuthContext";
 import { useUser } from "@/src/features/user/hooks/useUser";
 import { spacing } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
@@ -16,9 +15,9 @@ import { useAuthStore } from "@/src/store/auth";
 
 export default function ProfileScreen() {
   const styles = useThemedStyles(createStyles);
-  const { logout } = useAuth();
-  const { data: userData, isLoading } = useUser();
+  const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  const { data: userData, isLoading } = useUser();
   const { lastSyncTime, pendingCount } = useSyncStore();
 
   const handleLogout = async () => {
