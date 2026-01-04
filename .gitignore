@@ -56,3 +56,4 @@ logs
 # Build
 dist/
 build/
+ios/
