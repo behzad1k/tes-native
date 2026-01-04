@@ -4,25 +4,83 @@
   "buttons": {
     "submit": "Submit",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "sync": "Sync",
+    "create": "Create"
   },
   "navigation": {
     "home": "Home",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "signs": "Signs"
   },
   "messages": {
     "loading": "Loading...",
     "error": "Something went wrong",
-    "success": "Operation completed successfully"
+    "success": "Operation completed successfully",
+    "syncing": "Syncing...",
+    "syncSuccess": "Sync completed successfully",
+    "syncFailed": "Sync failed"
   },
   "general": {
     "newOrder": "New Order",
     "loading": "Loading",
     "login": "Login",
-    "profile": "Profile"
+    "profile": "Profile",
+    "orders": "Orders",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "signs": {
+    "title": "Sign Inventory",
+    "create": "Create Sign",
+    "edit": "Edit Sign",
+    "delete": "Delete Sign",
+    "list": "Sign List",
+    "details": "Sign Details",
+    "type": "Sign Type",
+    "condition": "Condition",
+    "location": "Location",
+    "address": "Address",
+    "notes": "Notes",
+    "status": "Status",
+    "pending": "Pending Sync",
+    "synced": "Synced",
+    "failed": "Sync Failed",
+    "noSigns": "No signs found",
+    "createFirst": "Create your first sign to get started",
+    "deleteConfirm": "Are you sure you want to delete this sign?",
+    "mustBeSynced": "Sign must be synced before deletion",
+    "types": {
+      "stop": "Stop Sign",
+      "yield": "Yield Sign",
+      "speed_limit": "Speed Limit",
+      "no_parking": "No Parking",
+      "one_way": "One Way",
+      "other": "Other"
+    },
+    "conditions": {
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "damaged": "Damaged"
+    }
   },
   "error": {
+    "phoneNumberInvalid": "Phone number is invalid",
+    "phoneNumberNotSet": "Phone number is not set",
+    "networkError": "Network error. Please check your connection.",
+    "syncError": "Failed to sync data",
+    "createError": "Failed to create sign",
+    "updateError": "Failed to update sign",
+    "deleteError": "Failed to delete sign"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidLatitude": "Invalid latitude",
+    "invalidLongitude": "Invalid longitude",
     "phoneNumberInvalid": "Phone number is invalid",
     "phoneNumberNotSet": "Phone number is not set"
   }

@@ -1,4 +1,4 @@
-import { useLoading } from "@/src/components/contexts/LoadingContext";
+import { useLoading } from "@/src/contexts/LoadingContext";
 import React from "react";
 import {
   View,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import TextView from "./TextView";
 import { Theme } from "@/src/types/theme";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";

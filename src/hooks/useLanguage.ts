@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useCallback, useMemo } from "react";
 import { Language, LanguageOption } from "@/src/types/translation";
-import { useI18nContext } from "@/src/components/contexts/LanguageContext";
+import { useI18nContext } from "@/src/contexts/LanguageContext";
 
 export const useLanguage = () => {
 	const { t, i18n } = useTranslation();

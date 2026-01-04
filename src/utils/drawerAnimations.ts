@@ -1,12 +1,4 @@
-import {
-	interpolate,
-	Extrapolate,
-	withTiming,
-	Easing,
-} from "react-native-reanimated";
-import { Dimensions } from "react-native";
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+import { interpolate, Extrapolate, Easing } from "react-native-reanimated";
 
 export const createTimingConfig = (duration: number) => ({
 	duration,

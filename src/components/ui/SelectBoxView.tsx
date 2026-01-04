@@ -5,7 +5,7 @@ import { colors } from "@/src/styles/theme/colors";
 import Typography from "@/src/styles/theme/typography";
 import { Theme } from "@/src/types/theme";
 import React, { useState, useEffect } from "react";
-import { useTheme } from "@/src/components/contexts/ThemeContext";
+import { useTheme } from "@/src/contexts/ThemeContext";
 import {
   TouchableOpacity,
   Text,
@@ -19,7 +19,7 @@ import {
   Dimensions,
   TextInput,
 } from "react-native";
-import { useDrawer } from "@/src/components/contexts/DrawerContext";
+import { useDrawer } from "@/src/contexts/DrawerContext";
 
 export type SelectBoxVariant = "primary" | "secondary" | "outline" | "ghost";
 export type SelectBoxSize = "small" | "medium" | "large";
