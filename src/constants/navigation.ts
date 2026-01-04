@@ -1,0 +1,27 @@
+export const PUBLIC_ROUTES = {
+	ROOT: "/",
+} as const;
+
+export const PROTECTED_ROUTES = {
+	ROOT: "/(protected)",
+	SIGNS_HOME: "/(protected)/signs",
+	SIGNS_CREATE: "/(protected)/signs/create",
+	SIGN_DETAIL: "/(protected)/signs/[id]",
+	PROFILE: "/(protected)/profile",
+	PROFILE_EDIT: "/(protected)/profile/edit",
+	PROFILE_SETTINGS: "/(protected)/profile/settings",
+	DASHBOARD: "/(protected)/dashboard",
+	NOTIFICATIONS: "/(protected)/notifications",
+} as const;
+
+export const ROUTES = {
+	...PUBLIC_ROUTES,
+	...PROTECTED_ROUTES,
+} as const;
+
+export type PublicRoute = (typeof PUBLIC_ROUTES)[keyof typeof PUBLIC_ROUTES];
+
+export type ProtectedRoute =
+	(typeof PROTECTED_ROUTES)[keyof typeof PROTECTED_ROUTES];
+
+export type Route = (typeof ROUTES)[keyof typeof ROUTES];

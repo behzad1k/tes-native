@@ -1,4 +1,3 @@
-import { AuthProvider } from "@/src/contexts/AuthContext";
 import { DrawerProvider } from "@/src/contexts/DrawerContext";
 import {
   LanguageProvider,
@@ -13,22 +12,46 @@ import { LoadingGlobal } from "@/src/components/ui/LoadingGlobal";
 import { useLanguage } from "@/src/hooks/useLanguage";
 import { STORAGE_KEYS } from "@/src/utils/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Stack } from "expo-router";
+import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
-import { StatusBar, StyleSheet } from "react-native";
+import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import ToastManager from "toastify-react-native";
 import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { queryClient, asyncStoragePersister } from "@/src/store/queryClient";
 import { DatabaseProvider } from "@nozbe/watermelondb/react";
 import { database } from "@/src/database";
 import { syncEngine } from "@/src/services/sync/SyncEngine";
 import { useNetworkStatus } from "@/src/hooks/useNetworkStatus";
+import { useAuthStore } from "@/src/store/auth";
+
+// Protected route logic
+function useProtectedRoute() {
+  const segments = useSegments();
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inProtectedGroup = segments[0] === "(protected)";
+
+    if (!isAuthenticated && inProtectedGroup) {
+      router.replace("/");
+    } else if (
+      isAuthenticated &&
+      !inProtectedGroup &&
+      segments[0] !== "(global)"
+    ) {
+      router.replace("/(protected)/signs");
+    }
+  }, [isAuthenticated, segments, isLoading]);
+}
 
 function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
@@ -37,6 +60,8 @@ function AppContent() {
   const { t, isLanguageLoaded } = useLanguage();
   const { isOnline } = useNetworkStatus();
 
+  useProtectedRoute();
+
   const toastConfig: ToastManagerProps = {
     useModal: false,
     isRTL: isRTL,
@@ -44,7 +69,6 @@ function AppContent() {
     topOffset: 60,
   };
 
-  // Start sync engine
   useEffect(() => {
     syncEngine.start();
     return () => {
@@ -52,7 +76,6 @@ function AppContent() {
     };
   }, []);
 
-  // Initialize app
   useEffect(() => {
     const initializeApp = async () => {
       const themeToken = await AsyncStorage.getItem(STORAGE_KEYS.THEME);
@@ -64,7 +87,6 @@ function AppContent() {
     initializeApp();
   }, []);
 
-  // Hide splash when language is loaded
   useEffect(() => {
     if (isLanguageLoaded) {
       const timer = setTimeout(() => {
@@ -80,11 +102,7 @@ function AppContent() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <DrawerProvider>
           <Drawer>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="signs" />
-              <Stack.Screen name="+not-found" />
-            </Stack>
+            <Slot />
             <StatusBar
               barStyle={isDark ? "light-content" : "dark-content"}
               backgroundColor={theme.background}
@@ -107,16 +125,14 @@ export default function RootLayout() {
       >
         <LoadingProvider>
           <LanguageProvider>
-            <AuthProvider>
-              <ThemeProvider>
-                <SplashProvider>
-                  <KeyboardProvider>
-                    <AppContent />
-                    <LoadingGlobal />
-                  </KeyboardProvider>
-                </SplashProvider>
-              </ThemeProvider>
-            </AuthProvider>
+            <ThemeProvider>
+              <SplashProvider>
+                <KeyboardProvider>
+                  <AppContent />
+                  <LoadingGlobal />
+                </KeyboardProvider>
+              </SplashProvider>
+            </ThemeProvider>
           </LanguageProvider>
         </LoadingProvider>
       </PersistQueryClientProvider>
