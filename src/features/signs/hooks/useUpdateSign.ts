@@ -17,10 +17,8 @@ export function useUpdateSign() {
 			id: string;
 			data: Partial<CreateSignRequest>;
 		}) => {
-			// Update locally first
 			const updatedSign = await signOfflineService.updateSign(id, data);
 
-			// If online and already synced, update on server
 			if (isOnline && updatedSign.serverId) {
 				try {
 					await signApiService.updateSign(updatedSign.serverId, data);

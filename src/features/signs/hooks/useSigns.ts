@@ -12,7 +12,6 @@ export function useSigns() {
 		return [];
 	}
 
-	// Reactive query - auto-updates when data changes
 	const signs = signsCollection
 		.query(Q.where("user_id", userId), Q.sortBy("created_at", Q.desc))
 		.observe();

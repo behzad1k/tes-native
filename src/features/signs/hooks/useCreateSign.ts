@@ -17,10 +17,8 @@ export function useCreateSign() {
 				throw new Error("User not authenticated");
 			}
 
-			// Always create locally first
 			const localSign = await signOfflineService.createSign(data, userId);
 
-			// If online, try to sync immediately
 			if (isOnline) {
 				try {
 					const serverResponse = await signApiService.createSign(data);
@@ -34,7 +32,6 @@ export function useCreateSign() {
 						status: "synced" as const,
 					};
 				} catch (error) {
-					// If sync fails, keep as pending
 					console.error("Failed to sync sign:", error);
 					return localSign;
 				}

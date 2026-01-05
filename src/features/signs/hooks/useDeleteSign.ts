@@ -12,17 +12,14 @@ export function useDeleteSign() {
 		mutationFn: async (id: string) => {
 			const sign = await signOfflineService.getSignById(id);
 
-			// Only allow deleting synced signs
 			if (sign.status !== "synced") {
 				throw new Error("Cannot delete unsynced sign. Please sync first.");
 			}
 
-			// Delete from server if online
 			if (isOnline && sign.serverId) {
 				await signApiService.deleteSign(sign.serverId);
 			}
 
-			// Delete locally
 			await signOfflineService.deleteSign(id);
 		},
 

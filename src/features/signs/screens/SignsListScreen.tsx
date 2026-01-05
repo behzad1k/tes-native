@@ -21,12 +21,10 @@ function SignsListScreenComponent({ signs, pendingSigns }: any) {
   const { isOnline, isSyncing: globalSyncing } = useSyncStore();
 
   const handleCreateSign = () => {
-    // Fix: Cast to any to avoid type error
     router.push("/signs/create" as any);
   };
 
   const handleSignPress = (sign: any) => {
-    // Fix: Cast to any to avoid type error
     router.push(`/signs/${sign.id}` as any);
   };
 

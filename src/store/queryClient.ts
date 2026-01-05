@@ -26,7 +26,6 @@ export const asyncStoragePersister = createAsyncStoragePersister({
 	key: "REACT_QUERY_OFFLINE_CACHE",
 });
 
-// Fix: Use onlineManager instead of queryClient.setOnline
 NetInfo.addEventListener((state) => {
 	onlineManager.setOnline(state.isConnected ?? false);
 });
