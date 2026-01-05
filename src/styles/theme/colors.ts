@@ -1,7 +1,7 @@
 export const colors = {
 	primary: "#f4e9f4",
-	lightPink: "#fbe4f8",
-	midPink: "#c89dc7",
+	darkGreen: "#557630",
+	lightGreen: "#9BC631",
 	lightBlack: "rgb(66, 66, 66)",
 	whitePink: "rgba(248, 243, 243, 0.74)",
 	lightGrey: "rgba(224, 222, 222, 1)",

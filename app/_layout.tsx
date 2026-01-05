@@ -29,7 +29,6 @@ import { syncEngine } from "@/src/services/sync/SyncEngine";
 import { useNetworkStatus } from "@/src/hooks/useNetworkStatus";
 import { useAuthStore } from "@/src/store/auth";
 
-// Protected route logic
 function useProtectedRoute() {
   const segments = useSegments();
   const router = useRouter();
@@ -42,7 +41,7 @@ function useProtectedRoute() {
     const inProtectedGroup = segments[0] === "(protected)";
 
     if (!isAuthenticated && inProtectedGroup) {
-      router.replace("/");
+      router.replace("/(global)");
     } else if (
       isAuthenticated &&
       !inProtectedGroup &&
@@ -57,8 +56,7 @@ function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
   const { theme, isDark } = useTheme();
   const { isRTL } = useI18nContext();
-  const { t, isLanguageLoaded } = useLanguage();
-  const { isOnline } = useNetworkStatus();
+  const { isLanguageLoaded } = useLanguage();
 
   useProtectedRoute();
 
@@ -69,18 +67,18 @@ function AppContent() {
     topOffset: 60,
   };
 
-  useEffect(() => {
-    syncEngine.start();
-    return () => {
-      syncEngine.stop();
-    };
-  }, []);
+  // useEffect(() => {
+  //   syncEngine.start();
+  //   return () => {
+  //     syncEngine.stop();
+  //   };
+  // }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
       const themeToken = await AsyncStorage.getItem(STORAGE_KEYS.THEME);
       if (!themeToken) {
-        await AsyncStorage.setItem(STORAGE_KEYS.THEME, "dark");
+        await AsyncStorage.setItem(STORAGE_KEYS.THEME, "light");
       }
     };
 

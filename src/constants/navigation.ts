@@ -1,5 +1,6 @@
 export const PUBLIC_ROUTES = {
 	ROOT: "/",
+	LOGIN: "/(global)/login",
 } as const;
 
 export const PROTECTED_ROUTES = {

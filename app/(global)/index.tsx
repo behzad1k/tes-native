@@ -1,15 +1,82 @@
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
-import React from "react";
+import React, { useEffect } from "react";
+import {
+  Dimensions,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from "react-native";
+import { useAuthStore } from "@/src/store/auth";
+import { router } from "expo-router";
+import TextView from "@/src/components/ui/TextView";
+import ModuleCard from "@/src/components/layouts/ModuleCard";
+import { LOCAL_IMAGES } from "@/src/constants/images";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
+const { height, width } = Dimensions.get("window");
 
 export default function HomePage() {
   const styles = useThemedStyles(createStyles);
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.replace("/(global)/login");
+      } else {
+        router.replace("/(protected)/signs");
+      }
+    }
+  }, [isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.loadingContainer}>
+          <TextView variant="body">Loading...</TextView>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.content}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
+        <ModuleCard
+          title="Traffic Counter"
+          description="You can count the number of vehicles and determine the direction of each one."
+          backgroundImage={LOCAL_IMAGES.TRAFFIC_COUNTER_CARD}
+        />
+        <ModuleCard
+          title="Sing Inventory"
+          description="You can count the number of vehicles and determine the direction of each one."
+          backgroundImage={LOCAL_IMAGES.SING_INVENTORY_CARD}
+        />
+        <ModuleCard
+          title="Collision"
+          description="You can count the number of vehicles and determine the direction of each one."
+          backgroundImage={LOCAL_IMAGES.COLLISION_CARD}
+        />
+        <ModuleCard
+          title="Maintenance"
+          description="You can count the number of vehicles and determine the direction of each one."
+          backgroundImage={LOCAL_IMAGES.MAINTENANCE_CARD}
+        />
+        <ModuleCard
+          title="Schedule"
+          description="You can count the number of vehicles and determine the direction of each one."
+          backgroundImage={LOCAL_IMAGES.SCHEDULE_CARD}
+        />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -18,6 +85,16 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.primary,
+      backgroundColor: theme.background,
+      paddingTop: 10,
+      paddingHorizontal: 16,
+    },
+    content: {
+      gap: 8,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
     },
   });
