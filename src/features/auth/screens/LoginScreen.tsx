@@ -38,6 +38,7 @@ export function LoginScreen() {
         onForgotPassword={handleForgotPassword}
         loading={isLoggingIn || isLoginPending}
       />,
+      { drawerHeight: "auto" },
     );
   };
   const handleLogin = (credentials: LoginCredentials) => {
@@ -62,8 +63,7 @@ export function LoginScreen() {
         success={isForgotPasswordSuccess}
       />,
       {
-        position: "bottom",
-        drawerHeight: 400,
+        drawerHeight: "auto",
       },
     );
   };

@@ -25,32 +25,8 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { queryClient, asyncStoragePersister } from "@/src/store/queryClient";
 import { DatabaseProvider } from "@nozbe/watermelondb/react";
 import { database } from "@/src/database";
-import { syncEngine } from "@/src/services/sync/SyncEngine";
-import { useNetworkStatus } from "@/src/hooks/useNetworkStatus";
 import { useAuthStore } from "@/src/store/auth";
-
-function useProtectedRoute() {
-  const segments = useSegments();
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isLoading = useAuthStore((state) => state.isLoading);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    const inProtectedGroup = segments[0] === "(protected)";
-
-    if (!isAuthenticated && inProtectedGroup) {
-      router.replace("/(global)");
-    } else if (
-      isAuthenticated &&
-      !inProtectedGroup &&
-      segments[0] !== "(global)"
-    ) {
-      router.replace("/(protected)/signs");
-    }
-  }, [isAuthenticated, segments, isLoading]);
-}
+import useProtectedRoute from "@/src/hooks/useProtectedRoutes";
 
 function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
@@ -58,7 +34,7 @@ function AppContent() {
   const { isRTL } = useI18nContext();
   const { isLanguageLoaded } = useLanguage();
 
-  useProtectedRoute();
+  // useProtectedRoute();
 
   const toastConfig: ToastManagerProps = {
     useModal: false,

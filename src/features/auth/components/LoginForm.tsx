@@ -78,18 +78,20 @@ export function LoginForm({
             secureTextEntry={!showPassword}
             error={errors.password}
             editable={!loading}
+            icon={
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+                disabled={loading}
+              >
+                <Entypo
+                  name={showPassword ? "eye" : "eye-with-line"}
+                  size={24}
+                  color={colors.lightGreen}
+                />
+              </TouchableOpacity>
+            }
           />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-            disabled={loading}
-          >
-            <Entypo
-              name={showPassword ? "eye" : "eye-with-line"}
-              size={24}
-              color={colors.pink}
-            />
-          </TouchableOpacity>
         </View>
 
         <ButtonView
@@ -137,11 +139,13 @@ const createStyles = (theme: Theme) =>
     },
     inputContainer: {
       position: "relative",
+      flexDirection: "row",
+      width: "100%",
+      flex: 1,
     },
     eyeIcon: {
       position: "absolute",
       right: spacing.md,
-      top: 42,
       padding: spacing.xs,
     },
     submitButton: {
@@ -152,7 +156,7 @@ const createStyles = (theme: Theme) =>
       marginTop: spacing.sm,
     },
     forgotPasswordText: {
-      color: colors.pink,
+      color: colors.lightGreen,
       fontWeight: "600",
     },
   });

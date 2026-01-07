@@ -1,7 +1,7 @@
 import { useTheme } from "@/src/contexts/ThemeContext";
 import { spacing } from "@/src/styles/theme/spacing";
 import Typography from "@/src/styles/theme/typography";
-import React, { forwardRef } from "react";
+import React, { forwardRef, ReactElement } from "react";
 import {
   TextInput,
   TextInputProps,
@@ -16,10 +16,11 @@ interface TextInputViewProps extends TextInputProps {
   error?: string;
   containerStyle?: ViewStyle;
   label?: string;
+  icon?: ReactElement;
 }
 
 const TextInputView = forwardRef<TextInput, TextInputViewProps>(
-  ({ containerStyle = {}, style, error, label, ...props }, ref) => {
+  ({ containerStyle = {}, style, error, label, icon, ...props }, ref) => {
     const { theme } = useTheme();
 
     return (
@@ -29,20 +30,23 @@ const TextInputView = forwardRef<TextInput, TextInputViewProps>(
             {label}
           </TextView>
         )}
-        <TextInput
-          ref={ref}
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.primary,
-              color: theme.text,
-              borderColor: error ? colors.error : theme.border,
-            },
-            style,
-          ]}
-          placeholderTextColor={theme.secondary}
-          {...props}
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            ref={ref}
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.primary,
+                color: theme.text,
+                borderColor: error ? colors.error : theme.border,
+              },
+              style,
+            ]}
+            placeholderTextColor={theme.secondary}
+            {...props}
+          />
+          {icon && icon}
+        </View>
         {error && (
           <TextView variant="caption" style={styles.error}>
             {error}
@@ -56,12 +60,20 @@ const TextInputView = forwardRef<TextInput, TextInputViewProps>(
 const styles = StyleSheet.create({
   container: {
     gap: spacing.xs,
+    flex: 1,
+  },
+  inputContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   label: {
     marginBottom: 4,
   },
   input: {
     borderWidth: 1,
+    flex: 1,
     padding: spacing.sm,
     borderRadius: 8,
     fontSize: 16,

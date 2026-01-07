@@ -60,7 +60,6 @@ const SingleDrawer: React.FC<SingleDrawerProps> = ({
   const progress = useSharedValue(0);
   const isClosing = useSharedValue(false);
   const { keyboardHeight } = useGradualAnimation();
-
   const config = drawer.config;
 
   useEffect(() => {

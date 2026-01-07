@@ -15,10 +15,12 @@ import { PlusCircle, ArrowsClockwise } from "phosphor-react-native";
 import { colors } from "@/src/styles/theme/colors";
 import { withObservables } from "@nozbe/watermelondb/react";
 
-function SignsListScreenComponent({ signs, pendingSigns }: any) {
+export function SignsListScreen() {
   const styles = useThemedStyles(createStyles);
   const { mutate: syncSigns, isPending: isSyncing } = useSyncSigns();
   const { isOnline, isSyncing: globalSyncing } = useSyncStore();
+  const signs = useSigns();
+  const pendingSigns = usePendingSigns();
 
   const handleCreateSign = () => {
     router.push("/signs/create" as any);
@@ -70,7 +72,7 @@ function SignsListScreenComponent({ signs, pendingSigns }: any) {
             >
               <ArrowsClockwise
                 size={20}
-                color={colors.pink}
+                color={colors.green}
                 weight={isSyncing ? "bold" : "regular"}
               />
               <TextView variant="bodySmall" style={styles.syncText}>
@@ -95,11 +97,6 @@ function SignsListScreenComponent({ signs, pendingSigns }: any) {
     </SafeAreaView>
   );
 }
-
-export const SignsListScreen = withObservables([], () => ({
-  signs: useSigns(),
-  pendingSigns: usePendingSigns(),
-}))(SignsListScreenComponent);
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
@@ -154,11 +151,11 @@ const createStyles = (theme: Theme) =>
       paddingVertical: spacing.sm,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.pink,
+      borderColor: colors.green,
       backgroundColor: theme.background,
     },
     syncText: {
-      color: colors.pink,
+      color: colors.green,
     },
     createButton: {
       flex: 1,
@@ -168,7 +165,7 @@ const createStyles = (theme: Theme) =>
       gap: spacing.xs,
       paddingVertical: spacing.sm,
       borderRadius: 8,
-      backgroundColor: colors.pink,
+      backgroundColor: colors.green,
     },
     createButtonText: {
       color: colors.white,

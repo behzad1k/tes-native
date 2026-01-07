@@ -22,7 +22,7 @@ export function HomeScreen() {
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.replace("/(global)/login");
+        router.replace("/(protected)/signs");
       } else {
         router.replace("/(protected)/signs");
       }

@@ -18,7 +18,7 @@ const defaultConfig: DrawerConfig = {
   transitionDuration: 300,
   overlayOpacity: 0.5,
   drawerWidth: Dimensions.get("window").width,
-  drawerHeight: Dimensions.get("window").height * 0.5,
+  drawerHeight: "auto",
   enableGestures: true,
   enableOverlay: true,
 };
@@ -49,7 +49,6 @@ export const DrawerProvider: React.FC<DrawerProviderProps> = ({
           filtered.length > 0
             ? Math.max(...filtered.map((d) => d.zIndex))
             : 1000;
-
         const finalConfig = { ...config, ...drawerConfig };
         const newDrawer: DrawerInstance = {
           id,
