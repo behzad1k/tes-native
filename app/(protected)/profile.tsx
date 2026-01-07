@@ -44,7 +44,7 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <User size={48} color={colors.pink} weight="fill" />
+              <User size={48} color={colors.green} weight="fill" />
             </View>
           </View>
 
@@ -166,7 +166,7 @@ const createStyles = (theme: Theme) =>
       justifyContent: "center",
       alignItems: "center",
       borderWidth: 2,
-      borderColor: colors.pink,
+      borderColor: colors.green,
     },
     userInfo: {
       alignItems: "center",
@@ -182,7 +182,7 @@ const createStyles = (theme: Theme) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: 4,
       borderRadius: 12,
-      backgroundColor: colors.pink,
+      backgroundColor: colors.green,
       marginTop: spacing.xs,
     },
     roleText: {
@@ -231,7 +231,7 @@ const createStyles = (theme: Theme) =>
       justifyContent: "center",
       paddingVertical: spacing.md,
       borderRadius: 8,
-      backgroundColor: colors.pink,
+      backgroundColor: colors.green,
       gap: spacing.xs,
     },
     actionButtonText: {

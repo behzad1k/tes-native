@@ -25,42 +25,16 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { queryClient, asyncStoragePersister } from "@/src/store/queryClient";
 import { DatabaseProvider } from "@nozbe/watermelondb/react";
 import { database } from "@/src/database";
-import { syncEngine } from "@/src/services/sync/SyncEngine";
-import { useNetworkStatus } from "@/src/hooks/useNetworkStatus";
 import { useAuthStore } from "@/src/store/auth";
-
-// Protected route logic
-function useProtectedRoute() {
-  const segments = useSegments();
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isLoading = useAuthStore((state) => state.isLoading);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    const inProtectedGroup = segments[0] === "(protected)";
-
-    if (!isAuthenticated && inProtectedGroup) {
-      router.replace("/");
-    } else if (
-      isAuthenticated &&
-      !inProtectedGroup &&
-      segments[0] !== "(global)"
-    ) {
-      router.replace("/(protected)/signs");
-    }
-  }, [isAuthenticated, segments, isLoading]);
-}
+import useProtectedRoute from "@/src/hooks/useProtectedRoutes";
 
 function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
   const { theme, isDark } = useTheme();
   const { isRTL } = useI18nContext();
-  const { t, isLanguageLoaded } = useLanguage();
-  const { isOnline } = useNetworkStatus();
+  const { isLanguageLoaded } = useLanguage();
 
-  useProtectedRoute();
+  // useProtectedRoute();
 
   const toastConfig: ToastManagerProps = {
     useModal: false,
@@ -69,18 +43,18 @@ function AppContent() {
     topOffset: 60,
   };
 
-  useEffect(() => {
-    syncEngine.start();
-    return () => {
-      syncEngine.stop();
-    };
-  }, []);
+  // useEffect(() => {
+  //   syncEngine.start();
+  //   return () => {
+  //     syncEngine.stop();
+  //   };
+  // }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
       const themeToken = await AsyncStorage.getItem(STORAGE_KEYS.THEME);
       if (!themeToken) {
-        await AsyncStorage.setItem(STORAGE_KEYS.THEME, "dark");
+        await AsyncStorage.setItem(STORAGE_KEYS.THEME, "light");
       }
     };
 

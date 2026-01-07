@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: 6,
-    backgroundColor: colors.pink,
+    backgroundColor: colors.green,
   },
   text: {
     color: colors.white,

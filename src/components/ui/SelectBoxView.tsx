@@ -362,7 +362,7 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
                       height: 24,
                       borderRadius: 12,
                       borderWidth: 0.5,
-                      borderColor: colors.pink,
+                      borderColor: colors.green,
                     }}
                   >
                     {isSelected && <View style={styles.selectedIcon}></View>}
@@ -688,13 +688,13 @@ const createStyles = (theme: Theme) =>
       fontWeight: "600",
     },
     selectedOptionBox: {
-      borderColor: colors.pink,
+      borderColor: colors.green,
     },
     selectedIcon: {
       width: 18,
       height: 18,
       borderRadius: 10,
-      backgroundColor: colors.pink,
+      backgroundColor: colors.green,
     },
     option: {
       borderRadius: 12,

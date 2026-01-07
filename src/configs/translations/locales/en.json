@@ -8,7 +8,9 @@
     "delete": "Delete",
     "edit": "Edit",
     "sync": "Sync",
-    "create": "Create"
+    "create": "Create",
+    "send": "Send",
+    "close": "Close"
   },
   "navigation": {
     "home": "Home",
@@ -32,6 +34,21 @@
     "orders": "Orders",
     "online": "Online",
     "offline": "Offline"
+  },
+  "auth": {
+    "appTitle": "TES Information Technology",
+    "signIn": "Sign In",
+    "username": "Username",
+    "password": "Password",
+    "usernamePlaceholder": "Enter your username",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot Password?",
+    "loginSuccess": "Login successful!",
+    "forgotPasswordDescription": "A link will be sent to your email to reset your password.",
+    "forgotPasswordSuccess": "The link is successfully sent to your email address to reset your password.",
+    "emailPlaceholder": "Enter your email address",
+    "welcome": "Welcome to TES",
+    "appDescription": "A software for recording, managing and analyzing traffic information."
   },
   "signs": {
     "title": "Sign Inventory",
@@ -75,13 +92,16 @@
     "syncError": "Failed to sync data",
     "createError": "Failed to create sign",
     "updateError": "Failed to update sign",
-    "deleteError": "Failed to delete sign"
+    "deleteError": "Failed to delete sign",
+    "loginFailed": "Login failed",
+    "forgotPasswordFailed": "Failed to send reset email"
   },
   "validation": {
     "required": "This field is required",
     "invalidLatitude": "Invalid latitude",
     "invalidLongitude": "Invalid longitude",
     "phoneNumberInvalid": "Phone number is invalid",
-    "phoneNumberNotSet": "Phone number is not set"
+    "phoneNumberNotSet": "Phone number is not set",
+    "invalidEmail": "Invalid email address"
   }
 }

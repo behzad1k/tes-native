@@ -14,9 +14,9 @@ export default function ThemeSwitchButton() {
   return (
     <TouchableOpacity style={styles.button} onPress={toggleTheme}>
       {isDark ? (
-        <Sun size={24} color={colors.pink} weight="fill" />
+        <Sun size={24} color={colors.green} weight="fill" />
       ) : (
-        <Moon size={24} color={colors.pink} weight="fill" />
+        <Moon size={24} color={colors.green} weight="fill" />
       )}
     </TouchableOpacity>
   );

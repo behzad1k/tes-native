@@ -184,7 +184,7 @@ const createStyles = (theme: Theme) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: 16,
-      backgroundColor: colors.pink,
+      backgroundColor: colors.green,
     },
     statusText: {
       color: colors.white,

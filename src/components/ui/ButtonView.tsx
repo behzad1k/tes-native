@@ -71,7 +71,7 @@ export default function ButtonView({
       case "secondary":
         return colors.white;
       case "outline":
-        return colors.pink;
+        return colors.lightGreen;
     }
   };
 
@@ -111,7 +111,7 @@ const createStyles = (theme: Theme) =>
       borderRadius: 8,
     },
     primary: {
-      backgroundColor: colors.pink,
+      backgroundColor: colors.lightGreen,
     },
     secondary: {
       backgroundColor: theme.secondary,
@@ -119,7 +119,7 @@ const createStyles = (theme: Theme) =>
     outline: {
       backgroundColor: "transparent",
       borderWidth: 1,
-      borderColor: colors.pink,
+      borderColor: colors.lightGreen,
     },
     danger: {
       backgroundColor: colors.error,
