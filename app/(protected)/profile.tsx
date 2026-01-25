@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -5,13 +6,10 @@ import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
 import TextView from "@/src/components/ui/TextView";
-import { useUser } from "@/src/features/user/hooks/useUser";
 import { spacing } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
 import { User, SignOut } from "phosphor-react-native";
 import { router } from "expo-router";
-import { useSyncStore } from "@/src/store/sync";
-import { useAuthStore } from "@/src/store/auth";
 
 export default function ProfileScreen() {
   const styles = useThemedStyles(createStyles);

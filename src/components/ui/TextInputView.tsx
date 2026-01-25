@@ -1,5 +1,5 @@
 import { useTheme } from "@/src/contexts/ThemeContext";
-import { spacing } from "@/src/styles/theme/spacing";
+import { scale, spacing } from "@/src/styles/theme/spacing";
 import Typography from "@/src/styles/theme/typography";
 import React, { forwardRef, ReactElement } from "react";
 import {
@@ -36,13 +36,13 @@ const TextInputView = forwardRef<TextInput, TextInputViewProps>(
             style={[
               styles.input,
               {
-                backgroundColor: theme.primary,
+                backgroundColor: theme.background,
                 color: theme.text,
                 borderColor: error ? colors.error : theme.border,
               },
               style,
             ]}
-            placeholderTextColor={theme.secondary}
+            placeholderTextColor={"rgba(109, 119, 122, 0.4)"}
             {...props}
           />
           {icon && icon}
@@ -67,17 +67,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    height: scale(36),
   },
   label: {
     marginBottom: 4,
   },
   input: {
+    borderRadius: 4,
     borderWidth: 1,
+    borderColor: colors.placeholder,
     flex: 1,
-    padding: spacing.sm,
-    borderRadius: 8,
-    fontSize: 16,
-    ...Typography.variants.body,
+    padding: spacing.xs,
+    fontSize: 12,
+    lineHeight: 14,
+    height: scale(36),
   },
   error: {
     color: colors.error,

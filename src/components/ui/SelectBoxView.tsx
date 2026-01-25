@@ -20,9 +20,8 @@ import {
   TextInput,
 } from "react-native";
 import { useDrawer } from "@/src/contexts/DrawerContext";
-
-export type SelectBoxVariant = "primary" | "secondary" | "outline" | "ghost";
-export type SelectBoxSize = "small" | "medium" | "large";
+import { CaretDown, CaretUp } from "phosphor-react-native";
+import { scale } from "@/src/styles/theme/spacing";
 
 export interface SelectBoxOption {
   label: string;
@@ -36,29 +35,34 @@ interface SelectBoxViewProps {
   onChange: (value: string | number | null) => void;
   placeholder?: string;
 
+  label?: string;
+  labelStyle?: TextStyle;
+
+  title?: string;
+  titleStyle?: TextStyle;
+
   loading?: boolean;
   loadingText?: string;
   loadingComponent?: React.ReactNode;
 
-  variant?: SelectBoxVariant;
-  size?: SelectBoxSize;
   disabled?: boolean;
 
-  style?: ViewStyle | ViewStyle[];
+  // Style props
+  containerStyle?: ViewStyle | ViewStyle[];
+  selectBoxStyle?: ViewStyle | ViewStyle[];
   textStyle?: TextStyle;
+  iconStyle?: ViewStyle;
   dropdownStyle?: ViewStyle;
   optionStyle?: ViewStyle;
   optionTextStyle?: TextStyle;
-
-  backgroundColor?: string;
-  textColor?: string;
-  loadingColor?: string;
-  dropdownBackgroundColor?: string;
-  selectedOptionColor?: string;
+  selectedOptionStyle?: ViewStyle;
+  selectedOptionTextStyle?: TextStyle;
+  errorTextStyle?: TextStyle;
+  loadingContainerStyle?: ViewStyle;
 
   accessibilityLabel?: string;
   accessibilityHint?: string;
-  testID?: string;
+  id?: string;
 
   fullWidth?: boolean;
 
@@ -80,26 +84,29 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
   options,
   value,
   onChange,
-  placeholder = "Select an option",
+  placeholder = "Select an item",
+  label,
+  labelStyle,
+  title,
+  titleStyle,
   loading = false,
   loadingText,
   loadingComponent,
-  variant = "primary",
-  size = "medium",
   disabled = false,
-  style,
+  containerStyle,
+  selectBoxStyle,
   textStyle,
+  iconStyle,
   dropdownStyle,
   optionStyle,
   optionTextStyle,
-  backgroundColor,
-  textColor,
-  loadingColor,
-  dropdownBackgroundColor,
-  selectedOptionColor,
+  selectedOptionStyle,
+  selectedOptionTextStyle,
+  errorTextStyle,
+  loadingContainerStyle,
   accessibilityLabel,
   accessibilityHint,
-  testID,
+  id,
   fullWidth = false,
   error = false,
   errorMessage,
@@ -114,48 +121,20 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const { openDrawer, closeDrawer, isDrawerOpen } = useDrawer();
   const { theme } = useTheme();
-  const drawerId = `selectbox-${testID || "default"}`;
+  const drawerId = `selectbox-${id || "default"}`;
   const isOpen = isDrawerOpen(drawerId);
-
+  const styles = useThemedStyles(createStyles);
   const isDisabled = disabled || loading;
 
-  const variantStyles = getVariantStyles(variant);
-  const sizeStyles = getSizeStyles(size);
-
-  const boxBackgroundColor =
-    backgroundColor || theme.background || variantStyles.backgroundColor;
-  const boxTextColor = textColor || theme.text || variantStyles.textColor;
-  const spinnerColor = loadingColor || variantStyles.loadingColor;
-  const dropdownBgColor = dropdownBackgroundColor || "#FFFFFF";
-  const selectedColor =
-    selectedOptionColor || variantStyles.selectedOptionColor;
-  const styles = useThemedStyles(createStyles);
-
-  const finalBackgroundColor = isDisabled
-    ? variantStyles.disabledBackgroundColor
-    : error
-      ? variantStyles.errorBackgroundColor
-      : boxBackgroundColor;
-  const finalTextColor = isDisabled
-    ? variantStyles.disabledTextColor
-    : error
-      ? variantStyles.errorTextColor
-      : boxTextColor;
-  const finalBorderColor = error
-    ? variantStyles.errorBorderColor
-    : theme.pink || variantStyles.borderColor;
-
-  const selectBoxStyle: ViewStyle[] = [
+  const finalSelectBoxStyle: ViewStyle[] = [
     styles.selectBox,
-    sizeStyles.selectBox,
-    {
-      backgroundColor: finalBackgroundColor,
-      borderColor: finalBorderColor,
-      borderWidth: variantStyles.borderWidth,
-    },
-    fullWidth ? styles.fullWidth : {},
-    isDisabled ? styles.disabled : {},
-    style ? (Array.isArray(style) ? StyleSheet.flatten(style) : style) : {},
+    isDisabled && styles.disabled,
+    error && styles.errorBorder,
+    selectBoxStyle
+      ? Array.isArray(selectBoxStyle)
+        ? StyleSheet.flatten(selectBoxStyle)
+        : selectBoxStyle
+      : {},
   ];
 
   const selectedOption = options.find((opt) => opt.value === value);
@@ -179,17 +158,10 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
     }
 
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size={sizeStyles.spinnerSize} color={spinnerColor} />
+      <View style={[styles.loadingContainer, loadingContainerStyle]}>
+        <ActivityIndicator size="small" color={theme.text} />
         {loadingText && (
-          <TextView
-            style={[
-              styles.loadingText,
-              sizeStyles.text,
-              { color: finalTextColor },
-              textStyle,
-            ]}
-          >
+          <TextView style={[styles.loadingText, textStyle]}>
             {loadingText}
           </TextView>
         )}
@@ -204,16 +176,10 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
       return dropdownIcon;
     }
 
-    return (
-      <TextView
-        style={[
-          styles.dropdownIconText,
-          { color: finalTextColor },
-          sizeStyles.icon,
-        ]}
-      >
-        {isOpen ? "▲" : "▼"}
-      </TextView>
+    return isOpen ? (
+      <CaretUp size={20} color={colors.placeholder} style={iconStyle} />
+    ) : (
+      <CaretDown size={20} color={colors.placeholder} style={iconStyle} />
     );
   };
 
@@ -224,19 +190,7 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
 
     return (
       <View style={styles.contentContainer}>
-        <TextView
-          style={[
-            styles.selectedText,
-            sizeStyles.text,
-            {
-              color: selectedOption
-                ? finalTextColor
-                : variantStyles.placeholderColor,
-            },
-            textStyle,
-          ]}
-          numberOfLines={1}
-        >
+        <TextView style={[styles.selectedText, textStyle]} numberOfLines={1}>
           {selectedOption ? selectedOption.label : placeholder}
         </TextView>
         {renderDropdownIcon()}
@@ -290,14 +244,16 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
           >
             <TextView style={styles.closeButtonText}>✕</TextView>
           </TouchableOpacity>
-          <TextView style={styles.drawerTitle}>{placeholder}</TextView>
+          <TextView style={[styles.drawerTitle, titleStyle]}>
+            {title || placeholder}
+          </TextView>
         </View>
 
         {/* Search Input */}
         {searchable && (
           <View style={styles.searchContainer}>
             <TextInputView
-              style={[styles.searchInput, sizeStyles.searchInput]}
+              style={styles.searchInput}
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChangeText={handleSearchChange}
@@ -330,8 +286,10 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
                   key={`${option.value}-${index}`}
                   style={[
                     styles.option,
-                    sizeStyles.option,
-                    isSelected && styles.selectedOptionBox,
+                    isSelected && [
+                      styles.selectedOptionBox,
+                      selectedOptionStyle,
+                    ],
                     isOptionDisabled && styles.disabledOption,
                     optionStyle,
                   ]}
@@ -346,8 +304,10 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
                   <TextView
                     style={[
                       styles.optionText,
-                      sizeStyles.optionText,
-                      isSelected && styles.selectedOptionText,
+                      isSelected && [
+                        styles.selectedOptionText,
+                        selectedOptionTextStyle,
+                      ],
                       isOptionDisabled && styles.disabledOptionText,
                       optionTextStyle,
                     ]}
@@ -377,188 +337,36 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
   };
 
   return (
-    <View style={fullWidth ? styles.fullWidth : {}}>
+    <View style={[fullWidth && styles.fullWidth, containerStyle]}>
+      {label && (
+        <TextView
+          style={[styles.label, error && styles.labelError, labelStyle]}
+        >
+          {label}
+        </TextView>
+      )}
+
       <TouchableOpacity
-        style={selectBoxStyle}
+        style={finalSelectBoxStyle}
         onPress={handleOpen}
         disabled={isDisabled}
         accessibilityLabel={accessibilityLabel || placeholder}
         accessibilityHint={accessibilityHint}
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, expanded: isOpen }}
-        testID={testID}
+        id={id}
         activeOpacity={0.8}
       >
         {renderContent()}
       </TouchableOpacity>
 
       {error && errorMessage && (
-        <TextView style={[styles.errorText, sizeStyles.errorText]}>
+        <TextView style={[styles.errorText, errorTextStyle]}>
           {errorMessage}
         </TextView>
       )}
     </View>
   );
-};
-
-const getVariantStyles = (variant: SelectBoxVariant) => {
-  const variants = {
-    primary: {
-      backgroundColor: colors.background,
-      textColor: "#000000",
-      borderColor: "#007AFF",
-      borderWidth: 2,
-      loadingColor: "#007AFF",
-      placeholderColor: "#999999",
-      disabledBackgroundColor: "#F2F2F7",
-      disabledTextColor: "#B0B0B0",
-      errorBackgroundColor: "#FFF5F5",
-      errorTextColor: "#FF3B30",
-      errorBorderColor: "#FF3B30",
-      selectedOptionColor: "#E3F2FD",
-    },
-    secondary: {
-      backgroundColor: "#F2F2F7",
-      textColor: "#000000",
-      borderColor: "#E5E5EA",
-      borderWidth: 1,
-      loadingColor: "#007AFF",
-      placeholderColor: "#999999",
-      disabledBackgroundColor: "#E5E5EA",
-      disabledTextColor: "#B0B0B0",
-      errorBackgroundColor: "#FFF5F5",
-      errorTextColor: "#FF3B30",
-      errorBorderColor: "#FF3B30",
-      selectedOptionColor: "#E3F2FD",
-    },
-    outline: {
-      backgroundColor: "transparent",
-      textColor: "#000000",
-      borderColor: "#CCCCCC",
-      borderWidth: 1,
-      loadingColor: "#007AFF",
-      placeholderColor: "#999999",
-      disabledBackgroundColor: "transparent",
-      disabledTextColor: "#B0B0B0",
-      errorBackgroundColor: "transparent",
-      errorTextColor: "#FF3B30",
-      errorBorderColor: "#FF3B30",
-      selectedOptionColor: "#E3F2FD",
-    },
-    ghost: {
-      backgroundColor: "transparent",
-      textColor: "#000000",
-      borderColor: "transparent",
-      borderWidth: 0,
-      loadingColor: "#007AFF",
-      placeholderColor: "#999999",
-      disabledBackgroundColor: "transparent",
-      disabledTextColor: "#B0B0B0",
-      errorBackgroundColor: "transparent",
-      errorTextColor: "#FF3B30",
-      errorBorderColor: "transparent",
-      selectedOptionColor: "#E3F2FD",
-    },
-  };
-
-  return variants[variant];
-};
-
-const getSizeStyles = (size: SelectBoxSize) => {
-  const sizes = {
-    small: {
-      selectBox: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        minHeight: 36,
-        borderRadius: 6,
-      },
-      text: {
-        fontSize: 14,
-        fontWeight: "500" as const,
-      },
-      icon: {
-        fontSize: 12,
-      },
-      spinnerSize: "small" as const,
-      option: {
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-      },
-      optionText: {
-        fontSize: 14,
-      },
-      errorText: {
-        fontSize: 12,
-      },
-      searchInput: {
-        fontSize: 14,
-        paddingVertical: 8,
-      },
-    },
-    medium: {
-      selectBox: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        minHeight: 48,
-        borderRadius: 8,
-      },
-      text: {
-        fontSize: 16,
-        fontWeight: "500" as const,
-      },
-      icon: {
-        fontSize: 14,
-      },
-      spinnerSize: "small" as const,
-      option: {
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-      },
-      optionText: {
-        fontSize: 16,
-      },
-      errorText: {
-        fontSize: 13,
-      },
-      searchInput: {
-        fontSize: 16,
-        paddingVertical: 10,
-      },
-    },
-    large: {
-      selectBox: {
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        minHeight: 56,
-        borderRadius: 10,
-      },
-      text: {
-        fontSize: 18,
-        fontWeight: "500" as const,
-      },
-      icon: {
-        fontSize: 16,
-      },
-      spinnerSize: "small" as const,
-      option: {
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-      },
-      optionText: {
-        fontSize: 18,
-      },
-      errorText: {
-        fontSize: 14,
-      },
-      searchInput: {
-        fontSize: 18,
-        paddingVertical: 12,
-      },
-    },
-  };
-
-  return sizes[size];
 };
 
 const createStyles = (theme: Theme) =>
@@ -567,21 +375,13 @@ const createStyles = (theme: Theme) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      backgroundColor: theme.primary,
-      ...Platform.select({
-        ios: {
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 0,
-            height: 1,
-          },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-        },
-        android: {
-          elevation: 2,
-        },
-      }),
+      backgroundColor: theme.background,
+      borderWidth: 1,
+      borderColor: "rgba(109, 119, 122, 0.2)",
+      paddingVertical: 8,
+      paddingHorizontal: 8,
+      height: scale(36),
+      borderRadius: 4,
     },
     fullWidth: {
       width: "100%",
@@ -597,6 +397,9 @@ const createStyles = (theme: Theme) =>
         },
       }),
     },
+    errorBorder: {
+      borderColor: "#FF3B30",
+    },
     contentContainer: {
       backgroundColor: theme.background,
       flexDirection: "row",
@@ -606,7 +409,8 @@ const createStyles = (theme: Theme) =>
     },
     selectedText: {
       flex: 1,
-      marginRight: 8,
+      fontSize: 12,
+      color: colors.placeholder,
     },
     dropdownIconText: {
       marginLeft: 8,
@@ -618,11 +422,23 @@ const createStyles = (theme: Theme) =>
     },
     loadingText: {
       marginLeft: 8,
+      fontSize: 16,
+      color: theme.text,
+    },
+    label: {
+      color: theme.text,
+      fontWeight: "600",
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    labelError: {
+      color: "#FF3B30",
     },
     errorText: {
       color: "#FF3B30",
       marginTop: 4,
       marginLeft: 4,
+      fontSize: 13,
     },
     drawerContentContainer: {
       flex: 1,
@@ -674,6 +490,8 @@ const createStyles = (theme: Theme) =>
       backgroundColor: "#F2F2F7",
       borderRadius: 8,
       paddingHorizontal: 12,
+      fontSize: 16,
+      paddingVertical: 10,
     },
     optionsList: {
       flex: 1,
@@ -683,6 +501,7 @@ const createStyles = (theme: Theme) =>
     optionText: {
       flex: 1,
       color: theme.text,
+      fontSize: 16,
     },
     selectedOptionText: {
       fontWeight: "600",

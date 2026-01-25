@@ -1,11 +1,11 @@
 export const PUBLIC_ROUTES = {
-	ROOT: "/",
+	HOME: "/(global)",
 	LOGIN: "/(global)/login",
 } as const;
 
 export const PROTECTED_ROUTES = {
 	ROOT: "/(protected)",
-	SIGNS_HOME: "/(protected)/signs",
+	SIGNS_LIST: "/(protected)/signs",
 	SIGNS_CREATE: "/(protected)/signs/create",
 	SIGN_DETAIL: "/(protected)/signs/[id]",
 	PROFILE: "/(protected)/profile",

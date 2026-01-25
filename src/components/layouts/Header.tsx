@@ -1,60 +1,32 @@
-import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { ReactElement } from "react";
+import { StyleSheet, View } from "react-native";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { spacing } from "@/src/styles/theme/spacing";
-import { useNavigation } from "@react-navigation/native";
-import { ArrowLeft } from "phosphor-react-native";
 import TextView from "@/src/components/ui/TextView";
-import ThemeSwitchButton from "@/src/components/ui/DarkModeButton";
-import LanguageSwitchButton from "@/src/components/ui/LanguageSwitchButton";
+import { colors } from "@/src/styles/theme/colors";
+import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
 
 interface HeaderProps {
   title?: string;
-  onBackPress?: (() => void) | true;
-  showThemeSwitch?: boolean;
-  showLanguageSwitch?: boolean;
-  rightComponent?: React.ReactNode;
+  rightIcons?: ReactElement[];
+  leftIcons?: ReactElement[];
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  title,
-  onBackPress,
-  showThemeSwitch = false,
-  showLanguageSwitch = false,
-  rightComponent,
+  title = "TES",
+  leftIcons = [],
+  rightIcons = [],
 }) => {
-  const navigation = useNavigation();
   const styles = useThemedStyles(createStyles);
-
-  const handleBackPress = () => {
-    if (typeof onBackPress === "function") {
-      onBackPress();
-    } else if (onBackPress === true) {
-      navigation.goBack();
-    }
-  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.left}>
-        {onBackPress && (
-          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-            <ArrowLeft size={24} color={styles.icon.color} />
-          </TouchableOpacity>
-        )}
-        {title && (
-          <TextView variant="h4" style={styles.title}>
-            {title}
-          </TextView>
-        )}
-      </View>
-
-      <View style={styles.right}>
-        {showLanguageSwitch && <LanguageSwitchButton />}
-        {showThemeSwitch && <ThemeSwitchButton />}
-        {rightComponent}
-      </View>
+      <View style={styles.left}>{leftIcons}</View>
+      <TextView variant="h4" style={styles.titleText}>
+        {title}
+      </TextView>
+      <View style={styles.right}>{rightIcons}</View>
     </View>
   );
 };
@@ -63,33 +35,38 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       height: 56,
-      backgroundColor: theme.primary,
+      backgroundColor: theme.background,
       paddingHorizontal: spacing.md,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      borderBottomWidth: 1,
       borderBottomColor: theme.border,
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.6,
+      zIndex: 2,
+      shadowColor: colors.lightGrey,
     },
     left: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.sm,
-      flex: 1,
+      width: "30%",
     },
-    backButton: {
-      padding: spacing.xs,
-    },
-    title: {
+    titleText: {
       color: theme.text,
-      flex: 1,
+      fontWeight: FontWeights.regular,
+      fontSize: FontSizes.xl,
+      width: "40%",
+      textAlign: "center",
     },
     right: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "flex-end",
       gap: spacing.sm,
-    },
-    icon: {
-      color: theme.text,
+      width: "30%",
     },
   });

@@ -1,6 +1,6 @@
 import React from "react";
 import { render, fireEvent } from "@/tests/utils/test-utils";
-import { SignCard } from "@/src/features/signs/components/SignCard";
+import { SignCard } from "@/src/modules/signs/components/SignCard";
 import { mockSign } from "@/tests/utils/mock-data";
 
 describe("SignCard", () => {

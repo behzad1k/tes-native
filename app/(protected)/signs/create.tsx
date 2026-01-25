@@ -1,3 +1,3 @@
-import { CreateSignScreen } from "@/src/features/signs/screens/CreateSignScreen";
+import CreateSignScreen from "@/src/modules/signs/screens/ManageSignScreen/CreateSignScreen";
 
 export default CreateSignScreen;

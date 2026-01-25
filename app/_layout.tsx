@@ -1,3 +1,8 @@
+import Splash from "@/src/components/layouts/Splash";
+import { Drawer } from "@/src/components/ui/Drawer";
+import { LoadingGlobal } from "@/src/components/ui/LoadingGlobal";
+import { SYNC_STATUS } from "@/src/constants/global";
+import { ROUTES } from "@/src/constants/navigation";
 import { DrawerProvider } from "@/src/contexts/DrawerContext";
 import {
   LanguageProvider,
@@ -6,35 +11,31 @@ import {
 import { LoadingProvider } from "@/src/contexts/LoadingContext";
 import { SplashProvider, useSplash } from "@/src/contexts/SplashContext";
 import { ThemeProvider, useTheme } from "@/src/contexts/ThemeContext";
-import Splash from "@/src/components/layouts/Splash";
-import { Drawer } from "@/src/components/ui/Drawer";
-import { LoadingGlobal } from "@/src/components/ui/LoadingGlobal";
 import { useLanguage } from "@/src/hooks/useLanguage";
+import { store } from "@/src/store";
+import { ReduxStorage } from "@/src/store/persistence";
+import { initializeAuth, updateToken } from "@/src/store/slices/authSlice";
+import { fetchSigns, loadSavedSigns } from "@/src/store/slices/signSlice";
 import { STORAGE_KEYS } from "@/src/utils/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Slot, useRouter, useSegments } from "expo-router";
+import NetInfo from "@react-native-community/netinfo";
+import { Slot, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Provider } from "react-redux";
 import ToastManager from "toastify-react-native";
 import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { queryClient, asyncStoragePersister } from "@/src/store/queryClient";
-import { DatabaseProvider } from "@nozbe/watermelondb/react";
-import { database } from "@/src/database";
-import { useAuthStore } from "@/src/store/auth";
-import useProtectedRoute from "@/src/hooks/useProtectedRoutes";
 
 function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
   const { theme, isDark } = useTheme();
   const { isRTL } = useI18nContext();
   const { isLanguageLoaded } = useLanguage();
-
-  // useProtectedRoute();
+  const router = useRouter();
 
   const toastConfig: ToastManagerProps = {
     useModal: false,
@@ -43,23 +44,75 @@ function AppContent() {
     topOffset: 60,
   };
 
-  // useEffect(() => {
-  //   syncEngine.start();
-  //   return () => {
-  //     syncEngine.stop();
-  //   };
-  // }, []);
-
-  useEffect(() => {
-    const initializeApp = async () => {
+  const initializeApp = async () => {
+    try {
       const themeToken = await AsyncStorage.getItem(STORAGE_KEYS.THEME);
       if (!themeToken) {
         await AsyncStorage.setItem(STORAGE_KEYS.THEME, "light");
       }
-    };
 
-    initializeApp();
-  }, []);
+      // 1. Initialize auth from storage
+      await store.dispatch(initializeAuth());
+
+      const authState = store.getState().auth;
+
+      if (!authState.isAuthenticated) {
+        if (router && router.canGoBack()) {
+          router.navigate(ROUTES.HOME); // For Development
+          // router.navigate(ROUTES.LOGIN);
+        } else {
+          setTimeout(() => router.navigate(ROUTES.HOME), 200);
+        }
+        return;
+      }
+
+      // 2. Check network status
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected ?? false;
+
+      if (isOnline) {
+        // 3. Update token if online
+        await store.dispatch(updateToken());
+
+        // 4. Fetch latest signs from backend
+        await store.dispatch(fetchSigns());
+      } else {
+        // 5. Load saved signs from storage
+        const savedSigns: any = await ReduxStorage.loadState("signs_data");
+        if (savedSigns) {
+          store.dispatch(loadSavedSigns(savedSigns));
+        }
+      }
+
+      // 6. Calculate pending sync counts
+      const signsState = store.getState().signs;
+      const unsyncedSigns = signsState.signs.filter(
+        (s) => s.status === SYNC_STATUS.NOT_SYNCED,
+      );
+
+      const pendingCounts = {
+        creates: unsyncedSigns.filter((s) => s.isNew).length,
+        updates: unsyncedSigns.filter((s) => !s.isNew).length,
+        deletes: 0, // Track deletions separately if needed
+        images: unsyncedSigns.reduce(
+          (count, sign) =>
+            count + sign.images.filter((img) => img.isNew).length,
+          0,
+        ),
+      };
+
+      // Update sync state with counts
+      // dispatch(updatePendingCounts(pendingCounts));
+    } catch (error) {
+      console.error("App initialization failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (router && isLanguageLoaded) {
+      initializeApp();
+    }
+  }, [router, isLanguageLoaded]);
 
   useEffect(() => {
     if (isLanguageLoaded) {
@@ -92,24 +145,19 @@ function AppContent() {
 
 export default function RootLayout() {
   return (
-    <DatabaseProvider database={database}>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{ persister: asyncStoragePersister }}
-      >
-        <LoadingProvider>
-          <LanguageProvider>
-            <ThemeProvider>
-              <SplashProvider>
-                <KeyboardProvider>
-                  <AppContent />
-                  <LoadingGlobal />
-                </KeyboardProvider>
-              </SplashProvider>
-            </ThemeProvider>
-          </LanguageProvider>
-        </LoadingProvider>
-      </PersistQueryClientProvider>
-    </DatabaseProvider>
+    <Provider store={store}>
+      <LoadingProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <SplashProvider>
+              <KeyboardProvider>
+                <AppContent />
+                <LoadingGlobal />
+              </KeyboardProvider>
+            </SplashProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </LoadingProvider>
+    </Provider>
   );
 }

@@ -1,11 +1,11 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@/tests/utils/test-utils";
-import { CreateSignScreen } from "@/src/features/signs/screens/CreateSignScreen";
-import { signOfflineService } from "@/src/features/signs/services/SignOfflineService";
+import { CreateSignScreen } from "@/src/modules/signs/screens/CreateSignScreen";
+import { signOfflineService } from "@/src/modules/signs/services/SignOfflineService";
 import { mockSignData } from "@/tests/utils/mock-data";
 
 // Mock services
-jest.mock("@/src/features/signs/services/SignOfflineService");
+jest.mock("@/src/modules/signs/services/SignOfflineService");
 jest.mock("@/src/store/auth", () => ({
   useAuthStore: jest.fn(() => ({
     user: { id: "user-123" },

@@ -1,10 +1,10 @@
 import React from "react";
 import { render, waitFor } from "@/tests/utils/test-utils";
-import { SignsListScreen } from "@/src/features/signs/screens/SignsListScreen";
+import { SignsListScreen } from "@/src/modules/signs/screens/SignsListScreen";
 import { mockSign } from "@/tests/utils/mock-data";
 
 // Mock hooks
-jest.mock("@/src/features/signs/hooks/useSigns", () => ({
+jest.mock("@/src/modules/signs/hooks/useSigns", () => ({
   useSigns: jest.fn(() => [mockSign]),
   usePendingSigns: jest.fn(() => []),
 }));

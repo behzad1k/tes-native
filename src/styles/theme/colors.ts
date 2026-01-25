@@ -2,6 +2,7 @@ export const colors = {
 	primary: "#f4e9f4",
 	darkGreen: "#557630",
 	lightGreen: "#9BC631",
+	lightBlue: "#7999f6",
 	lightBlack: "rgb(66, 66, 66)",
 	whitePink: "rgba(248, 243, 243, 0.74)",
 	lightGrey: "rgba(224, 222, 222, 1)",
@@ -22,17 +23,17 @@ export const colors = {
 	text: "#333333",
 	blue: "#1482d2",
 	border: "#E0E0E0",
-	placeholder: "#9E9E9E",
+	placeholder: "rgba(109, 119, 122, 0.4)",
 	red: "#ff4444",
 } as const;
 
 export const lightTheme = {
 	background: "#FFF",
-	primary: "#eeeeee",
+	primary: "#e5e7e7",
 	secondary: "#7e7d7d",
 	third: "#a3a1a1",
 	text: "#313131",
-	textSecondary: "#eceaea",
+	textSecondary: "#7f878a",
 	surface: "#e3e3e3",
 	border: "#E5E5E5",
 	card: "#FFFFFF",

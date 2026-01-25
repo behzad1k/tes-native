@@ -6,23 +6,23 @@ export const Typography = {
 		// Headings
 		h1: {
 			fontFamily: FontFamilies.poppins.bold,
-			fontSize: FontSizes["4xl"],
-			lineHeight: LineHeights["4xl"],
-			fontWeight: FontWeights.bold,
+			fontSize: FontSizes["3xl"],
+			lineHeight: LineHeights["3xl"],
+			fontWeight: FontWeights.xxbold,
 		} as TextStyle,
 
 		h2: {
 			fontFamily: FontFamilies.poppins.bold,
-			fontSize: FontSizes["3xl"],
-			lineHeight: LineHeights["3xl"],
-			fontWeight: FontWeights.bold,
+			fontSize: FontSizes["2xl"],
+			lineHeight: LineHeights["2xl"],
+			fontWeight: FontWeights.xbold,
 		} as TextStyle,
 
 		h3: {
 			fontFamily: FontFamilies.poppins.semiBold,
-			fontSize: FontSizes["2xl"],
-			lineHeight: LineHeights["2xl"],
-			fontWeight: FontWeights.semiBold,
+			fontSize: FontSizes["xl"],
+			lineHeight: LineHeights["xl"],
+			fontWeight: FontWeights.bold,
 		} as TextStyle,
 
 		h4: {
@@ -36,7 +36,7 @@ export const Typography = {
 		body: {
 			fontFamily: FontFamilies.poppins.regular,
 			fontSize: FontSizes.base,
-			lineHeight: LineHeights.base,
+			lineHeight: LineHeights.sm,
 			fontWeight: FontWeights.regular,
 		} as TextStyle,
 
@@ -49,7 +49,7 @@ export const Typography = {
 
 		bodySmall: {
 			fontFamily: FontFamilies.poppins.regular,
-			fontSize: FontSizes.sm,
+			fontSize: FontSizes.xs,
 			lineHeight: LineHeights.sm,
 			fontWeight: FontWeights.regular,
 		} as TextStyle,

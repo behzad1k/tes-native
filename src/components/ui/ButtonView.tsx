@@ -23,7 +23,7 @@ interface ButtonViewProps {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
-  textStyle?: TextStyle;
+  textStyle?: TextStyle | TextStyle[];
 }
 
 export default function ButtonView({
@@ -90,13 +90,15 @@ export default function ButtonView({
     >
       {loading ? (
         <ActivityIndicator color={getTextColor()} />
-      ) : (
+      ) : typeof children == "string" ? (
         <TextView
           variant="button"
           style={[{ color: getTextColor() }, textStyle]}
         >
           {children}
         </TextView>
+      ) : (
+        <>{children}</>
       )}
     </TouchableOpacity>
   );

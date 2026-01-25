@@ -1,12 +1,12 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useSyncSigns } from '@/src/features/signs/hooks/useSyncSigns';
-import { signOfflineService } from '@/src/features/signs/services/SignOfflineService';
-import { signApiService } from '@/src/features/signs/services/SignApiService';
+import { useSyncSigns } from '@/src/modules/signs/hooks/useSyncSigns';
+import { signOfflineService } from '@/src/modules/signs/services/SignOfflineService';
+import { signApiService } from '@/src/modules/signs/services/SignApiService';
 import React from 'react';
 
-jest.mock('@/src/features/signs/services/SignOfflineService');
-jest.mock('@/src/features/signs/services/SignApiService');
+jest.mock('@/src/modules/signs/services/SignOfflineService');
+jest.mock('@/src/modules/signs/services/SignApiService');
 jest.mock('@/src/store/sync', () => ({
   useSyncStore: jest.fn(() => ({
     setSyncing: jest.fn(),

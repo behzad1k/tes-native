@@ -1,5 +1,5 @@
 import { Sign } from "@/src/database/models/Sign";
-import { CreateSignRequest, SignData } from "@/src/features/signs/types";
+import { CreateSignRequest, SignData } from "@/src/modules/signs/types";
 
 export const mockUser = {
 	id: "user-123",

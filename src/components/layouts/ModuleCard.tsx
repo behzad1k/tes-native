@@ -3,6 +3,7 @@ import {
   ImageSourcePropType,
   StyleProp,
   StyleSheet,
+  TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
@@ -14,16 +15,21 @@ interface ModuleCardProps {
   title: string;
   backgroundImage: ImageSourcePropType;
   description: string;
+  onPress?: () => void;
   containerStyle?: StyleProp<ViewStyle>;
 }
 const ModuleCard = ({
   title,
   backgroundImage,
   description,
+  onPress,
   containerStyle = {},
 }: ModuleCardProps) => {
   return (
-    <View style={[styles.container, containerStyle]}>
+    <TouchableOpacity
+      onPress={onPress ? onPress : () => {}}
+      style={[styles.container, containerStyle]}
+    >
       <Image source={backgroundImage} style={styles.backgroundImage} />
       <BlurView intensity={15} style={styles.mainBox}>
         <View style={styles.textBox}>
@@ -32,7 +38,7 @@ const ModuleCard = ({
         </View>
         <ArrowRight size={26} color="#FFF" />
       </BlurView>
-    </View>
+    </TouchableOpacity>
   );
 };
 

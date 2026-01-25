@@ -1,11 +1,11 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useCreateSign } from '@/src/features/signs/hooks/useCreateSign';
-import { signOfflineService } from '@/src/features/signs/services/SignOfflineService';
+import { useCreateSign } from '@/src/modules/signs/hooks/useCreateSign';
+import { signOfflineService } from '@/src/modules/signs/services/SignOfflineService';
 import { mockSignData, mockUser } from '@/tests/utils/mock-data';
 import React from 'react';
 
-jest.mock('@/src/features/signs/services/SignOfflineService');
+jest.mock('@/src/modules/signs/services/SignOfflineService');
 jest.mock('@/src/store/auth', () => ({
   useAuthStore: jest.fn(() => ({ user: mockUser })),
 }));
