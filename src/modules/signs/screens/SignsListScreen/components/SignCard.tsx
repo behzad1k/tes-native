@@ -6,8 +6,15 @@ import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { colors } from "@/src/styles/theme/colors";
 import { spacing } from "@/src/styles/theme/spacing";
-import { CheckCircle, Clock, XCircle } from "phosphor-react-native";
+import {
+  CheckCircle,
+  Clock,
+  TrafficSign,
+  XCircle,
+} from "phosphor-react-native";
 import { SYNC_STATUS } from "@/src/constants/global";
+import { useTheme } from "@/src/contexts/ThemeContext";
+import Typography from "@/src/styles/theme/typography";
 
 interface SignCardProps {
   sign: Sign;
@@ -16,7 +23,7 @@ interface SignCardProps {
 
 export function SignCard({ sign, onPress }: SignCardProps) {
   const styles = useThemedStyles(createStyles);
-
+  const { theme } = useTheme();
   const getStatusIcon = () => {
     switch (sign.status) {
       case SYNC_STATUS.SYNCED:
@@ -37,71 +44,24 @@ export function SignCard({ sign, onPress }: SignCardProps) {
     }
   };
 
+  console.log(sign);
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      {/*<View style={styles.header}>
+      <View style={styles.icon}>
+        <TrafficSign size={24} color={theme.secondary} />
+      </View>
+      <View style={styles.content}>
         <View style={styles.titleRow}>
-          <TextView variant="h4" style={styles.signType}>
-            {sign.signType.replace("_", " ").toUpperCase()}
-          </TextView>
-          <View style={styles.statusBadge}>
+          <TextView style={styles.signTitle}>{sign.localId}</TextView>
+          {/*<View style={styles.statusBadge}>
             {getStatusIcon()}
             <TextView variant="caption" style={styles.statusText}>
               {getStatusText()}
             </TextView>
-          </View>
+          </View>*/}
         </View>
-      </View>*/}
-
-      <View style={styles.content}>
-        {/*{sign.address && (
-          <View style={styles.row}>
-            <TextView variant="bodySmall" style={styles.label}>
-              Address:
-            </TextView>
-            <TextView variant="bodySmall" style={styles.value}>
-              {sign.address}
-            </TextView>
-          </View>
-        )}
-
-        <View style={styles.row}>
-          <TextView variant="bodySmall" style={styles.label}>
-            Condition:
-          </TextView>
-          <TextView
-            variant="bodySmall"
-            style={[styles.value, { color: getConditionColor() }]}
-          >
-            {sign.condition.toUpperCase()}
-          </TextView>
-        </View>
-
-        <View style={styles.row}>
-          <TextView variant="bodySmall" style={styles.label}>
-            Location:
-          </TextView>
-          <TextView variant="bodySmall" style={styles.value}>
-            {sign.locationLat.toFixed(6)}, {sign.locationLng.toFixed(6)}
-          </TextView>
-        </View>
-
-        {sign.notes && (
-          <View style={styles.notesContainer}>
-            <TextView variant="bodySmall" style={styles.label}>
-              Notes:
-            </TextView>
-            <TextView variant="bodySmall" style={styles.notes}>
-              {sign.notes}
-            </TextView>
-          </View>
-        )}*/}
-
-        <View style={styles.footer}>
-          <TextView variant="caption" style={styles.timestamp}>
-            d{/*Created: {new Date(sign.ti).toLocaleDateString()}*/}
-          </TextView>
-        </View>
+        <TextView style={styles.signDescription}>{sign.note}</TextView>
       </View>
     </TouchableOpacity>
   );
@@ -110,40 +70,41 @@ export function SignCard({ sign, onPress }: SignCardProps) {
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     card: {
-      backgroundColor: theme.primary,
-      borderRadius: 12,
-      padding: spacing.md,
-      marginBottom: spacing.md,
-      borderWidth: 1,
+      flexDirection: "row",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderBottomWidth: 1,
       borderColor: theme.border,
+      gap: 10,
+    },
+    icon: {
+      margin: "auto",
+      borderRadius: 200,
+      backgroundColor: theme.primary,
+      padding: spacing.xxs,
     },
     header: {
-      marginBottom: spacing.sm,
+      flex: 1,
     },
     titleRow: {
+      flex: 1,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
     },
-    signType: {
-      flex: 1,
-      color: theme.text,
+    signTitle: {
+      fontWeight: 600,
+      fontSize: 14,
+      lineHeight: 22,
     },
-    statusBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
-      borderRadius: 12,
-      backgroundColor: theme.background,
-    },
-    statusText: {
-      fontSize: 11,
-      color: theme.text,
+    signDescription: {
+      fontWeight: 400,
+      fontSize: 10,
+      lineHeight: 18,
+      color: theme.secondary,
     },
     content: {
-      gap: spacing.xs,
+      flex: 1,
     },
     row: {
       flexDirection: "row",

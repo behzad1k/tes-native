@@ -12,8 +12,7 @@ import { LoadingProvider } from "@/src/contexts/LoadingContext";
 import { SplashProvider, useSplash } from "@/src/contexts/SplashContext";
 import { ThemeProvider, useTheme } from "@/src/contexts/ThemeContext";
 import { useLanguage } from "@/src/hooks/useLanguage";
-import { store } from "@/src/store";
-import { ReduxStorage } from "@/src/store/persistence";
+import { store, persistor } from "@/src/store";
 import { initializeAuth, updateToken } from "@/src/store/slices/authSlice";
 import { fetchSigns, loadSavedSigns } from "@/src/store/slices/signSlice";
 import { STORAGE_KEYS } from "@/src/utils/storage";
@@ -27,6 +26,7 @@ import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
 import ToastManager from "toastify-react-native";
 import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
 
@@ -51,7 +51,7 @@ function AppContent() {
         await AsyncStorage.setItem(STORAGE_KEYS.THEME, "light");
       }
 
-      // 1. Initialize auth from storage
+      // 1. Initialize auth from storage (handled by Redux Persist)
       await store.dispatch(initializeAuth());
 
       const authState = store.getState().auth;
@@ -76,15 +76,10 @@ function AppContent() {
 
         // 4. Fetch latest signs from backend
         await store.dispatch(fetchSigns());
-      } else {
-        // 5. Load saved signs from storage
-        const savedSigns: any = await ReduxStorage.loadState("signs_data");
-        if (savedSigns) {
-          store.dispatch(loadSavedSigns(savedSigns));
-        }
       }
+      // Redux Persist will automatically load saved signs
 
-      // 6. Calculate pending sync counts
+      // 5. Calculate pending sync counts (handled by syncSlice)
       const signsState = store.getState().signs;
       const unsyncedSigns = signsState.signs.filter(
         (s) => s.status === SYNC_STATUS.NOT_SYNCED,
@@ -146,18 +141,20 @@ function AppContent() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <LoadingProvider>
-        <LanguageProvider>
-          <ThemeProvider>
-            <SplashProvider>
-              <KeyboardProvider>
-                <AppContent />
-                <LoadingGlobal />
-              </KeyboardProvider>
-            </SplashProvider>
-          </ThemeProvider>
-        </LanguageProvider>
-      </LoadingProvider>
+      <PersistGate loading={null} persistor={persistor}>
+        <LoadingProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <SplashProvider>
+                <KeyboardProvider>
+                  <AppContent />
+                  <LoadingGlobal />
+                </KeyboardProvider>
+              </SplashProvider>
+            </ThemeProvider>
+          </LanguageProvider>
+        </LoadingProvider>
+      </PersistGate>
     </Provider>
   );
 }

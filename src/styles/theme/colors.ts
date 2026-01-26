@@ -29,8 +29,8 @@ export const colors = {
 
 export const lightTheme = {
 	background: "#FFF",
-	primary: "#e5e7e7",
-	secondary: "#7e7d7d",
+	primary: "rgba(109, 119, 122, 0.2)",
+	secondary: "rgb(109, 119, 122)",
 	third: "#a3a1a1",
 	text: "#313131",
 	textSecondary: "#7f878a",

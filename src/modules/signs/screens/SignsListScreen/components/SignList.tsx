@@ -52,9 +52,7 @@ export function SignList({ signs, onSignPress, loading }: SignListProps) {
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
-    list: {
-      padding: spacing.md,
-    },
+    list: {},
     emptyContainer: {
       flex: 1,
       justifyContent: "center",

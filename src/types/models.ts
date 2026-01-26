@@ -22,7 +22,7 @@ export interface Sign {
 	reflectiveCoatingId: string;
 	reflectiveRatingId: string;
 	dimensionId: string;
-	dateInstalled: Date;
+	dateInstalled: string; // Store as ISO string for Redux serialization
 	signConditionId: string;
 	note: string;
 	images: SignImage[];

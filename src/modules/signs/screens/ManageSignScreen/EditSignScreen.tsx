@@ -1,146 +1,184 @@
-import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
-import { useLocalSearchParams, useRouter } from "expo-router/build/hooks";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import TextView from "@/src/components/ui/TextView";
-import { spacing } from "@/src/styles/theme/spacing";
-import { colors } from "@/src/styles/theme/colors";
 import DetailsStep from "./components/DetailsStep";
-import { Check } from "phosphor-react-native";
 import ButtonView from "@/src/components/ui/ButtonView";
 import LocationStep from "./components/LocationStep";
-import { ROUTES } from "@/src/constants/navigation";
 import ImageStep from "./components/ImageStep";
+import { SignFormData } from "../../types";
+import { useForm } from "react-hook-form";
+import StepHeader from "./components/StepHeader";
+import { useSignOperations, useSignForm } from "../../hooks/useSignOperations";
+import { Toast } from "toastify-react-native";
+import TextView from "@/src/components/ui/TextView";
 
-export function EditSignScreen() {
+export default function EditSignScreen() {
   const { t } = useTranslation();
-  const STEPS = {
-    FIRST: {
-      index: 1,
-      subtitle: t("details"),
-    },
-    SECOND: {
-      index: 2,
-      subtitle: t("location"),
-    },
-    THIRD: {
-      index: 3,
-      subtitle: t("image"),
-    },
-  };
-  const [step, setStep] = useState(STEPS.FIRST);
-  const [signForm, setSignForm] = useState({});
+  const { id } = useLocalSearchParams();
+  const [step, setStep] = useState<number>(0);
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { editSign } = useSignOperations();
+  const { sign, initialValues, isEditMode } = useSignForm(id as string);
 
-  const handleValidation = (stepIndex: number) => {
-    return true;
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+    trigger,
+    reset,
+  } = useForm<SignFormData>({
+    defaultValues: initialValues,
+    mode: "onChange",
+  });
+
+  // useEffect(() => {
+  //   if (sign) {
+  //     reset(initialValues);
+  //   }
+  // }, [sign, initialValues, reset]);
+
+  if (!sign) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <Header title={t("signs.edit")} />
+        <View style={styles.errorContainer}>
+          <TextView variant="body">Sign not found</TextView>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const validateStep = async (stepIndex: number): Promise<boolean> => {
+    let fieldsToValidate: (keyof SignFormData)[] = [];
+
+    switch (stepIndex) {
+      case 0:
+        fieldsToValidate = [
+          "signId",
+          "dimensionId",
+          "height",
+          "facingDirectionId",
+          "faceMaterialId",
+          "reflectiveCoatingId",
+          "reflectiveRatingId",
+          "signConditionId",
+        ];
+        break;
+      case 1:
+        fieldsToValidate = ["supportId", "locationTypeId"];
+        break;
+      case 2:
+        return true;
+    }
+
+    const result = await trigger(fieldsToValidate);
+    return result;
   };
 
-  const handleChangeStep = (newStepIndex: number) => {
-    if (newStepIndex > step.index) {
-      if (handleValidation(newStepIndex)) {
-        if (newStepIndex > Object.keys(STEPS).length) return handleSubmit();
-      } else {
-        // Toast Validation Error
+  const handleChangeStep = async (newStepIndex: number) => {
+    if (newStepIndex > step) {
+      const isValid = await validateStep(step);
+      if (!isValid) {
+        Toast.error(t("validation.required"));
+        return;
       }
-    } else {
-      if (newStepIndex == 0) return handleCancel();
+
+      if (newStepIndex > 2) {
+        handleSubmit(onSubmit)();
+        return;
+      }
+    } else if (newStepIndex === -1) {
+      handleCancel();
+      return;
     }
-    setStep(Object.values(STEPS).find((e) => e.index == newStepIndex));
+
+    setStep(newStepIndex);
   };
 
   const handleCancel = () => {
-    router.navigate(ROUTES.SIGNS_LIST);
-  };
-
-  const handleSubmit = () => {
-    // createSign(data, {
-    //   onSuccess: () => {
-    //     router.back();
-    //   },
-    // });
-  };
-  const stepHeader = () => {
-    return (
-      <View style={styles.stepsContainer}>
-        {Object.values(STEPS).map((st) => {
-          const isSelected = st.index <= step.index;
-          return (
-            <View style={styles.stepContainer} key={st.subtitle}>
-              {st.index > 1 && (
-                <View
-                  style={[
-                    styles.stepLine,
-                    isSelected && styles.selectedStepLine,
-                  ]}
-                ></View>
-              )}
-              <View style={styles.step}>
-                {st.index < step.index ? (
-                  <View style={styles.checkedStep}>
-                    <Check color={colors.white} size={20} weight="bold" />
-                  </View>
-                ) : (
-                  <TextView
-                    style={[
-                      styles.stepText,
-                      isSelected && styles.selectedStepText,
-                    ]}
-                  >
-                    {st.index}
-                  </TextView>
-                )}
-                <TextView
-                  style={[
-                    styles.stepSubText,
-                    isSelected && styles.selectedStepSubText,
-                  ]}
-                >
-                  {st.subtitle}
-                </TextView>
-              </View>
-            </View>
-          );
-        })}
-      </View>
+    Alert.alert(
+      t("cancel"),
+      "Are you sure you want to cancel? All changes will be lost.",
+      [
+        {
+          text: t("buttons.cancel"),
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: () => router.back(),
+        },
+      ],
     );
   };
 
-  const renderContent = () => {
-    // switch (step.index) {
-    //   case 1:
-    //     return <DetailsStep signForm={signForm} setSignForm={setSignForm} />;
-    //   case 2:
-    //     return <LocationStep signForm={signForm} setSignForm={setSignForm} />;
-    //   case 3:
-    //     return <ImageStep signForm={signForm} setSignForm={setSignForm} />;
-    // }
+  const onSubmit = async (formData: SignFormData) => {
+    try {
+      const updates = {
+        customerId: formData.customerId,
+        locationTypeId: formData.locationTypeId,
+        signId: formData.signId,
+        supportId: formData.supportId,
+        codeId: formData.codeId,
+        height: formData.height,
+        facingDirectionId: formData.facingDirectionId,
+        faceMaterialId: formData.faceMaterialId,
+        reflectiveCoatingId: formData.reflectiveCoatingId,
+        reflectiveRatingId: formData.reflectiveRatingId,
+        dimensionId: formData.dimensionId,
+        // Convert Date to ISO string
+        dateInstalled:
+          formData.dateInstalled instanceof Date
+            ? formData.dateInstalled.toISOString()
+            : formData.dateInstalled,
+        signConditionId: formData.signConditionId,
+        note: formData.note,
+      };
+
+      const result = await editSign(id as string, updates);
+
+      if (result.success) {
+        Toast.success("Sign updated successfully!");
+        router.back();
+      } else {
+        Toast.error("Failed to update sign");
+      }
+    } catch (error) {
+      console.error("Error updating sign:", error);
+      Toast.error("An error occurred while updating the sign");
+    }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <Header title={t("signs.addNewSign")} />
-      {stepHeader()}
-      {/*{renderContent()}*/}
+      <Header title={t("signs.edit")} />
+      <StepHeader step={step} />
+      <View style={styles.content}>
+        {step === 0 && <DetailsStep signFormControl={control} />}
+        {step === 1 && <LocationStep signFormControl={control} />}
+        {step === 2 && (
+          <ImageStep signFormControl={control} signId={id as string} />
+        )}
+      </View>
       <View style={styles.buttonContainer}>
         <ButtonView
           style={styles.button}
           variant="outline"
-          onPress={() => handleChangeStep(step.index - 1)}
+          onPress={() => handleChangeStep(step - 1)}
         >
-          {step.index > 1 ? t("back") : t("cancel")}
+          {step > 0 ? t("back") : t("cancel")}
         </ButtonView>
         <ButtonView
           style={styles.button}
-          onPress={() => handleChangeStep(step.index + 1)}
+          onPress={() => handleChangeStep(step + 1)}
         >
-          {t("next")}
+          {step === 2 ? t("buttons.save") : t("next")}
         </ButtonView>
       </View>
     </SafeAreaView>
@@ -153,62 +191,27 @@ const createStyles = (theme: Theme) =>
       flex: 1,
       backgroundColor: theme.background,
     },
-    stepContainer: { flexDirection: "row", alignItems: "center" },
-    stepsContainer: {
-      flexDirection: "row",
+    content: {
+      flex: 1,
+    },
+    errorContainer: {
+      flex: 1,
       justifyContent: "center",
-      padding: spacing.xxxl,
-    },
-    step: {
       alignItems: "center",
-      gap: 4,
-    },
-    stepLine: {
-      borderTopWidth: 2,
-      borderColor: theme.textSecondary,
-      marginBottom: 20,
-      width: 100,
-      height: 2,
-    },
-    stepSubText: {
-      fontSize: 12,
-    },
-    stepText: {
-      color: theme.textSecondary,
-      borderWidth: 1,
-      paddingHorizontal: spacing.xs,
-      paddingVertical: spacing.xxs,
-      borderRadius: 100,
-      minWidth: 28,
-      borderColor: theme.textSecondary,
-    },
-    selectedStepText: {
-      color: colors.lightGreen,
-      borderColor: colors.lightGreen,
-      borderWidth: 3,
-    },
-    selectedStepSubText: {
-      color: colors.lightGreen,
-    },
-    selectedStepLine: {
-      borderColor: colors.lightGreen,
-    },
-    checkedStep: {
-      backgroundColor: colors.lightGreen,
-      borderRadius: 100,
-      paddingHorizontal: spacing.xxs,
-      paddingVertical: spacing.xxs,
     },
     buttonContainer: {
+      backgroundColor: theme.background,
       position: "absolute",
-      bottom: 40,
+      bottom: 0,
       left: 0,
-
+      right: 0,
+      paddingBottom: 40,
       flexDirection: "row",
-      flex: 1,
       justifyContent: "space-between",
       gap: 8,
       padding: 12,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
     },
     button: {
       flex: 1,

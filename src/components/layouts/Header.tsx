@@ -2,7 +2,7 @@ import React, { ReactElement } from "react";
 import { StyleSheet, View } from "react-native";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
-import { spacing } from "@/src/styles/theme/spacing";
+import { scale, spacing } from "@/src/styles/theme/spacing";
 import TextView from "@/src/components/ui/TextView";
 import { colors } from "@/src/styles/theme/colors";
 import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
-      height: 56,
+      height: scale(50),
       backgroundColor: theme.background,
       paddingHorizontal: spacing.md,
       flexDirection: "row",
@@ -57,8 +57,8 @@ const createStyles = (theme: Theme) =>
     },
     titleText: {
       color: theme.text,
-      fontWeight: FontWeights.regular,
-      fontSize: FontSizes.xl,
+      fontWeight: FontWeights.semiBold,
+      fontSize: FontSizes.lg,
       width: "40%",
       textAlign: "center",
     },

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
@@ -14,60 +14,147 @@ import ImageStep from "./components/ImageStep";
 import { SignFormData } from "../../types";
 import { useForm } from "react-hook-form";
 import StepHeader from "./components/StepHeader";
+import { useSignOperations } from "../../hooks/useSignOperations";
+import { Toast } from "toastify-react-native";
+import { SignImage } from "@/src/types/models";
 
 export default function CreateSignScreen() {
   const { t } = useTranslation();
   const [step, setStep] = useState<number>(0);
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
+  const { createSign } = useSignOperations();
+
+  // Store images temporarily before sign is created
+  const [tempImages, setTempImages] = useState<SignImage[]>([]);
+
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid, isDirty },
-    setError,
-    reset,
+    formState: { errors, isValid },
+    trigger,
+    getValues,
   } = useForm<SignFormData>({
-    defaultValues: {},
+    defaultValues: {
+      customerId: "",
+      locationTypeId: "",
+      signId: "",
+      supportId: "",
+      codeId: "",
+      height: "",
+      facingDirectionId: "",
+      faceMaterialId: "",
+      reflectiveCoatingId: "",
+      reflectiveRatingId: "",
+      dimensionId: "",
+      dateInstalled: new Date().toISOString(), // Use ISO string
+      signConditionId: "",
+      note: "",
+    },
+    mode: "onChange",
   });
 
-  const handleValidation = (stepIndex: number) => {
-    return true;
+  const validateStep = async (stepIndex: number): Promise<boolean> => {
+    let fieldsToValidate: (keyof SignFormData)[] = [];
+
+    switch (stepIndex) {
+      case 0: // Details step
+        fieldsToValidate = [
+          "signId",
+          "dimensionId",
+          "height",
+          "facingDirectionId",
+          "faceMaterialId",
+          "reflectiveCoatingId",
+          "reflectiveRatingId",
+          "signConditionId",
+        ];
+        break;
+      case 1: // Location step
+        fieldsToValidate = ["supportId", "locationTypeId"];
+        break;
+      case 2: // Image step - no validation needed
+        return true;
+    }
+
+    const result = await trigger(fieldsToValidate);
+    return result;
   };
 
-  const handleChangeStep = (newStepIndex: number) => {
+  const handleChangeStep = async (newStepIndex: number) => {
     if (newStepIndex > step) {
-      if (handleValidation(newStepIndex)) {
-        if (newStepIndex > 2) return handleSubmit(onSubmit)();
-      } else {
-        // Toast Validation Error
+      // Validate current step before proceeding
+      const isValid = await validateStep(step);
+      if (!isValid) {
+        Toast.error(t("validation.required"));
+        return;
       }
-    } else {
-      if (newStepIndex == -1) return handleCancel();
+
+      if (newStepIndex > 2) {
+        // Submit the form
+        handleSubmit(onSubmit)();
+        return;
+      }
+    } else if (newStepIndex === -1) {
+      handleCancel();
+      return;
     }
+
     setStep(newStepIndex);
   };
 
   const handleCancel = () => {
-    router.navigate(ROUTES.SIGNS_LIST);
+    Alert.alert(
+      t("cancel"),
+      "Are you sure you want to cancel? All changes will be lost.",
+      [
+        {
+          text: t("buttons.cancel"),
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: () => router.navigate(ROUTES.SIGNS_LIST),
+        },
+      ],
+    );
   };
 
-  const onSubmit = (form: SignFormData) => {
-    console.log(form);
-    // createSign(data, {
-    //   onSuccess: () => {
-    //     router.back();
-    //   },
-    // });
-  };
+  const onSubmit = async (formData: SignFormData) => {
+    try {
+      const signData = {
+        customerId: formData.customerId,
+        locationTypeId: formData.locationTypeId,
+        signId: formData.signId,
+        supportId: formData.supportId,
+        codeId: formData.codeId,
+        height: formData.height,
+        facingDirectionId: formData.facingDirectionId,
+        faceMaterialId: formData.faceMaterialId,
+        reflectiveCoatingId: formData.reflectiveCoatingId,
+        reflectiveRatingId: formData.reflectiveRatingId,
+        dimensionId: formData.dimensionId,
+        // Convert Date to ISO string
+        dateInstalled:
+          formData.dateInstalled instanceof Date
+            ? formData.dateInstalled.toISOString()
+            : formData.dateInstalled,
+        signConditionId: formData.signConditionId,
+        note: formData.note,
+        images: tempImages, // Include temporary images
+      };
 
-  const renderContent = () => {
-    switch (step) {
-      case 0:
-        return <DetailsStep signFormControl={control} />;
-      case 1:
-        return <LocationStep signFormControl={control} />;
-      case 2:
-        return <ImageStep signFormControl={control} />;
+      const result = await createSign(signData);
+
+      if (result.success) {
+        Toast.success("Sign created successfully!");
+        router.back();
+      } else {
+        Toast.error("Failed to create sign");
+      }
+    } catch (error) {
+      console.error("Error creating sign:", error);
+      Toast.error("An error occurred while creating the sign");
     }
   };
 
@@ -75,20 +162,31 @@ export default function CreateSignScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Header title={t("signs.addNewSign")} />
       <StepHeader step={step} />
-      {renderContent()}
+      <View style={styles.content}>
+        {step === 0 && <DetailsStep signFormControl={control} />}
+        {step === 1 && <LocationStep signFormControl={control} />}
+        {step === 2 && (
+          <ImageStep
+            signFormControl={control}
+            tempImages={tempImages}
+            setTempImages={setTempImages}
+            isCreateMode={true}
+          />
+        )}
+      </View>
       <View style={styles.buttonContainer}>
         <ButtonView
           style={styles.button}
           variant="outline"
           onPress={() => handleChangeStep(step - 1)}
         >
-          {step > 1 ? t("back") : t("cancel")}
+          {step > 0 ? t("back") : t("cancel")}
         </ButtonView>
         <ButtonView
           style={styles.button}
           onPress={() => handleChangeStep(step + 1)}
         >
-          {t("next")}
+          {step === 2 ? t("buttons.save") : t("next")}
         </ButtonView>
       </View>
     </SafeAreaView>
@@ -99,20 +197,24 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      paddingBottom: 100,
       backgroundColor: theme.background,
+    },
+    content: {
+      flex: 1,
     },
     buttonContainer: {
       backgroundColor: theme.background,
       position: "absolute",
       bottom: 0,
       left: 0,
+      right: 0,
       paddingBottom: 40,
       flexDirection: "row",
-      flex: 1,
       justifyContent: "space-between",
       gap: 8,
       padding: 12,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
     },
     button: {
       flex: 1,

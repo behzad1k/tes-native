@@ -14,10 +14,15 @@ import Tabs from "@/src/components/layouts/Tabs";
 import { TabsType } from "@/src/types/layouts";
 import { useTranslation } from "react-i18next";
 import { useDrawer } from "@/src/contexts/DrawerContext";
-import { useSigns } from "../../hooks/useSigns";
 import FilterSignForm from "./components/FilterSignForm";
 import NewSignType from "./components/NewSignType";
 import SortSignForm from "./components/SignSortForm";
+import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
+import { startSync } from "@/src/store/slices/syncSlice";
+import { ROUTES } from "@/src/constants/navigation";
+import { Sign } from "@/src/types/models";
+import { Toast } from "toastify-react-native";
+import { useTheme } from "@/src/contexts/ThemeContext";
 
 export function SignsListScreen() {
   const { t } = useTranslation();
@@ -25,10 +30,58 @@ export function SignsListScreen() {
     LIST: { value: t("list") },
     MAP: { value: t("map") },
   } as const;
+
   const styles = useThemedStyles(createStyles);
+  const { theme } = useTheme();
+  const dispatch = useAppDispatch();
   const [tab, setTab] = useState(Object.keys(TABS)[0]);
-  const { signs, sort, setSort, filters, setFilters } = useSigns();
   const { openDrawer } = useDrawer();
+
+  // Get signs from Redux store
+  const signs = useAppSelector((state) => state.signs.signs);
+  const isLoading = useAppSelector((state) => state.signs.isLoading);
+  const isSyncing = useAppSelector((state) => state.sync.isSyncing);
+  const pendingOperations = useAppSelector(
+    (state) => state.sync.pendingOperations,
+  );
+
+  // Local state for filtering and sorting
+  const [filters, setFilters] = useState<any[]>([]);
+  const [sort, setSort] = useState<{ key: string; dir: "ASC" | "DESC" }>({
+    key: "id",
+    dir: "DESC",
+  });
+
+  // Apply filters and sorting
+  const filteredSigns = React.useMemo(() => {
+    let result = [...signs];
+
+    // Apply filters
+    filters.forEach((filter) => {
+      result = result.filter((sign) => {
+        const value = sign[filter.key as keyof Sign];
+        return value === filter.value;
+      });
+    });
+
+    // Apply sorting
+    result.sort((a, b) => {
+      const aValue = a[sort.key as keyof Sign];
+      const bValue = b[sort.key as keyof Sign];
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sort.dir === "ASC"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sort.dir === "ASC"
+        ? (aValue as any) - (bValue as any)
+        : (bValue as any) - (aValue as any);
+    });
+
+    return result;
+  }, [signs, filters, sort]);
 
   const handleSortPress = () => {
     openDrawer("sort-sign", <SortSignForm sort={sort} setSort={setSort} />, {
@@ -43,39 +96,78 @@ export function SignsListScreen() {
       { drawerHeight: "auto" },
     );
   };
+
   const handleCreateSign = () => {
     openDrawer("new-sign-type", <NewSignType />, { drawerHeight: "auto" });
   };
 
-  const handleSignPress = (sign: any) => {
-    router.push(`/signs/${sign.id}` as any);
+  const handleSignPress = (sign: Sign) => {
+    router.push(`${ROUTES.SIGN_DETAIL.replace("[id]", sign.id)}` as any);
   };
 
-  const handleSync = () => {};
+  const handleSync = async () => {
+    const totalPending =
+      pendingOperations.creates +
+      pendingOperations.updates +
+      pendingOperations.deletes +
+      pendingOperations.images;
+
+    if (totalPending === 0) {
+      Toast.info("No changes to sync");
+      return;
+    }
+
+    try {
+      const result = await dispatch(startSync()).unwrap();
+      if (result.synced) {
+        Toast.success(`Successfully synced ${result.syncedCount} items`);
+      } else {
+        Toast.info(result.message || "Nothing to sync");
+      }
+    } catch (error) {
+      Toast.error("Sync failed. Please try again.");
+    }
+  };
+
+  const totalPending =
+    pendingOperations.creates +
+    pendingOperations.updates +
+    pendingOperations.deletes +
+    pendingOperations.images;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Header
         title={t("signs.title")}
         leftIcons={[
-          <TouchableOpacity key="home">
-            <House />
+          <TouchableOpacity key="home" onPress={() => router.push(ROUTES.HOME)}>
+            <House size={24} color={theme.secondary} />
           </TouchableOpacity>,
         ]}
         rightIcons={[
           <TouchableOpacity key="search">
-            <MagnifyingGlass />
+            <MagnifyingGlass size={24} color={theme.secondary} />
           </TouchableOpacity>,
-          <TouchableOpacity key="sync">
-            <Repeat />
+          <TouchableOpacity
+            key="sync"
+            onPress={handleSync}
+            disabled={isSyncing || totalPending === 0}
+          >
+            <View style={styles.syncButton}>
+              <Repeat
+                size={24}
+                color={theme.secondary}
+                weight={isSyncing ? "bold" : "regular"}
+              />
+            </View>
           </TouchableOpacity>,
         ]}
       />
       <Tabs setTab={setTab} tab={tab} tabs={TABS} />
       <View style={styles.listHeader}>
-        <TextView
-          style={styles.itemsLengthText}
-        >{`${signs.length} ${t("items")}`}</TextView>
+        <TextView style={styles.itemsLengthText}>
+          {filteredSigns.length} {t("items")}
+        </TextView>
         <View style={styles.listActions}>
           <TouchableOpacity onPress={handleSortPress}>
             <TextView style={styles.listActionText}>{t("sort")}</TextView>
@@ -85,38 +177,13 @@ export function SignsListScreen() {
           </TouchableOpacity>
         </View>
       </View>
-      {/*<View style={styles.header}>
-        <View style={styles.statusRow}>
-          {pendingSigns.length > 0 && (
-            <View style={styles.pendingBadge}>
-              <TextView variant="bodySmall" style={styles.pendingText}>
-                {pendingSigns.length} pending sync
-              </TextView>
-            </View>
-          )}
-        </View>
 
-        <View style={styles.actions}>
-          {pendingSigns.length > 0 && isOnline && (
-            <TouchableOpacity
-              style={styles.syncButton}
-              onPress={handleSync}
-              disabled={isSyncing || globalSyncing}
-            >
-              <ArrowsClockwise
-                size={20}
-                color={colors.green}
-                weight={isSyncing ? "bold" : "regular"}
-              />
-              <TextView variant="bodySmall" style={styles.syncText}>
-                {isSyncing ? "Syncing..." : "Sync Now"}
-              </TextView>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>*/}
+      <SignList
+        signs={filteredSigns}
+        onSignPress={handleSignPress}
+        loading={isLoading}
+      />
 
-      <SignList signs={signs} onSignPress={handleSignPress} />
       <TouchableOpacity style={styles.createButton} onPress={handleCreateSign}>
         <Plus size={60} color={colors.white} weight="bold" />
       </TouchableOpacity>
@@ -130,63 +197,30 @@ const createStyles = (theme: Theme) =>
       flex: 1,
       backgroundColor: theme.background,
     },
-    header: {
-      padding: spacing.md,
-      gap: spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-    },
-    statusRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-    },
-    statusBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: 16,
-      backgroundColor: theme.primary,
-    },
-    statusDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-    pendingBadge: {
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: 16,
-      backgroundColor: colors.warning,
-    },
-    pendingText: {
-      color: colors.white,
-      fontWeight: "600",
-    },
-    actions: {
-      flexDirection: "row",
-      gap: spacing.sm,
-    },
     syncButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.green,
-      backgroundColor: theme.background,
+      position: "relative",
     },
-    syncText: {
-      color: colors.green,
+    badge: {
+      position: "absolute",
+      top: -8,
+      right: -8,
+      backgroundColor: colors.error,
+      borderRadius: 10,
+      minWidth: 20,
+      height: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 4,
+    },
+    badgeText: {
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: "bold",
     },
     listHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
-      padding: 16,
+      padding: 12,
       borderBottomWidth: 2,
       borderColor: theme.primary,
     },
@@ -196,10 +230,11 @@ const createStyles = (theme: Theme) =>
     },
     listActions: {
       flexDirection: "row",
-      gap: 16,
+      gap: 20,
     },
     listActionText: {
-      fontSize: 18,
+      fontSize: 15,
+      fontWeight: 400,
       color: colors.lightBlue,
     },
     createButton: {
@@ -211,8 +246,13 @@ const createStyles = (theme: Theme) =>
       padding: spacing.xxs,
       borderRadius: 100,
       backgroundColor: colors.lightGreen,
-    },
-    createButtonText: {
-      color: colors.white,
+      elevation: 5,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
     },
   });
