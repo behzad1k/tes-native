@@ -29,7 +29,7 @@ export function HomeScreen() {
         // router.replace("/(protected)/signs/create");
         // router.replace("/(global)");
       } else {
-        router.replace("/(protected)/signs");
+        router.replace(ROUTES.SIGNS_LIST);
       }
     }
   }, [isAuthenticated, isLoading]);

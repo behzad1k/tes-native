@@ -2,23 +2,21 @@ import React from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
-import TextInputView from "@/src/components/ui/TextInputView";
 import { spacing } from "@/src/styles/theme/spacing";
 import { useTranslation } from "react-i18next";
-import FormSelectBox from "@/src/components/ui/FormSelectBox";
 import FormInput from "@/src/components/ui/FormInput";
+import FormSelectBox from "@/src/components/ui/FormSelectBox";
 import { Control } from "react-hook-form";
-import { SignFormData } from "../../../types";
+import { SupportFormData } from "../../../types";
 
-interface LocationStepProps {
-  signFormControl: Control<SignFormData, any, SignFormData>;
+interface DetailsStepProps {
+  supportFormControl: Control<SupportFormData, any, SupportFormData>;
 }
 
-const LocationStep = ({ signFormControl }: LocationStepProps) => {
+const DetailsStep = ({ supportFormControl }: DetailsStepProps) => {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
-
-  const signTypeOptions = [
+  const supportTypeOptions = [
     { label: "test1", value: 1 },
     { label: "test2", value: 2 },
     { label: "test3", value: 3 },
@@ -28,28 +26,37 @@ const LocationStep = ({ signFormControl }: LocationStepProps) => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
         <FormSelectBox
-          id={"support-code"}
+          id={"supportCode"}
           label={`${t("signs.supportCode")} :`}
-          control={signFormControl}
-          name="supportId"
-          options={signTypeOptions}
+          control={supportFormControl}
+          name="codeId"
+          options={supportTypeOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.supportCode")}
         />
-        <FormInput
-          control={signFormControl}
-          name="locationType"
-          label={`${t("signs.locationType")} :`}
+        <FormSelectBox
+          id={"position"}
+          label={`${t("position")} :`}
+          control={supportFormControl}
+          name="positionId"
+          options={supportTypeOptions}
+          placeholder={t("pressToSelect")}
+          title={t("position")}
+        />
+        <FormSelectBox
+          id={"support-condition"}
+          label={`${t("signs.supportCondition")} :`}
+          control={supportFormControl}
+          name="conditionId"
+          options={supportTypeOptions}
+          placeholder={t("pressToSelect")}
+          title={t("signs.supportCondition")}
+          searchable={true}
         />
         <FormInput
-          control={signFormControl}
-          name="longitude"
-          label={`${t("longitude")} :`}
-        />
-        <FormInput
-          control={signFormControl}
-          name="latitude"
-          label={`${t("latitude")} :`}
+          control={supportFormControl}
+          name="note"
+          label={`${t("note")} :`}
         />
       </View>
     </ScrollView>
@@ -65,6 +72,7 @@ const createStyles = (theme: Theme) =>
       padding: spacing.md,
       paddingTop: 0,
       gap: spacing.md,
+      flex: 1,
     },
     field: {
       gap: spacing.xs,
@@ -81,4 +89,4 @@ const createStyles = (theme: Theme) =>
     },
   });
 
-export default LocationStep;
+export default DetailsStep;

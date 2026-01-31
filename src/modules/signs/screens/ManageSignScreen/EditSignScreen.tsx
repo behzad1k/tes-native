@@ -31,17 +31,10 @@ export default function EditSignScreen() {
     handleSubmit,
     formState: { errors, isValid },
     trigger,
-    reset,
   } = useForm<SignFormData>({
     defaultValues: initialValues,
     mode: "onChange",
   });
-
-  // useEffect(() => {
-  //   if (sign) {
-  //     reset(initialValues);
-  //   }
-  // }, [sign, initialValues, reset]);
 
   if (!sign) {
     return (
@@ -67,7 +60,7 @@ export default function EditSignScreen() {
           "faceMaterialId",
           "reflectiveCoatingId",
           "reflectiveRatingId",
-          "signConditionId",
+          "conditionId",
         ];
         break;
       case 1:
@@ -132,12 +125,8 @@ export default function EditSignScreen() {
         reflectiveCoatingId: formData.reflectiveCoatingId,
         reflectiveRatingId: formData.reflectiveRatingId,
         dimensionId: formData.dimensionId,
-        // Convert Date to ISO string
-        dateInstalled:
-          formData.dateInstalled instanceof Date
-            ? formData.dateInstalled.toISOString()
-            : formData.dateInstalled,
-        signConditionId: formData.signConditionId,
+        dateInstalled: formData.dateInstalled,
+        conditionId: formData.conditionId,
         note: formData.note,
       };
 
@@ -157,7 +146,7 @@ export default function EditSignScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <Header title={t("signs.edit")} />
+      <Header title={t("signs.editSign")} />
       <StepHeader step={step} />
       <View style={styles.content}>
         {step === 0 && <DetailsStep signFormControl={control} />}

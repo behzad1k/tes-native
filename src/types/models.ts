@@ -23,7 +23,7 @@ export interface Sign {
 	reflectiveRatingId: string;
 	dimensionId: string;
 	dateInstalled: string; // Store as ISO string for Redux serialization
-	signConditionId: string;
+	conditionId: string;
 	note: string;
 	images: SignImage[];
 	isNew: boolean;
@@ -32,6 +32,41 @@ export interface Sign {
 	serverId?: string; // Server ID after sync
 }
 
+export interface Support {
+	id: string;
+	localId?: string;
+	customerId: string;
+	supportLocationTypeId: string;
+	locationId: string;
+	latitude: number;
+	longitude: number;
+	supportId: string;
+	codeId: string;
+	positionId: string;
+	conditionId: string;
+	note: string;
+	dateInstalled: string;
+	signs: Array<{
+		id: string;
+		supportId?: string;
+		signId: string;
+		// Add other sign properties from the previous Sign interface as needed
+		[key: string]: any;
+	}>;
+	images: Array<SupportImage>;
+	isNew: boolean;
+	isSynced: boolean;
+	status: SyncStatus;
+}
+
+export interface SupportImage {
+	uri: string;
+	status: SyncStatus;
+	isNew: boolean;
+	supportId: string;
+	imageId?: string;
+	localPath?: string;
+}
 export interface User {
 	id: string;
 	name: string;

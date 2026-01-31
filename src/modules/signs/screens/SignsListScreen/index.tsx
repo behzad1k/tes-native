@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
-import { SignList } from "./components/SignList";
+import SignSupportList from "./components/SignList";
 import TextView from "@/src/components/ui/TextView";
 import { spacing } from "@/src/styles/theme/spacing";
 import { router } from "expo-router";
@@ -20,7 +20,7 @@ import SortSignForm from "./components/SignSortForm";
 import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
 import { startSync } from "@/src/store/slices/syncSlice";
 import { ROUTES } from "@/src/constants/navigation";
-import { Sign } from "@/src/types/models";
+import { Sign, Support } from "@/src/types/models";
 import { Toast } from "toastify-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
 
@@ -39,6 +39,8 @@ export function SignsListScreen() {
 
   // Get signs from Redux store
   const signs = useAppSelector((state) => state.signs.signs);
+  const supports = useAppSelector((state) => state.supports.supports);
+  const fullList: Array<Sign | Support> = [...supports, ...signs];
   const isLoading = useAppSelector((state) => state.signs.isLoading);
   const isSyncing = useAppSelector((state) => state.sync.isSyncing);
   const pendingOperations = useAppSelector(
@@ -54,7 +56,7 @@ export function SignsListScreen() {
 
   // Apply filters and sorting
   const filteredSigns = React.useMemo(() => {
-    let result = [...signs];
+    let result = [...fullList];
 
     // Apply filters
     filters.forEach((filter) => {
@@ -101,8 +103,8 @@ export function SignsListScreen() {
     openDrawer("new-sign-type", <NewSignType />, { drawerHeight: "auto" });
   };
 
-  const handleSignPress = (sign: Sign) => {
-    router.push(`${ROUTES.SIGN_DETAIL.replace("[id]", sign.id)}` as any);
+  const handleSignPress = (item: Sign | Support) => {
+    router.push(`${ROUTES.SIGN_EDIT.replace("[id]", item.id)}` as any);
   };
 
   const handleSync = async () => {
@@ -178,9 +180,9 @@ export function SignsListScreen() {
         </View>
       </View>
 
-      <SignList
-        signs={filteredSigns}
-        onSignPress={handleSignPress}
+      <SignSupportList
+        list={filteredSigns}
+        onItemPress={handleSignPress}
         loading={isLoading}
       />
 

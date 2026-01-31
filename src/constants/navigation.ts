@@ -5,9 +5,11 @@ export const PUBLIC_ROUTES = {
 
 export const PROTECTED_ROUTES = {
 	ROOT: "/(protected)",
-	SIGNS_LIST: "/(protected)/signs",
-	SIGNS_CREATE: "/(protected)/signs/create",
-	SIGN_DETAIL: "/(protected)/signs/[id]",
+	SIGNS_LIST: "/(protected)/sign-inventory",
+	SIGN_CREATE: "/(protected)/sign-inventory/sign/create",
+	SIGN_EDIT: "/(protected)/sign-inventory/sign/[id]",
+	SUPPORT_CREATE: "/(protected)/sign-inventory/support/create",
+	SUPPORT_EDIT: "/(protected)/sign-inventory/support/[id]",
 	PROFILE: "/(protected)/profile",
 	PROFILE_EDIT: "/(protected)/profile/edit",
 	PROFILE_SETTINGS: "/(protected)/profile/settings",

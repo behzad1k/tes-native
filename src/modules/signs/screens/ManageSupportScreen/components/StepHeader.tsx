@@ -12,7 +12,7 @@ interface StepHeaderProps {
 }
 const StepHeader = ({ step }: StepHeaderProps) => {
   const { t } = useTranslation();
-  const STEP_TITLES = [t("details"), t("location"), t("image")];
+  const STEP_TITLES = [t("details"), t("location"), t("sign"), t("image")];
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.stepsContainer}>
@@ -57,13 +57,17 @@ const StepHeader = ({ step }: StepHeaderProps) => {
 };
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
-    stepContainer: { flexDirection: "row", alignItems: "center" },
+    stepContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
     stepsContainer: {
       flexDirection: "row",
-      justifyContent: "center",
+      justifyContent: "space-evenly",
       padding: spacing.xxxl,
     },
     step: {
+      minWidth: 40,
       alignItems: "center",
       gap: 4,
     },
@@ -71,7 +75,7 @@ const createStyles = (theme: Theme) =>
       borderTopWidth: 2,
       borderColor: theme.textSecondary,
       marginBottom: 20,
-      width: 100,
+      width: 50,
       height: 2,
     },
     stepSubText: {

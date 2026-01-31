@@ -17,7 +17,10 @@ const NewSignType = () => {
 
   const handlePressItem = (item: "sign" | "support") => {
     closeDrawer("new-sign-type");
-    router.navigate(`${ROUTES.SIGNS_CREATE}?type=${item}`);
+    console.log(item);
+    router.navigate(
+      item === "sign" ? ROUTES.SIGN_CREATE : ROUTES.SUPPORT_CREATE,
+    );
   };
   return (
     <View style={styles.container}>

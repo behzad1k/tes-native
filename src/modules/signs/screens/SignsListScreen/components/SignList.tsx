@@ -1,37 +1,41 @@
 import React from "react";
 import { FlatList, View, StyleSheet } from "react-native";
-import { SignCard } from "./SignCard";
-import { Sign } from "@/src/types/models";
+import SignSupportCard from "./SignCard";
+import { Sign, Support } from "@/src/types/models";
 import TextView from "@/src/components/ui/TextView";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { spacing } from "@/src/styles/theme/spacing";
 
-interface SignListProps {
-  signs: Sign[];
-  onSignPress?: (sign: Sign) => void;
+interface SignSupportListProps {
+  list: Array<Sign | Support>;
+  onItemPress?: (item: Sign | Support) => void;
   loading?: boolean;
 }
 
-export function SignList({ signs, onSignPress, loading }: SignListProps) {
+export default function SignSupportList({
+  list,
+  onItemPress,
+  loading,
+}: SignSupportListProps) {
   const styles = useThemedStyles(createStyles);
 
   if (loading) {
     return (
       <View style={styles.emptyContainer}>
-        <TextView variant="body">Loading signs...</TextView>
+        <TextView variant="body">Loading...</TextView>
       </View>
     );
   }
 
-  if (signs.length === 0) {
+  if (list.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <TextView variant="body" style={styles.emptyText}>
-          No signs found
+          No items found
         </TextView>
         <TextView variant="bodySmall" style={styles.emptySubtext}>
-          Create your first sign to get started
+          Create your first sign/support to get started
         </TextView>
       </View>
     );
@@ -39,9 +43,9 @@ export function SignList({ signs, onSignPress, loading }: SignListProps) {
 
   return (
     <FlatList
-      data={signs}
+      data={list}
       renderItem={({ item }) => (
-        <SignCard sign={item} onPress={() => onSignPress?.(item)} />
+        <SignSupportCard item={item} onPress={() => onItemPress?.(item)} />
       )}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}

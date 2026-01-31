@@ -1,79 +1,73 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
-import { useRouter } from "expo-router/build/hooks";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import DetailsStep from "./components/DetailsStep";
 import ButtonView from "@/src/components/ui/ButtonView";
 import LocationStep from "./components/LocationStep";
-import { ROUTES } from "@/src/constants/navigation";
 import ImageStep from "./components/ImageStep";
-import { SignFormData } from "../../types";
+import { SupportFormData } from "../../types";
 import { useForm } from "react-hook-form";
 import StepHeader from "./components/StepHeader";
-import { useSignOperations } from "../../hooks/useSignOperations";
+import {
+  useSupportOperations,
+  useSupportForm,
+} from "../../hooks/useSupportOperations";
 import { Toast } from "toastify-react-native";
-import { SignImage } from "@/src/types/models";
+import TextView from "@/src/components/ui/TextView";
 
-export default function CreateSignScreen() {
+export default function EditSupportScreen() {
   const { t } = useTranslation();
+  const { id } = useLocalSearchParams();
   const [step, setStep] = useState<number>(0);
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
-  const { createSign } = useSignOperations();
-
-  // Store images temporarily before sign is created
-  const [tempImages, setTempImages] = useState<SignImage[]>([]);
+  const { editSupport } = useSupportOperations();
+  const { support, initialValues, isEditMode } = useSupportForm(id as string);
 
   const {
     control,
     handleSubmit,
     formState: { errors, isValid },
     trigger,
-    getValues,
-  } = useForm<SignFormData>({
-    defaultValues: {
-      customerId: "",
-      locationTypeId: "",
-      signId: "",
-      supportId: "",
-      codeId: "",
-      height: "",
-      facingDirectionId: "",
-      faceMaterialId: "",
-      reflectiveCoatingId: "",
-      reflectiveRatingId: "",
-      dimensionId: "",
-      dateInstalled: new Date().toISOString(), // Use ISO string
-      conditionId: "",
-      note: "",
-    },
+    reset,
+  } = useForm<SupportFormData>({
+    defaultValues: initialValues,
     mode: "onChange",
   });
 
+  // useEffect(() => {
+  //   if (support) {
+  //     reset(initialValues);
+  //   }
+  // }, [support, initialValues, reset]);
+
+  if (!support) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <Header title={t("supports.edit")} />
+        <View style={styles.errorContainer}>
+          <TextView variant="body">Support not found</TextView>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const validateStep = async (stepIndex: number): Promise<boolean> => {
-    let fieldsToValidate: (keyof SignFormData)[] = [];
+    let fieldsToValidate: (keyof SupportFormData)[] = [];
 
     switch (stepIndex) {
-      case 0: // Details step
-        fieldsToValidate = [
-          "signId",
-          "dimensionId",
-          "height",
-          "facingDirectionId",
-          "faceMaterialId",
-          "reflectiveCoatingId",
-          "reflectiveRatingId",
-          "conditionId",
-        ];
+      case 0:
+        fieldsToValidate = ["supportId", "conditionId"];
         break;
-      case 1: // Location step
-        fieldsToValidate = ["supportId", "locationTypeId"];
+      case 1:
+        fieldsToValidate = ["supportId"];
         break;
-      case 2: // Image step - no validation needed
+      case 2:
         return true;
     }
 
@@ -83,7 +77,6 @@ export default function CreateSignScreen() {
 
   const handleChangeStep = async (newStepIndex: number) => {
     if (newStepIndex > step) {
-      // Validate current step before proceeding
       const isValid = await validateStep(step);
       if (!isValid) {
         Toast.error(t("validation.required"));
@@ -91,7 +84,6 @@ export default function CreateSignScreen() {
       }
 
       if (newStepIndex > 2) {
-        // Submit the form
         handleSubmit(onSubmit)();
         return;
       }
@@ -114,60 +106,57 @@ export default function CreateSignScreen() {
         },
         {
           text: "Yes",
-          onPress: () => router.navigate(ROUTES.SIGNS_LIST),
+          onPress: () => router.back(),
         },
       ],
     );
   };
 
-  const onSubmit = async (formData: SignFormData) => {
+  const onSubmit = async (formData: SupportFormData) => {
     try {
-      const signData = {
+      const updates = {
         customerId: formData.customerId,
-        locationTypeId: formData.locationTypeId,
-        signId: formData.signId,
         supportId: formData.supportId,
-        codeId: formData.codeId,
-        height: formData.height,
-        facingDirectionId: formData.facingDirectionId,
-        faceMaterialId: formData.faceMaterialId,
-        reflectiveCoatingId: formData.reflectiveCoatingId,
-        reflectiveRatingId: formData.reflectiveRatingId,
-        dimensionId: formData.dimensionId,
         dateInstalled: formData.dateInstalled,
-        conditionId: formData.conditionId,
+        supportConditionId: formData.conditionId,
         note: formData.note,
-        images: tempImages,
+        images: formData.images,
+        id: formData.id,
+        supportLocationTypeId: formData.supportLocationTypeId,
+        locationId: formData.locationId,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        supportCodeId: formData.codeId,
+        supportPositionId: formData.positionId,
+        supports: [],
+        // isNew: false,
+        // isSynced: false,
+        signs: [],
       };
 
-      const result = await createSign(signData);
+      const result = await editSupport(id as string, updates);
 
       if (result.success) {
-        Toast.success("Sign created successfully!");
+        Toast.success("Support updated successfully!");
         router.back();
       } else {
-        Toast.error("Failed to create sign");
+        Toast.error("Failed to update support");
       }
     } catch (error) {
-      console.error("Error creating sign:", error);
-      Toast.error("An error occurred while creating the sign");
+      console.error("Error updating support:", error);
+      Toast.error("An error occurred while updating the support");
     }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <Header title={t("signs.addNewSign")} />
+      <Header title={t("signs.editSupport")} />
       <StepHeader step={step} />
       <View style={styles.content}>
-        {step === 0 && <DetailsStep signFormControl={control} />}
-        {step === 1 && <LocationStep signFormControl={control} />}
+        {step === 0 && <DetailsStep supportFormControl={control} />}
+        {step === 1 && <LocationStep supportFormControl={control} />}
         {step === 2 && (
-          <ImageStep
-            signFormControl={control}
-            tempImages={tempImages}
-            setTempImages={setTempImages}
-            isCreateMode={true}
-          />
+          <ImageStep supportFormControl={control} supportId={id as string} />
         )}
       </View>
       <View style={styles.buttonContainer}>
@@ -197,6 +186,11 @@ const createStyles = (theme: Theme) =>
     },
     content: {
       flex: 1,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
     },
     buttonContainer: {
       backgroundColor: theme.background,

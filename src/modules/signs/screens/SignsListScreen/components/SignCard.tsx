@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import TextView from "@/src/components/ui/TextView";
-import { Sign } from "@/src/types/models";
+import { Sign, Support } from "@/src/types/models";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { colors } from "@/src/styles/theme/colors";
@@ -9,6 +9,7 @@ import { spacing } from "@/src/styles/theme/spacing";
 import {
   CheckCircle,
   Clock,
+  LineVertical,
   TrafficSign,
   XCircle,
 } from "phosphor-react-native";
@@ -16,16 +17,23 @@ import { SYNC_STATUS } from "@/src/constants/global";
 import { useTheme } from "@/src/contexts/ThemeContext";
 import Typography from "@/src/styles/theme/typography";
 
-interface SignCardProps {
-  sign: Sign;
+interface SignSupportCardProps {
+  item: Sign | Support;
   onPress?: () => void;
 }
 
-export function SignCard({ sign, onPress }: SignCardProps) {
+export const isSupport = (item: Sign | Support) =>
+  Array.isArray((item as Support)?.signs);
+
+export default function SignSupportCard({
+  item,
+  onPress,
+}: SignSupportCardProps) {
   const styles = useThemedStyles(createStyles);
   const { theme } = useTheme();
+
   const getStatusIcon = () => {
-    switch (sign.status) {
+    switch (item.status) {
       case SYNC_STATUS.SYNCED:
         return <CheckCircle size={20} color={colors.success} weight="fill" />;
       case SYNC_STATUS.NOT_SYNCED:
@@ -36,7 +44,7 @@ export function SignCard({ sign, onPress }: SignCardProps) {
   };
 
   const getStatusText = () => {
-    switch (sign.status) {
+    switch (item.status) {
       case SYNC_STATUS.SYNCED:
         return "Synced";
       case SYNC_STATUS.NOT_SYNCED:
@@ -44,16 +52,18 @@ export function SignCard({ sign, onPress }: SignCardProps) {
     }
   };
 
-  console.log(sign);
-
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.icon}>
-        <TrafficSign size={24} color={theme.secondary} />
+        {isSupport(item) ? (
+          <LineVertical size={24} color={theme.secondary} />
+        ) : (
+          <TrafficSign size={24} color={theme.secondary} />
+        )}
       </View>
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <TextView style={styles.signTitle}>{sign.localId}</TextView>
+          <TextView style={styles.signTitle}>{item.localId}</TextView>
           {/*<View style={styles.statusBadge}>
             {getStatusIcon()}
             <TextView variant="caption" style={styles.statusText}>
@@ -61,7 +71,7 @@ export function SignCard({ sign, onPress }: SignCardProps) {
             </TextView>
           </View>*/}
         </View>
-        <TextView style={styles.signDescription}>{sign.note}</TextView>
+        <TextView style={styles.signDescription}>{item.note}</TextView>
       </View>
     </TouchableOpacity>
   );

@@ -13,6 +13,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import authReducer from "./slices/authSlice";
 import signsReducer from "./slices/signSlice";
+import supportReducer from "./slices/supportSlice";
 import syncReducer from "./slices/syncSlice";
 
 // Persist configuration for signs
@@ -20,6 +21,13 @@ const signsPersistConfig = {
 	key: "signs",
 	storage: AsyncStorage,
 	whitelist: ["signs", "backendImages", "lastFetched"], // Only persist these fields
+};
+
+// Persist configuration for supports
+const supportsPersistConfig = {
+	key: "supports",
+	storage: AsyncStorage,
+	whitelist: ["supports", "backendImages", "lastFetched"], // Only persist these fields
 };
 
 // Persist configuration for auth
@@ -32,6 +40,7 @@ const authPersistConfig = {
 const rootReducer = combineReducers({
 	auth: persistReducer(authPersistConfig, authReducer),
 	signs: persistReducer(signsPersistConfig, signsReducer),
+	supports: persistReducer(supportsPersistConfig, supportReducer),
 	sync: syncReducer, // Don't persist sync state
 });
 

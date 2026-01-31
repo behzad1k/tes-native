@@ -1,18 +1,18 @@
 import { apiClient } from "@/src/services/api/apiClient";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { ReduxStorage, ImageStorage, TokenStorage } from "../persistence";
-import { Sign, SignImage } from "@/src/types/models";
+import { Support, SupportImage } from "@/src/types/models";
 import { SYNC_STATUS } from "@/src/constants/global";
 
-interface SignState {
-	signs: Sign[];
-	backendImages: Record<string, string>; // imageId -> url
+interface SupportState {
+	supports: Support[];
+	backendImages: Record<string, string>;
 	isLoading: boolean;
 	lastFetched: number | null;
 }
 
-const initialState: SignState = {
-	signs: [],
+const initialState: SupportState = {
+	supports: [],
 	backendImages: {},
 	isLoading: false,
 	lastFetched: null,
@@ -30,37 +30,37 @@ const deserializeDate = (dateString: string): Date => {
 };
 
 // Auto-save helper
-const saveSignsToStorage = async (state: SignState) => {
+const saveSupportsToStorage = async (state: SupportState) => {
 	// Serialize dates before saving
-	const serializedSigns = state.signs.map((sign) => ({
-		...sign,
+	const serializedSupports = state.supports.map((support) => ({
+		...support,
 	}));
 
-	await ReduxStorage.saveState("signs_data", {
-		signs: serializedSigns,
+	await ReduxStorage.saveState("supports_data", {
+		supports: serializedSupports,
 		backendImages: state.backendImages,
 		lastFetched: state.lastFetched,
 	});
 };
 
-// Fetch signs from backend when online
-export const fetchSigns = createAsyncThunk(
-	"signs/fetch",
+// Fetch supports from backend when online
+export const fetchSupports = createAsyncThunk(
+	"supports/fetch",
 	async (_, { rejectWithValue }) => {
 		try {
 			const token = await TokenStorage.getToken();
 			if (!token) return rejectWithValue("No token");
 
-			const response = await apiClient.get("/signs", {
+			const response = await apiClient.get("/supports", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
 
-			const signs: Sign[] = response.data.map((sign: any) => ({
-				...sign,
-				dateInstalled: sign.dateInstalled, // Keep as ISO string
+			const supports: Support[] = response.data.map((support: any) => ({
+				...support,
+				dateInstalled: support.dateInstalled, // Keep as ISO string
 				isNew: false,
 				status: SYNC_STATUS.SYNCED,
-				images: sign.images.map((img: any) => ({
+				images: support.images.map((img: any) => ({
 					...img,
 					isNew: false,
 					status: SYNC_STATUS.SYNCED,
@@ -69,42 +69,41 @@ export const fetchSigns = createAsyncThunk(
 
 			// Extract backend images
 			const backendImages: Record<string, string> = {};
-			signs.forEach((sign) => {
-				sign.images.forEach((img) => {
+			supports.forEach((support) => {
+				support.images.forEach((img) => {
 					if (img.imageId) {
 						backendImages[img.imageId] = img.uri;
 					}
 				});
 			});
 
-			return { signs, backendImages };
+			return { supports, backendImages };
 		} catch (error) {
 			return rejectWithValue(error.message);
 		}
 	},
 );
 
-const signsSlice = createSlice({
-	name: "signs",
+const supportsSlice = createSlice({
+	name: "supports",
 	initialState,
 	reducers: {
-		// CREATE - Add new sign (offline)
-		addSign: (
+		// CREATE - Add new support (offline)
+		addSupport: (
 			state,
-			action: PayloadAction<Omit<Sign, "id" | "status" | "isNew">>,
+			action: PayloadAction<Omit<Support, "id" | "status" | "isNew">>,
 		) => {
 			const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-			// Convert Date to ISO string
 			const dateInstalled = action.payload.dateInstalled;
 
-			// Process images - update signId for temporary images
+			// Process images - update supportId for temporary images
 			const processedImages = (action.payload.images || []).map((img) => ({
 				...img,
-				signId: localId, // Update from "temp" to actual sign ID
+				supportId: localId, // Update from "temp" to actual support ID
 			}));
 
-			const newSign: Sign = {
+			const newSupport: Support = {
 				...action.payload,
 				dateInstalled, // Store as ISO string
 				id: localId,
@@ -114,24 +113,24 @@ const signsSlice = createSlice({
 				images: processedImages,
 			};
 
-			state.signs.push(newSign);
-			saveSignsToStorage(state);
+			state.supports.push(newSupport);
+			saveSupportsToStorage(state);
 		},
 
-		// UPDATE - Modify existing sign
-		updateSign: (
+		// UPDATE - Modify existing support
+		updateSupport: (
 			state,
 			action: PayloadAction<{
 				id: string;
-				updates: Partial<Sign>;
+				updates: Partial<Support>;
 				isNewImage?: boolean;
 			}>,
 		) => {
 			const { id, updates, isNewImage } = action.payload;
-			const signIndex = state.signs.findIndex((s) => s.id === id);
+			const supportIndex = state.supports.findIndex((s) => s.id === id);
 
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
+			if (supportIndex !== -1) {
+				const support = state.supports[supportIndex];
 
 				// Convert Date to ISO string if present in updates
 				const serializedUpdates = { ...updates };
@@ -139,42 +138,42 @@ const signsSlice = createSlice({
 					serializedUpdates.dateInstalled = updates.dateInstalled;
 				}
 
-				// If sign was synced before, mark as not synced
+				// If support was synced before, mark as not synced
 				const status =
-					sign.status === SYNC_STATUS.SYNCED &&
+					support.status === SYNC_STATUS.SYNCED &&
 					(isNewImage || Object.keys(serializedUpdates).length > 0)
 						? SYNC_STATUS.NOT_SYNCED
-						: sign.status;
+						: support.status;
 
-				state.signs[signIndex] = {
-					...sign,
+				state.supports[supportIndex] = {
+					...support,
 					...serializedUpdates,
 					status,
 				};
 
-				saveSignsToStorage(state);
+				saveSupportsToStorage(state);
 			}
 		},
 
-		// Add image to sign
-		addImageToSign: (
+		// Add image to support
+		addImageToSupport: (
 			state,
 			action: PayloadAction<{
-				signId: string;
+				supportId: string;
 				imageUri: string;
 				isNew: boolean;
 			}>,
 		) => {
-			const { signId, imageUri, isNew } = action.payload;
-			const signIndex = state.signs.findIndex((s) => s.id === signId);
+			const { supportId, imageUri, isNew } = action.payload;
+			const supportIndex = state.supports.findIndex((s) => s.id === supportId);
 
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
+			if (supportIndex !== -1) {
+				const support = state.supports[supportIndex];
 				const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-				const newImage: SignImage = {
+				const newImage: SupportImage = {
 					uri: imageUri,
-					signId,
+					supportId,
 					isNew,
 					status: SYNC_STATUS.NOT_SYNCED,
 					imageId: isNew ? undefined : imageId,
@@ -182,81 +181,83 @@ const signsSlice = createSlice({
 
 				// Save image locally if it's new
 				if (isNew) {
-					ImageStorage.saveImage(imageUri, signId, imageId).then(
+					ImageStorage.saveImage(imageUri, supportId, imageId).then(
 						(localPath) => {
 							newImage.localPath = localPath;
 						},
 					);
 				}
 
-				sign.images.push(newImage);
+				support.images.push(newImage);
 
-				// Mark sign as not synced
-				sign.status = SYNC_STATUS.NOT_SYNCED;
+				// Mark support as not synced
+				support.status = SYNC_STATUS.NOT_SYNCED;
 
-				saveSignsToStorage(state);
+				saveSupportsToStorage(state);
 			}
 		},
 
 		// Remove image
 		removeImage: (
 			state,
-			action: PayloadAction<{ signId: string; imageId: string }>,
+			action: PayloadAction<{ supportId: string; imageId: string }>,
 		) => {
-			const { signId, imageId } = action.payload;
-			const signIndex = state.signs.findIndex((s) => s.id === signId);
+			const { supportId, imageId } = action.payload;
+			const supportIndex = state.supports.findIndex((s) => s.id === supportId);
 
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
-				const imageIndex = sign.images.findIndex(
+			if (supportIndex !== -1) {
+				const support = state.supports[supportIndex];
+				const imageIndex = support.images.findIndex(
 					(img) => img.imageId === imageId || img.uri.includes(imageId),
 				);
 
 				if (imageIndex !== -1) {
 					// Delete local file if exists
-					const image = sign.images[imageIndex];
+					const image = support.images[imageIndex];
 					if (image.localPath) {
 						ImageStorage.deleteImage(image.localPath);
 					}
 
-					sign.images.splice(imageIndex, 1);
-					sign.status = SYNC_STATUS.NOT_SYNCED;
-					saveSignsToStorage(state);
+					support.images.splice(imageIndex, 1);
+					support.status = SYNC_STATUS.NOT_SYNCED;
+					saveSupportsToStorage(state);
 				}
 			}
 		},
 
 		// DELETE - Mark for deletion (soft delete)
-		markSignForDeletion: (state, action: PayloadAction<string>) => {
-			const signIndex = state.signs.findIndex((s) => s.id === action.payload);
+		markSupportForDeletion: (state, action: PayloadAction<string>) => {
+			const supportIndex = state.supports.findIndex(
+				(s) => s.id === action.payload,
+			);
 
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
+			if (supportIndex !== -1) {
+				const support = state.supports[supportIndex];
 
-				if (sign.status === SYNC_STATUS.SYNCED) {
+				if (support.status === SYNC_STATUS.SYNCED) {
 					// Mark for server deletion
-					sign.status = SYNC_STATUS.NOT_SYNCED;
-					sign.isNew = false; // It's not new, but needs deletion sync
+					support.status = SYNC_STATUS.NOT_SYNCED;
+					support.isNew = false; // It's not new, but needs deletion sync
 				} else {
 					// Remove locally if not yet synced
-					state.signs.splice(signIndex, 1);
+					state.supports.splice(supportIndex, 1);
 				}
 
-				saveSignsToStorage(state);
+				saveSupportsToStorage(state);
 			}
 		},
 
-		// Load saved signs from storage
-		loadSavedSigns: (
+		// Load saved supports from storage
+		loadSavedSupports: (
 			state,
 			action: PayloadAction<{
-				signs: Sign[];
+				supports: Support[];
 				backendImages: Record<string, string>;
 				lastFetched: number | null;
 			}>,
 		) => {
 			// Dates are already stored as ISO strings, no conversion needed
-			state.signs = action.payload.signs;
+			state.supports = action.payload.supports;
 			state.backendImages = action.payload.backendImages;
 			state.lastFetched = action.payload.lastFetched;
 		},
@@ -271,20 +272,22 @@ const signsSlice = createSlice({
 			}>,
 		) => {
 			const { localId, serverId, imageUpdates } = action.payload;
-			const signIndex = state.signs.findIndex((s) => s.localId === localId);
+			const supportIndex = state.supports.findIndex(
+				(s) => s.localId === localId,
+			);
 
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
+			if (supportIndex !== -1) {
+				const support = state.supports[supportIndex];
 
-				// Update sign ID
-				sign.id = serverId;
-				sign.serverId = serverId;
-				delete sign.localId;
-				sign.status = SYNC_STATUS.SYNCED;
-				sign.isNew = false;
+				// Update support ID
+				support.id = serverId;
+				// support.serverId = serverId;
+				delete support.localId;
+				support.status = SYNC_STATUS.SYNCED;
+				support.isNew = false;
 
 				// Update image IDs
-				sign.images.forEach((img, idx) => {
+				support.images.forEach((img, idx) => {
 					const update = imageUpdates.find(
 						(u) =>
 							img.uri.includes(u.localImageId) ||
@@ -302,36 +305,36 @@ const signsSlice = createSlice({
 					}
 				});
 
-				saveSignsToStorage(state);
+				saveSupportsToStorage(state);
 			}
 		},
 	},
 	extraReducers: (builder) => {
 		builder
-			.addCase(fetchSigns.pending, (state) => {
+			.addCase(fetchSupports.pending, (state) => {
 				state.isLoading = true;
 			})
-			.addCase(fetchSigns.fulfilled, (state, action) => {
-				state.signs = action.payload.signs;
+			.addCase(fetchSupports.fulfilled, (state, action) => {
+				state.supports = action.payload.supports;
 				state.backendImages = action.payload.backendImages;
 				state.lastFetched = Date.now();
 				state.isLoading = false;
-				saveSignsToStorage(state);
+				saveSupportsToStorage(state);
 			})
-			.addCase(fetchSigns.rejected, (state) => {
+			.addCase(fetchSupports.rejected, (state) => {
 				state.isLoading = false;
 			});
 	},
 });
 
 export const {
-	addSign,
-	updateSign,
-	addImageToSign,
+	addSupport,
+	updateSupport,
+	addImageToSupport,
 	removeImage,
-	markSignForDeletion,
-	loadSavedSigns,
+	markSupportForDeletion,
+	loadSavedSupports,
 	updateAfterSync,
-} = signsSlice.actions;
+} = supportsSlice.actions;
 
-export default signsSlice.reducer;
+export default supportsSlice.reducer;

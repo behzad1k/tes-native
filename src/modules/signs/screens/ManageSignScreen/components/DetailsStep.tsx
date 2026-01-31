@@ -22,6 +22,10 @@ const DetailsStep = ({ signFormControl }: DetailsStepProps) => {
     { label: "test3", value: 3 },
     { label: "test4", value: 4 },
   ];
+  const dimensions = [
+    { label: "20 x 20", value: "20x20" },
+    { label: "30 x 30", value: "30x30" },
+  ];
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
@@ -39,7 +43,7 @@ const DetailsStep = ({ signFormControl }: DetailsStepProps) => {
           label={`${t("dimension")} :`}
           control={signFormControl}
           name="dimensionId"
-          options={signTypeOptions}
+          options={dimensions}
           placeholder={t("pressToSelect")}
           title={t("dimension")}
         />
@@ -82,13 +86,13 @@ const DetailsStep = ({ signFormControl }: DetailsStepProps) => {
           name="reflectiveRatingId"
           options={signTypeOptions}
           placeholder={t("pressToSelect")}
-          title={t("signs.reflectiveRatingId")}
+          title={t("signs.reflectiveRating")}
         />
         <FormSelectBox
           id={"sign-condition"}
           label={`${t("signs.signCondition")} :`}
           control={signFormControl}
-          name="signConditionId"
+          name="conditionId"
           options={signTypeOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.signCondition")}

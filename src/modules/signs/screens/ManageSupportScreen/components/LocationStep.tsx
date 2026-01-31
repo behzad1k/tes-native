@@ -8,17 +8,17 @@ import { useTranslation } from "react-i18next";
 import FormSelectBox from "@/src/components/ui/FormSelectBox";
 import FormInput from "@/src/components/ui/FormInput";
 import { Control } from "react-hook-form";
-import { SignFormData } from "../../../types";
+import { SupportFormData } from "../../../types";
 
 interface LocationStepProps {
-  signFormControl: Control<SignFormData, any, SignFormData>;
+  supportFormControl: Control<SupportFormData, any, SupportFormData>;
 }
 
-const LocationStep = ({ signFormControl }: LocationStepProps) => {
+const LocationStep = ({ supportFormControl }: LocationStepProps) => {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
 
-  const signTypeOptions = [
+  const supportTypeOptions = [
     { label: "test1", value: 1 },
     { label: "test2", value: 2 },
     { label: "test3", value: 3 },
@@ -27,27 +27,18 @@ const LocationStep = ({ signFormControl }: LocationStepProps) => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
-        <FormSelectBox
-          id={"support-code"}
-          label={`${t("signs.supportCode")} :`}
-          control={signFormControl}
-          name="supportId"
-          options={signTypeOptions}
-          placeholder={t("pressToSelect")}
-          title={t("signs.supportCode")}
-        />
         <FormInput
-          control={signFormControl}
+          control={supportFormControl}
           name="locationType"
           label={`${t("signs.locationType")} :`}
         />
         <FormInput
-          control={signFormControl}
+          control={supportFormControl}
           name="longitude"
           label={`${t("longitude")} :`}
         />
         <FormInput
-          control={signFormControl}
+          control={supportFormControl}
           name="latitude"
           label={`${t("latitude")} :`}
         />

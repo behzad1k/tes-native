@@ -21,7 +21,7 @@ import {
 } from "react-native";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { CaretDown, CaretUp } from "phosphor-react-native";
-import { scale } from "@/src/styles/theme/spacing";
+import { scale, spacing } from "@/src/styles/theme/spacing";
 
 export interface SelectBoxOption {
   label: string;
@@ -236,14 +236,6 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
       <View style={[styles.drawerContentContainer, dropdownStyle]}>
         {/* Header with Close Button */}
         <View style={styles.drawerHeader}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={handleClose}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <TextView style={styles.closeButtonText}>✕</TextView>
-          </TouchableOpacity>
           <TextView style={[styles.drawerTitle, titleStyle]}>
             {title || placeholder}
           </TextView>
@@ -459,7 +451,7 @@ const createStyles = (theme: Theme) =>
     },
     drawerTitle: {
       fontSize: 18,
-      ...Typography.weights.medium,
+      fontWeight: 600,
       color: theme.text,
       flex: 1,
     },
@@ -495,8 +487,7 @@ const createStyles = (theme: Theme) =>
     },
     optionsList: {
       flex: 1,
-      paddingHorizontal: 10,
-      gap: 8,
+      paddingBottom: spacing.md,
     },
     optionText: {
       flex: 1,
@@ -516,16 +507,13 @@ const createStyles = (theme: Theme) =>
       backgroundColor: colors.green,
     },
     option: {
-      borderRadius: 12,
-      paddingVertical: 16,
-      paddingHorizontal: 8,
-      borderWidth: 2,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
       gap: 8,
-      marginVertical: 4,
       justifyContent: "space-between",
       flexDirection: "row",
-      borderColor: "transparent",
-      backgroundColor: theme.primary,
+      borderColor: theme.border,
     },
     checkmark: {
       fontSize: 18,
