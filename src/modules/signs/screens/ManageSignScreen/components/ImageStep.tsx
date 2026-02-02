@@ -33,9 +33,9 @@ import { SYNC_STATUS } from "@/src/constants/global";
 
 interface ImageStepProps {
   signFormControl: Control<SignFormData, any, SignFormData>;
-  signId?: string; // Optional for edit mode
-  tempImages?: SignImage[]; // For create mode
-  setTempImages?: React.Dispatch<React.SetStateAction<SignImage[]>>; // For create mode
+  signId?: string;
+  tempImages?: SignImage[];
+  setTempImages?: React.Dispatch<React.SetStateAction<SignImage[]>>;
   isCreateMode?: boolean;
 }
 
@@ -51,7 +51,6 @@ const ImageStep = ({
   const { addImageFromCamera, addImageFromGallery, deleteImage } =
     useSignImages();
 
-  // Get images from Redux store (for edit mode)
   const signs = useAppSelector((state) => state.signs.signs);
   const currentSign = signId ? signs.find((s) => s.id === signId) : null;
   const [images, setImages] = useState<SignImage[]>(
@@ -68,34 +67,28 @@ const ImageStep = ({
 
   const handleTakePhoto = async () => {
     if (isCreateMode) {
-      // Handle temporary image for create mode
       await handleTempImageFromCamera();
     } else {
-      // Handle image for edit mode
       if (!signId) {
         Alert.alert("Error", "Sign ID is required");
         return;
       }
       const result = await addImageFromCamera(signId);
       if (result.success) {
-        // Images will be updated automatically via Redux
       }
     }
   };
 
   const handleBrowseFiles = async () => {
     if (isCreateMode) {
-      // Handle temporary image for create mode
       await handleTempImageFromGallery();
     } else {
-      // Handle image for edit mode
       if (!signId) {
         Alert.alert("Error", "Sign ID is required");
         return;
       }
       const result = await addImageFromGallery(signId);
       if (result.success) {
-        // Images will be updated automatically via Redux
       }
     }
   };
@@ -123,7 +116,7 @@ const ImageStep = ({
 
         const newImage: SignImage = {
           uri: imageUri,
-          signId: "temp", // Will be updated when sign is created
+          signId: "temp",
           isNew: true,
           status: SYNC_STATUS.NOT_SYNCED,
           imageId: tempImageId,
@@ -165,7 +158,7 @@ const ImageStep = ({
 
         const newImage: SignImage = {
           uri: imageUri,
-          signId: "temp", // Will be updated when sign is created
+          signId: "temp",
           isNew: true,
           status: SYNC_STATUS.NOT_SYNCED,
           imageId: tempImageId,
@@ -183,56 +176,31 @@ const ImageStep = ({
   };
 
   const handleDeleteImage = async (imageId: string, index: number) => {
-    if (isCreateMode) {
-      // Delete from temporary images
-      Alert.alert(
-        "Delete Image",
-        "Are you sure you want to delete this image?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => {
-              if (setTempImages) {
-                setTempImages((prev) => prev.filter((_, i) => i !== index));
-              }
-            },
-          },
-        ],
-      );
-    } else {
-      // Delete from Redux store
-      if (!signId) return;
-
-      Alert.alert(
-        "Delete Image",
-        "Are you sure you want to delete this image?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              const result = await deleteImage(signId, imageId);
-              if (!result.success) {
-                Alert.alert("Error", "Failed to delete image");
-              }
-            },
-          },
-        ],
-      );
-    }
+    Alert.alert("Delete Image", "Are you sure you want to delete this image?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          if (isCreateMode) {
+            if (setTempImages) {
+              setTempImages((prev) => prev.filter((_, i) => i !== index));
+            }
+          } else if (signId) {
+            const result = await deleteImage(signId, imageId);
+            if (!result.success) {
+              Alert.alert("Error", "Failed to delete image");
+            }
+          }
+        },
+      },
+    ]);
   };
 
   const handleFetchFromServer = () => {
-    // TODO: Implement server fetch
     Alert.alert(
       "Coming Soon",
       "Fetch from server feature will be available soon",
@@ -283,7 +251,6 @@ const ImageStep = ({
           </View>
         </View>
 
-        {/* Display uploaded images */}
         {images.length > 0 && (
           <View style={styles.imagesContainer}>
             <TextView variant="h4" style={styles.imagesTitle}>

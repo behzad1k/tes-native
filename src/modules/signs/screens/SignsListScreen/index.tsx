@@ -24,11 +24,14 @@ import { Sign, Support } from "@/src/types/models";
 import { Toast } from "toastify-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
 
-export function SignsListScreen() {
+export const isSupport = (item: Sign | Support) =>
+  Array.isArray((item as Support)?.signs);
+
+export default function SignsListScreen() {
   const { t } = useTranslation();
   const TABS: TabsType = {
-    LIST: { value: t("list") },
-    MAP: { value: t("map") },
+    LIST: { id: "LIST", value: t("list") },
+    MAP: { id: "MAP", value: t("map") },
   } as const;
 
   const styles = useThemedStyles(createStyles);
@@ -103,8 +106,10 @@ export function SignsListScreen() {
     openDrawer("new-sign-type", <NewSignType />, { drawerHeight: "auto" });
   };
 
-  const handleSignPress = (item: Sign | Support) => {
-    router.push(`${ROUTES.SIGN_EDIT.replace("[id]", item.id)}` as any);
+  const handleItemPress = (item: Sign | Support) => {
+    router.push(
+      `${(isSupport(item) ? ROUTES.SUPPORT_EDIT : ROUTES.SIGN_EDIT).replace("[id]", item.id)}` as any,
+    );
   };
 
   const handleSync = async () => {
@@ -182,7 +187,7 @@ export function SignsListScreen() {
 
       <SignSupportList
         list={filteredSigns}
-        onItemPress={handleSignPress}
+        onItemPress={handleItemPress}
         loading={isLoading}
       />
 

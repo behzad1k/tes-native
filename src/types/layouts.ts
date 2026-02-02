@@ -1,4 +1,5 @@
 export interface TabValueType {
+	id: string;
 	value: string;
 	count?: number;
 }

@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 
-// Storage keys
 const STORAGE_KEYS = {
 	AUTH_USER: "auth_user",
 	AUTH_TOKEN: "auth_token",
@@ -10,9 +9,6 @@ const STORAGE_KEYS = {
 	IMAGES_DIR: "images",
 } as const;
 
-/**
- * Token Storage - handles secure token storage
- */
 export class TokenStorage {
 	static async getToken(): Promise<string | null> {
 		try {
@@ -41,9 +37,6 @@ export class TokenStorage {
 	}
 }
 
-/**
- * Redux Storage - handles Redux state persistence
- */
 export class ReduxStorage {
 	static async loadState<T>(key: string): Promise<T | null> {
 		try {
@@ -86,15 +79,9 @@ export class ReduxStorage {
 	}
 }
 
-/**
- * Image Storage - handles local image file storage
- */
 export class ImageStorage {
 	private static imagesDir = `${FileSystem.Directory}${STORAGE_KEYS.IMAGES_DIR}/`;
 
-	/**
-	 * Initialize images directory
-	 */
 	static async initialize(): Promise<void> {
 		try {
 			const dirInfo = await FileSystem.getInfoAsync(this.imagesDir);
@@ -109,13 +96,6 @@ export class ImageStorage {
 		}
 	}
 
-	/**
-	 * Save image to local storage
-	 * @param imageUri - URI of the image (from camera or gallery)
-	 * @param signId - ID of the sign this image belongs to
-	 * @param imageId - Unique ID for this image
-	 * @returns Local file path
-	 */
 	static async saveImage(
 		imageUri: string,
 		signId: string,
@@ -128,7 +108,6 @@ export class ImageStorage {
 			const filename = `${signId}_${imageId}.${extension}`;
 			const localPath = `${this.imagesDir}${filename}`;
 
-			// Copy image to local storage
 			await FileSystem.copyAsync({
 				from: imageUri,
 				to: localPath,
@@ -141,11 +120,6 @@ export class ImageStorage {
 		}
 	}
 
-	/**
-	 * Get image from local storage
-	 * @param localPath - Local file path
-	 * @returns Image URI or null if not found
-	 */
 	static async getImage(localPath: string): Promise<string | null> {
 		try {
 			const fileInfo = await FileSystem.getInfoAsync(localPath);
@@ -159,10 +133,6 @@ export class ImageStorage {
 		}
 	}
 
-	/**
-	 * Delete image from local storage
-	 * @param localPath - Local file path
-	 */
 	static async deleteImage(localPath: string): Promise<void> {
 		try {
 			const fileInfo = await FileSystem.getInfoAsync(localPath);
@@ -174,10 +144,6 @@ export class ImageStorage {
 		}
 	}
 
-	/**
-	 * Delete all images for a sign
-	 * @param signId - ID of the sign
-	 */
 	static async deleteSignImages(signId: string): Promise<void> {
 		try {
 			await this.initialize();
@@ -193,10 +159,6 @@ export class ImageStorage {
 		}
 	}
 
-	/**
-	 * Clean up images that don't belong to any sign
-	 * @param validSignIds - Array of valid sign IDs
-	 */
 	static async cleanupImages(validSignIds: string[]): Promise<void> {
 		try {
 			await this.initialize();
@@ -214,11 +176,6 @@ export class ImageStorage {
 		}
 	}
 
-	/**
-	 * Get all images for a sign
-	 * @param signId - ID of the sign
-	 * @returns Array of image paths
-	 */
 	static async getSignImages(signId: string): Promise<string[]> {
 		try {
 			await this.initialize();
@@ -235,9 +192,6 @@ export class ImageStorage {
 		}
 	}
 
-	/**
-	 * Clear all images
-	 */
 	static async clearAllImages(): Promise<void> {
 		try {
 			const dirInfo = await FileSystem.getInfoAsync(this.imagesDir);

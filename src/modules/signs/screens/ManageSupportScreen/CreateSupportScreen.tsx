@@ -25,7 +25,6 @@ export default function CreateSupportScreen() {
   const router = useRouter();
   const { createSupport } = useSupportOperations();
 
-  // Store images temporarily before support is created
   const [tempImages, setTempImages] = useState<SupportImage[]>([]);
 
   const {
@@ -59,13 +58,13 @@ export default function CreateSupportScreen() {
     let fieldsToValidate: (keyof SupportFormData)[] = [];
 
     switch (stepIndex) {
-      case 0: // Details step
+      case 0:
         fieldsToValidate = ["supportId", "conditionId"];
         break;
-      case 1: // Location step
+      case 1:
         fieldsToValidate = ["supportId"];
         break;
-      case 2: // Image step - no validation needed
+      case 2:
         return true;
     }
 
@@ -75,7 +74,6 @@ export default function CreateSupportScreen() {
 
   const handleChangeStep = async (newStepIndex: number) => {
     if (newStepIndex > step) {
-      // Validate current step before proceeding
       const isValid = await validateStep(step);
       if (!isValid) {
         Toast.error(t("validation.required"));
@@ -83,7 +81,6 @@ export default function CreateSupportScreen() {
       }
 
       if (newStepIndex > 2) {
-        // Submit the form
         handleSubmit(onSubmit)();
         return;
       }

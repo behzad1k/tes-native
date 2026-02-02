@@ -18,9 +18,6 @@ export function useSupportOperations() {
 	const supports = useAppSelector((state) => state.supports.supports);
 	const isLoading = useAppSelector((state) => state.supports.isLoading);
 
-	/**
-	 * Create a new support
-	 */
 	const createSupport = useCallback(
 		async (supportData: Omit<Support, "id" | "status" | "isNew">) => {
 			try {
@@ -34,9 +31,6 @@ export function useSupportOperations() {
 		[dispatch],
 	);
 
-	/**
-	 * Update an existing support
-	 */
 	const editSupport = useCallback(
 		async (supportId: string, updates: Partial<Support>) => {
 			try {
@@ -55,16 +49,11 @@ export function useSupportOperations() {
 		[dispatch],
 	);
 
-	/**
-	 * Delete a support
-	 */
 	const deleteSupport = useCallback(
 		async (supportId: string) => {
 			try {
-				// Delete associated images
 				await ImageStorage.deleteSignImages(supportId);
 
-				// Mark support for deletion
 				dispatch(markSupportForDeletion(supportId));
 
 				return { success: true };
@@ -76,9 +65,6 @@ export function useSupportOperations() {
 		[dispatch],
 	);
 
-	/**
-	 * Get a support by ID
-	 */
 	const getSupportById = useCallback(
 		(supportId: string): Support | undefined => {
 			return supports.find((support) => support.id === supportId);
@@ -86,16 +72,10 @@ export function useSupportOperations() {
 		[supports],
 	);
 
-	/**
-	 * Get all supports
-	 */
 	const getAllSupports = useCallback((): Support[] => {
 		return supports;
 	}, [supports]);
 
-	/**
-	 * Get pending supports (not synced)
-	 */
 	const getPendingSupports = useCallback((): Support[] => {
 		return supports.filter(
 			(support) => support.status === SYNC_STATUS.NOT_SYNCED,
@@ -116,9 +96,6 @@ export function useSupportOperations() {
 export function useSupportImages() {
 	const dispatch = useAppDispatch();
 
-	/**
-	 * Add image from camera
-	 */
 	const addImageFromCamera = useCallback(
 		async (supportId: string) => {
 			try {
@@ -160,9 +137,6 @@ export function useSupportImages() {
 		[dispatch],
 	);
 
-	/**
-	 * Add image from gallery
-	 */
 	const addImageFromGallery = useCallback(
 		async (supportId: string) => {
 			try {
@@ -205,9 +179,6 @@ export function useSupportImages() {
 		[dispatch],
 	);
 
-	/**
-	 * Remove an image
-	 */
 	const deleteImage = useCallback(
 		async (supportId: string, imageId: string) => {
 			try {
@@ -227,9 +198,6 @@ export function useSupportImages() {
 		[dispatch],
 	);
 
-	/**
-	 * Get images for a support
-	 */
 	const getSupportImages = useCallback((supportId: string): SupportImage[] => {
 		const supports = useAppSelector((state) => state.supports.supports);
 		const support = supports.find((s) => s.id === supportId);
@@ -244,9 +212,6 @@ export function useSupportImages() {
 	};
 }
 
-/**
- * Hook for managing support form state
- */
 export function useSupportForm(supportId?: string) {
 	const { getSupportById } = useSupportOperations();
 	const support = supportId ? getSupportById(supportId) : undefined;

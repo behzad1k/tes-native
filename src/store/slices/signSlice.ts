@@ -6,7 +6,7 @@ import { SYNC_STATUS } from "@/src/constants/global";
 
 interface SignState {
 	signs: Sign[];
-	backendImages: Record<string, string>; // imageId -> url
+	backendImages: Record<string, string>;
 	isLoading: boolean;
 	lastFetched: number | null;
 }
@@ -18,20 +18,16 @@ const initialState: SignState = {
 	lastFetched: null,
 };
 
-// Helper function to serialize dates
 const serializeDate = (date: Date | string): string => {
 	if (typeof date === "string") return date;
 	return date.toISOString();
 };
 
-// Helper function to deserialize dates
 const deserializeDate = (dateString: string): Date => {
 	return new Date(dateString);
 };
 
-// Auto-save helper
 const saveSignsToStorage = async (state: SignState) => {
-	// Serialize dates before saving
 	const serializedSigns = state.signs.map((sign) => ({
 		...sign,
 	}));
@@ -43,7 +39,6 @@ const saveSignsToStorage = async (state: SignState) => {
 	});
 };
 
-// Fetch signs from backend when online
 export const fetchSigns = createAsyncThunk(
 	"signs/fetch",
 	async (_, { rejectWithValue }) => {
@@ -57,7 +52,7 @@ export const fetchSigns = createAsyncThunk(
 
 			const signs: Sign[] = response.data.map((sign: any) => ({
 				...sign,
-				dateInstalled: sign.dateInstalled, // Keep as ISO string
+				dateInstalled: sign.dateInstalled,
 				isNew: false,
 				status: SYNC_STATUS.SYNCED,
 				images: sign.images.map((img: any) => ({
@@ -67,7 +62,6 @@ export const fetchSigns = createAsyncThunk(
 				})),
 			}));
 
-			// Extract backend images
 			const backendImages: Record<string, string> = {};
 			signs.forEach((sign) => {
 				sign.images.forEach((img) => {
@@ -88,25 +82,22 @@ const signsSlice = createSlice({
 	name: "signs",
 	initialState,
 	reducers: {
-		// CREATE - Add new sign (offline)
 		addSign: (
 			state,
 			action: PayloadAction<Omit<Sign, "id" | "status" | "isNew">>,
 		) => {
 			const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-			// Convert Date to ISO string
 			const dateInstalled = action.payload.dateInstalled;
 
-			// Process images - update signId for temporary images
 			const processedImages = (action.payload.images || []).map((img) => ({
 				...img,
-				signId: localId, // Update from "temp" to actual sign ID
+				signId: localId,
 			}));
 
 			const newSign: Sign = {
 				...action.payload,
-				dateInstalled, // Store as ISO string
+				dateInstalled,
 				id: localId,
 				localId,
 				isNew: true,
@@ -118,7 +109,6 @@ const signsSlice = createSlice({
 			saveSignsToStorage(state);
 		},
 
-		// UPDATE - Modify existing sign
 		updateSign: (
 			state,
 			action: PayloadAction<{
@@ -133,13 +123,11 @@ const signsSlice = createSlice({
 			if (signIndex !== -1) {
 				const sign = state.signs[signIndex];
 
-				// Convert Date to ISO string if present in updates
 				const serializedUpdates = { ...updates };
 				if (updates.dateInstalled) {
 					serializedUpdates.dateInstalled = updates.dateInstalled;
 				}
 
-				// If sign was synced before, mark as not synced
 				const status =
 					sign.status === SYNC_STATUS.SYNCED &&
 					(isNewImage || Object.keys(serializedUpdates).length > 0)
@@ -156,7 +144,6 @@ const signsSlice = createSlice({
 			}
 		},
 
-		// Add image to sign
 		addImageToSign: (
 			state,
 			action: PayloadAction<{
@@ -180,7 +167,6 @@ const signsSlice = createSlice({
 					imageId: isNew ? undefined : imageId,
 				};
 
-				// Save image locally if it's new
 				if (isNew) {
 					ImageStorage.saveImage(imageUri, signId, imageId).then(
 						(localPath) => {
@@ -191,14 +177,12 @@ const signsSlice = createSlice({
 
 				sign.images.push(newImage);
 
-				// Mark sign as not synced
 				sign.status = SYNC_STATUS.NOT_SYNCED;
 
 				saveSignsToStorage(state);
 			}
 		},
 
-		// Remove image
 		removeImage: (
 			state,
 			action: PayloadAction<{ signId: string; imageId: string }>,
@@ -213,7 +197,6 @@ const signsSlice = createSlice({
 				);
 
 				if (imageIndex !== -1) {
-					// Delete local file if exists
 					const image = sign.images[imageIndex];
 					if (image.localPath) {
 						ImageStorage.deleteImage(image.localPath);
@@ -226,7 +209,6 @@ const signsSlice = createSlice({
 			}
 		},
 
-		// DELETE - Mark for deletion (soft delete)
 		markSignForDeletion: (state, action: PayloadAction<string>) => {
 			const signIndex = state.signs.findIndex((s) => s.id === action.payload);
 
@@ -234,11 +216,9 @@ const signsSlice = createSlice({
 				const sign = state.signs[signIndex];
 
 				if (sign.status === SYNC_STATUS.SYNCED) {
-					// Mark for server deletion
 					sign.status = SYNC_STATUS.NOT_SYNCED;
-					sign.isNew = false; // It's not new, but needs deletion sync
+					sign.isNew = false;
 				} else {
-					// Remove locally if not yet synced
 					state.signs.splice(signIndex, 1);
 				}
 
@@ -246,7 +226,6 @@ const signsSlice = createSlice({
 			}
 		},
 
-		// Load saved signs from storage
 		loadSavedSigns: (
 			state,
 			action: PayloadAction<{
@@ -255,13 +234,11 @@ const signsSlice = createSlice({
 				lastFetched: number | null;
 			}>,
 		) => {
-			// Dates are already stored as ISO strings, no conversion needed
 			state.signs = action.payload.signs;
 			state.backendImages = action.payload.backendImages;
 			state.lastFetched = action.payload.lastFetched;
 		},
 
-		// Update after sync
 		updateAfterSync: (
 			state,
 			action: PayloadAction<{
@@ -276,14 +253,12 @@ const signsSlice = createSlice({
 			if (signIndex !== -1) {
 				const sign = state.signs[signIndex];
 
-				// Update sign ID
 				sign.id = serverId;
 				sign.serverId = serverId;
 				delete sign.localId;
 				sign.status = SYNC_STATUS.SYNCED;
 				sign.isNew = false;
 
-				// Update image IDs
 				sign.images.forEach((img, idx) => {
 					const update = imageUpdates.find(
 						(u) =>
@@ -295,7 +270,6 @@ const signsSlice = createSlice({
 						img.status = SYNC_STATUS.SYNCED;
 						img.isNew = false;
 
-						// Update backend images cache
 						if (img.uri.startsWith("http")) {
 							state.backendImages[update.serverImageId] = img.uri;
 						}

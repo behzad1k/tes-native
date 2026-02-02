@@ -40,12 +40,6 @@ export default function EditSupportScreen() {
     mode: "onChange",
   });
 
-  // useEffect(() => {
-  //   if (support) {
-  //     reset(initialValues);
-  //   }
-  // }, [support, initialValues, reset]);
-
   if (!support) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>

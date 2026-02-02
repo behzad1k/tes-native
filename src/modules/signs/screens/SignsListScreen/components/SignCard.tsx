@@ -16,14 +16,12 @@ import {
 import { SYNC_STATUS } from "@/src/constants/global";
 import { useTheme } from "@/src/contexts/ThemeContext";
 import Typography from "@/src/styles/theme/typography";
+import { isSupport } from "..";
 
 interface SignSupportCardProps {
   item: Sign | Support;
   onPress?: () => void;
 }
-
-export const isSupport = (item: Sign | Support) =>
-  Array.isArray((item as Support)?.signs);
 
 export default function SignSupportCard({
   item,

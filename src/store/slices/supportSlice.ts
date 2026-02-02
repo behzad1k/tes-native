@@ -18,20 +18,16 @@ const initialState: SupportState = {
 	lastFetched: null,
 };
 
-// Helper function to serialize dates
 const serializeDate = (date: Date | string): string => {
 	if (typeof date === "string") return date;
 	return date.toISOString();
 };
 
-// Helper function to deserialize dates
 const deserializeDate = (dateString: string): Date => {
 	return new Date(dateString);
 };
 
-// Auto-save helper
 const saveSupportsToStorage = async (state: SupportState) => {
-	// Serialize dates before saving
 	const serializedSupports = state.supports.map((support) => ({
 		...support,
 	}));
@@ -43,7 +39,6 @@ const saveSupportsToStorage = async (state: SupportState) => {
 	});
 };
 
-// Fetch supports from backend when online
 export const fetchSupports = createAsyncThunk(
 	"supports/fetch",
 	async (_, { rejectWithValue }) => {
@@ -57,7 +52,7 @@ export const fetchSupports = createAsyncThunk(
 
 			const supports: Support[] = response.data.map((support: any) => ({
 				...support,
-				dateInstalled: support.dateInstalled, // Keep as ISO string
+				dateInstalled: support.dateInstalled,
 				isNew: false,
 				status: SYNC_STATUS.SYNCED,
 				images: support.images.map((img: any) => ({
@@ -67,7 +62,6 @@ export const fetchSupports = createAsyncThunk(
 				})),
 			}));
 
-			// Extract backend images
 			const backendImages: Record<string, string> = {};
 			supports.forEach((support) => {
 				support.images.forEach((img) => {
@@ -88,7 +82,6 @@ const supportsSlice = createSlice({
 	name: "supports",
 	initialState,
 	reducers: {
-		// CREATE - Add new support (offline)
 		addSupport: (
 			state,
 			action: PayloadAction<Omit<Support, "id" | "status" | "isNew">>,
@@ -97,15 +90,14 @@ const supportsSlice = createSlice({
 
 			const dateInstalled = action.payload.dateInstalled;
 
-			// Process images - update supportId for temporary images
 			const processedImages = (action.payload.images || []).map((img) => ({
 				...img,
-				supportId: localId, // Update from "temp" to actual support ID
+				supportId: localId,
 			}));
 
 			const newSupport: Support = {
 				...action.payload,
-				dateInstalled, // Store as ISO string
+				dateInstalled,
 				id: localId,
 				localId,
 				isNew: true,
@@ -117,7 +109,6 @@ const supportsSlice = createSlice({
 			saveSupportsToStorage(state);
 		},
 
-		// UPDATE - Modify existing support
 		updateSupport: (
 			state,
 			action: PayloadAction<{
@@ -132,13 +123,11 @@ const supportsSlice = createSlice({
 			if (supportIndex !== -1) {
 				const support = state.supports[supportIndex];
 
-				// Convert Date to ISO string if present in updates
 				const serializedUpdates = { ...updates };
 				if (updates.dateInstalled) {
 					serializedUpdates.dateInstalled = updates.dateInstalled;
 				}
 
-				// If support was synced before, mark as not synced
 				const status =
 					support.status === SYNC_STATUS.SYNCED &&
 					(isNewImage || Object.keys(serializedUpdates).length > 0)
@@ -155,7 +144,6 @@ const supportsSlice = createSlice({
 			}
 		},
 
-		// Add image to support
 		addImageToSupport: (
 			state,
 			action: PayloadAction<{
@@ -179,7 +167,6 @@ const supportsSlice = createSlice({
 					imageId: isNew ? undefined : imageId,
 				};
 
-				// Save image locally if it's new
 				if (isNew) {
 					ImageStorage.saveImage(imageUri, supportId, imageId).then(
 						(localPath) => {
@@ -190,14 +177,12 @@ const supportsSlice = createSlice({
 
 				support.images.push(newImage);
 
-				// Mark support as not synced
 				support.status = SYNC_STATUS.NOT_SYNCED;
 
 				saveSupportsToStorage(state);
 			}
 		},
 
-		// Remove image
 		removeImage: (
 			state,
 			action: PayloadAction<{ supportId: string; imageId: string }>,
@@ -212,7 +197,6 @@ const supportsSlice = createSlice({
 				);
 
 				if (imageIndex !== -1) {
-					// Delete local file if exists
 					const image = support.images[imageIndex];
 					if (image.localPath) {
 						ImageStorage.deleteImage(image.localPath);
@@ -225,7 +209,6 @@ const supportsSlice = createSlice({
 			}
 		},
 
-		// DELETE - Mark for deletion (soft delete)
 		markSupportForDeletion: (state, action: PayloadAction<string>) => {
 			const supportIndex = state.supports.findIndex(
 				(s) => s.id === action.payload,
@@ -235,11 +218,9 @@ const supportsSlice = createSlice({
 				const support = state.supports[supportIndex];
 
 				if (support.status === SYNC_STATUS.SYNCED) {
-					// Mark for server deletion
 					support.status = SYNC_STATUS.NOT_SYNCED;
-					support.isNew = false; // It's not new, but needs deletion sync
+					support.isNew = false;
 				} else {
-					// Remove locally if not yet synced
 					state.supports.splice(supportIndex, 1);
 				}
 
@@ -247,7 +228,6 @@ const supportsSlice = createSlice({
 			}
 		},
 
-		// Load saved supports from storage
 		loadSavedSupports: (
 			state,
 			action: PayloadAction<{
@@ -256,13 +236,11 @@ const supportsSlice = createSlice({
 				lastFetched: number | null;
 			}>,
 		) => {
-			// Dates are already stored as ISO strings, no conversion needed
 			state.supports = action.payload.supports;
 			state.backendImages = action.payload.backendImages;
 			state.lastFetched = action.payload.lastFetched;
 		},
 
-		// Update after sync
 		updateAfterSync: (
 			state,
 			action: PayloadAction<{
@@ -279,14 +257,11 @@ const supportsSlice = createSlice({
 			if (supportIndex !== -1) {
 				const support = state.supports[supportIndex];
 
-				// Update support ID
 				support.id = serverId;
-				// support.serverId = serverId;
 				delete support.localId;
 				support.status = SYNC_STATUS.SYNCED;
 				support.isNew = false;
 
-				// Update image IDs
 				support.images.forEach((img, idx) => {
 					const update = imageUpdates.find(
 						(u) =>
@@ -298,7 +273,6 @@ const supportsSlice = createSlice({
 						img.status = SYNC_STATUS.SYNCED;
 						img.isNew = false;
 
-						// Update backend images cache
 						if (img.uri.startsWith("http")) {
 							state.backendImages[update.serverImageId] = img.uri;
 						}

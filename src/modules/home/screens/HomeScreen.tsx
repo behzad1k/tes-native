@@ -61,6 +61,12 @@ export function HomeScreen() {
           onPress={() => {}}
         />
         <ModuleCard
+          title="Maintenance"
+          description="You can count the number of vehicles and determine the direction of each one."
+          onPress={() => router.push(ROUTES.MAINTENCANCE_LIST)}
+          backgroundImage={LOCAL_IMAGES.MAINTENANCE_CARD}
+        />
+        <ModuleCard
           title={t("signs.title")}
           description="You can count the number of vehicles and determine the direction of each one."
           backgroundImage={LOCAL_IMAGES.SING_INVENTORY_CARD}
@@ -71,12 +77,6 @@ export function HomeScreen() {
           description="You can count the number of vehicles and determine the direction of each one."
           onPress={() => {}}
           backgroundImage={LOCAL_IMAGES.COLLISION_CARD}
-        />
-        <ModuleCard
-          title="Maintenance"
-          description="You can count the number of vehicles and determine the direction of each one."
-          onPress={() => {}}
-          backgroundImage={LOCAL_IMAGES.MAINTENANCE_CARD}
         />
         <ModuleCard
           title="Schedule"

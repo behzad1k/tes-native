@@ -1,4 +1,3 @@
-// store/index.ts
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import {
 	persistStore,
@@ -15,33 +14,38 @@ import authReducer from "./slices/authSlice";
 import signsReducer from "./slices/signSlice";
 import supportReducer from "./slices/supportSlice";
 import syncReducer from "./slices/syncSlice";
+import maintenanceReducer from "./slices/maintenanceSlice";
 
-// Persist configuration for signs
 const signsPersistConfig = {
 	key: "signs",
 	storage: AsyncStorage,
-	whitelist: ["signs", "backendImages", "lastFetched"], // Only persist these fields
+	whitelist: ["signs", "backendImages", "lastFetched"],
 };
 
-// Persist configuration for supports
 const supportsPersistConfig = {
 	key: "supports",
 	storage: AsyncStorage,
-	whitelist: ["supports", "backendImages", "lastFetched"], // Only persist these fields
+	whitelist: ["supports", "backendImages", "lastFetched"],
 };
 
-// Persist configuration for auth
 const authPersistConfig = {
 	key: "auth",
 	storage: AsyncStorage,
-	whitelist: ["user", "isAuthenticated"], // Don't persist loading states
+	whitelist: ["user", "isAuthenticated"],
+};
+
+const maintenancesPersistConfig = {
+	key: "maintenances",
+	storage: AsyncStorage,
+	whitelist: ["maintenances", "backendImages", "lastFetched"],
 };
 
 const rootReducer = combineReducers({
 	auth: persistReducer(authPersistConfig, authReducer),
 	signs: persistReducer(signsPersistConfig, signsReducer),
 	supports: persistReducer(supportsPersistConfig, supportReducer),
-	sync: syncReducer, // Don't persist sync state
+	maintenances: persistReducer(maintenancesPersistConfig, maintenanceReducer),
+	sync: syncReducer,
 });
 
 export const store = configureStore({
@@ -50,7 +54,6 @@ export const store = configureStore({
 		getDefaultMiddleware({
 			serializableCheck: {
 				ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-				// Ignore date fields in state and actions
 				ignoredActionPaths: ["payload.dateInstalled"],
 				ignoredPaths: ["signs.signs"],
 			},

@@ -4,7 +4,6 @@ import { Theme } from "@/src/types/theme";
 import { StyleProp, StyleSheet, TouchableOpacity, View } from "react-native";
 import TextView from "../ui/TextView";
 import { colors } from "@/src/styles/theme/colors";
-import Typography from "@/src/styles/theme/typography";
 import { ViewStyle } from "react-native/Libraries/StyleSheet/StyleSheetTypes";
 
 interface TabsProps {
@@ -26,7 +25,7 @@ const Tabs = ({
     <View style={[styles.container, containerStyle]}>
       {Object.entries(tabs)?.map(([t, v]) => (
         <TouchableOpacity
-          onPress={() => setTab(t)}
+          onPress={() => setTab(v.id)}
           key={t}
           style={[styles.tab, tabStyle, tab == t ? styles.activeTab : {}]}
         >

@@ -20,7 +20,6 @@ class ApiClient {
 	}
 
 	private setupInterceptors() {
-		// Request interceptor
 		this.client.interceptors.request.use(
 			async (config) => {
 				const token = await StorageService.getItem<string>("token");
@@ -33,7 +32,6 @@ class ApiClient {
 			(error) => Promise.reject(error),
 		);
 
-		// Response interceptor
 		this.client.interceptors.response.use(
 			(response) => response,
 			(error) => {

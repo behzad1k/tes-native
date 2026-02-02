@@ -43,15 +43,6 @@ const validations = {
 		}
 		return true;
 	},
-
-	// validateEmailExists: async (email: string) => {
-	// 	try {
-	// 		const exists = await checkEmailExists(email);
-	// 		return exists ? "Email already registered" : true;
-	// 	} catch {
-	// 		return "Unable to validate email";
-	// 	}
-	// },
 };
 
 export default validations;

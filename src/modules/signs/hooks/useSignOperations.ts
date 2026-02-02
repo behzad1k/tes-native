@@ -17,9 +17,6 @@ export function useSignOperations() {
 	const signs = useAppSelector((state) => state.signs.signs);
 	const isLoading = useAppSelector((state) => state.signs.isLoading);
 
-	/**
-	 * Create a new sign
-	 */
 	const createSign = useCallback(
 		async (signData: Omit<Sign, "id" | "status" | "isNew">) => {
 			try {
@@ -33,9 +30,6 @@ export function useSignOperations() {
 		[dispatch],
 	);
 
-	/**
-	 * Update an existing sign
-	 */
 	const editSign = useCallback(
 		async (signId: string, updates: Partial<Sign>) => {
 			try {
@@ -54,16 +48,11 @@ export function useSignOperations() {
 		[dispatch],
 	);
 
-	/**
-	 * Delete a sign
-	 */
 	const deleteSign = useCallback(
 		async (signId: string) => {
 			try {
-				// Delete associated images
 				await ImageStorage.deleteSignImages(signId);
 
-				// Mark sign for deletion
 				dispatch(markSignForDeletion(signId));
 
 				return { success: true };
@@ -75,9 +64,6 @@ export function useSignOperations() {
 		[dispatch],
 	);
 
-	/**
-	 * Get a sign by ID
-	 */
 	const getSignById = useCallback(
 		(signId: string): Sign | undefined => {
 			return signs.find((sign) => sign.id === signId);
@@ -85,16 +71,10 @@ export function useSignOperations() {
 		[signs],
 	);
 
-	/**
-	 * Get all signs
-	 */
 	const getAllSigns = useCallback((): Sign[] => {
 		return signs;
 	}, [signs]);
 
-	/**
-	 * Get pending signs (not synced)
-	 */
 	const getPendingSigns = useCallback((): Sign[] => {
 		return signs.filter((sign) => sign.status === "NOT_SYNCED");
 	}, [signs]);
@@ -113,9 +93,6 @@ export function useSignOperations() {
 export function useSignImages() {
 	const dispatch = useAppDispatch();
 
-	/**
-	 * Add image from camera
-	 */
 	const addImageFromCamera = useCallback(
 		async (signId: string) => {
 			try {
@@ -157,9 +134,6 @@ export function useSignImages() {
 		[dispatch],
 	);
 
-	/**
-	 * Add image from gallery
-	 */
 	const addImageFromGallery = useCallback(
 		async (signId: string) => {
 			try {
@@ -202,9 +176,6 @@ export function useSignImages() {
 		[dispatch],
 	);
 
-	/**
-	 * Remove an image
-	 */
 	const deleteImage = useCallback(
 		async (signId: string, imageId: string) => {
 			try {
@@ -224,9 +195,6 @@ export function useSignImages() {
 		[dispatch],
 	);
 
-	/**
-	 * Get images for a sign
-	 */
 	const getSignImages = useCallback((signId: string): SignImage[] => {
 		const signs = useAppSelector((state) => state.signs.signs);
 		const sign = signs.find((s) => s.id === signId);
@@ -241,9 +209,6 @@ export function useSignImages() {
 	};
 }
 
-/**
- * Hook for managing sign form state
- */
 export function useSignForm(signId?: string) {
 	const { getSignById } = useSignOperations();
 	const sign = signId ? getSignById(signId) : undefined;

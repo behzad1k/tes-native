@@ -33,9 +33,9 @@ import { SYNC_STATUS } from "@/src/constants/global";
 
 interface ImageStepProps {
   supportFormControl: Control<SupportFormData, any, SupportFormData>;
-  supportId?: string; // Optional for edit mode
-  tempImages?: SupportImage[]; // For create mode
-  setTempImages?: React.Dispatch<React.SetStateAction<SupportImage[]>>; // For create mode
+  supportId?: string;
+  tempImages?: SupportImage[];
+  setTempImages?: React.Dispatch<React.SetStateAction<SupportImage[]>>;
   isCreateMode?: boolean;
 }
 
@@ -51,7 +51,6 @@ const ImageStep = ({
   const { addImageFromCamera, addImageFromGallery, deleteImage } =
     useSupportImages();
 
-  // Get images from Redux store (for edit mode)
   const supports = useAppSelector((state) => state.supports.supports);
   const currentSupport = supportId
     ? supports.find((s) => s.id === supportId)
@@ -70,34 +69,28 @@ const ImageStep = ({
 
   const handleTakePhoto = async () => {
     if (isCreateMode) {
-      // Handle temporary image for create mode
       await handleTempImageFromCamera();
     } else {
-      // Handle image for edit mode
       if (!supportId) {
         Alert.alert("Error", "Support ID is required");
         return;
       }
       const result = await addImageFromCamera(supportId);
       if (result.success) {
-        // Images will be updated automatically via Redux
       }
     }
   };
 
   const handleBrowseFiles = async () => {
     if (isCreateMode) {
-      // Handle temporary image for create mode
       await handleTempImageFromGallery();
     } else {
-      // Handle image for edit mode
       if (!supportId) {
         Alert.alert("Error", "Support ID is required");
         return;
       }
       const result = await addImageFromGallery(supportId);
       if (result.success) {
-        // Images will be updated automatically via Redux
       }
     }
   };
@@ -125,7 +118,7 @@ const ImageStep = ({
 
         const newImage: SupportImage = {
           uri: imageUri,
-          supportId: "temp", // Will be updated when support is created
+          supportId: "temp",
           isNew: true,
           status: SYNC_STATUS.NOT_SYNCED,
           imageId: tempImageId,
@@ -167,7 +160,7 @@ const ImageStep = ({
 
         const newImage: SupportImage = {
           uri: imageUri,
-          supportId: "temp", // Will be updated when support is created
+          supportId: "temp",
           isNew: true,
           status: SYNC_STATUS.NOT_SYNCED,
           imageId: tempImageId,
@@ -185,56 +178,31 @@ const ImageStep = ({
   };
 
   const handleDeleteImage = async (imageId: string, index: number) => {
-    if (isCreateMode) {
-      // Delete from temporary images
-      Alert.alert(
-        "Delete Image",
-        "Are you sure you want to delete this image?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => {
-              if (setTempImages) {
-                setTempImages((prev) => prev.filter((_, i) => i !== index));
-              }
-            },
-          },
-        ],
-      );
-    } else {
-      // Delete from Redux store
-      if (!supportId) return;
-
-      Alert.alert(
-        "Delete Image",
-        "Are you sure you want to delete this image?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              const result = await deleteImage(supportId, imageId);
-              if (!result.success) {
-                Alert.alert("Error", "Failed to delete image");
-              }
-            },
-          },
-        ],
-      );
-    }
+    Alert.alert("Delete Image", "Are you sure you want to delete this image?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          if (isCreateMode) {
+            if (setTempImages) {
+              setTempImages((prev) => prev.filter((_, i) => i !== index));
+            }
+          } else if (supportId) {
+            const result = await deleteImage(supportId, imageId);
+            if (!result.success) {
+              Alert.alert("Error", "Failed to delete image");
+            }
+          }
+        },
+      },
+    ]);
   };
 
   const handleFetchFromServer = () => {
-    // TODO: Implement server fetch
     Alert.alert(
       "Coming Soon",
       "Fetch from server feature will be available soon",

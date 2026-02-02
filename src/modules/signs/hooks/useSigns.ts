@@ -47,7 +47,6 @@ export function usePendingSigns() {
 }
 
 export function useSignById(id: string | null) {
-	// const database = useDatabase();
 	const signsCollection: any = {};
 
 	if (!id) {

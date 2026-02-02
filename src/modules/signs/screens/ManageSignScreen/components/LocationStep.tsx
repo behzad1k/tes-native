@@ -2,7 +2,6 @@ import React from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
-import TextInputView from "@/src/components/ui/TextInputView";
 import { spacing } from "@/src/styles/theme/spacing";
 import { useTranslation } from "react-i18next";
 import FormSelectBox from "@/src/components/ui/FormSelectBox";

@@ -22,14 +22,14 @@ export interface Sign {
 	reflectiveCoatingId: string;
 	reflectiveRatingId: string;
 	dimensionId: string;
-	dateInstalled: string; // Store as ISO string for Redux serialization
+	dateInstalled: string;
 	conditionId: string;
 	note: string;
 	images: SignImage[];
 	isNew: boolean;
 	status: SyncStatus;
-	localId?: string; // Temporary ID for unsynced signs
-	serverId?: string; // Server ID after sync
+	localId?: string;
+	serverId?: string;
 }
 
 export interface Support {
@@ -50,7 +50,6 @@ export interface Support {
 		id: string;
 		supportId?: string;
 		signId: string;
-		// Add other sign properties from the previous Sign interface as needed
 		[key: string]: any;
 	}>;
 	images: Array<SupportImage>;
@@ -79,4 +78,94 @@ export interface BackendImage {
 	url: string;
 	signId: string;
 	thumbnailUrl?: string;
+}
+export interface MaintenanceImage {
+	id?: string;
+	uri: string;
+	isSynced: boolean;
+	jobId: string;
+	isNew?: boolean;
+	localPath?: string;
+}
+
+export interface JobAsset {
+	id: string;
+	assetId: string;
+	type: number;
+	statusId: string;
+	note?: string;
+	isEdited?: boolean;
+}
+
+export interface MaintenanceJob {
+	id: string;
+	name: string;
+	typeId: string;
+	typeName: string;
+	statusId: string;
+	statusName: string;
+	assignDate: string;
+	duration: number;
+	note?: string;
+	assets: JobAsset[];
+	isEdited?: boolean;
+	isSynced: boolean;
+}
+
+export interface MaintenanceJobUpdate {
+	statusId?: string;
+	duration?: number;
+	note?: string;
+	assets?: JobAsset[];
+}
+
+export interface JobAssetUpdate {
+	id: string;
+	statusId?: string;
+	note?: string;
+}
+
+export interface JobType {
+	id: string;
+	name: string;
+}
+
+export interface JobStatus {
+	id: string;
+	name: string;
+}
+
+export enum FilterMaintenanceOperator {
+	EQUAL = "equal",
+	MORE = "more",
+	LESS = "less",
+}
+
+export type FilterMaintenance = {
+	key: string;
+	value: string;
+	operator?: FilterMaintenanceOperator;
+};
+
+export type SortMaintenance = { key: string; dir: "ASC" | "DESC" };
+
+export interface MapCoordinate {
+	latitude: number;
+	longitude: number;
+}
+
+export interface MapRegion extends MapCoordinate {
+	latitudeDelta?: number;
+	longitudeDelta?: number;
+	zoom?: number;
+}
+
+export interface MapMarkerData {
+	id: string;
+	type: 1 | 2;
+	coordinate: MapCoordinate;
+	title: string;
+	statusId: string;
+	statusName: string;
+	jobId: string;
 }

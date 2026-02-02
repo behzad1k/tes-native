@@ -54,7 +54,6 @@ export default {
       },
     ],
     "expo-location",
-    "@nozbe/watermelondb/watermelondb-expo-plugin",
     {
       locationAlwaysAndWhenInUsePermission:
         "Allow $(PRODUCT_NAME) to use your location.",
