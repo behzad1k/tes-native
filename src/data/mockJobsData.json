@@ -1,0 +1,294 @@
+{
+  "jobs": [
+    {
+      "id": "job_001",
+      "name": "Routine Maintenance - Main Street Signs",
+      "typeId": "type_maintenance",
+      "typeName": "Routine Maintenance",
+      "statusId": "status_pending",
+      "statusName": "Pending",
+      "assignDate": "2026-01-28",
+      "duration": 120,
+      "note": "Check all signs along Main Street for damage and fading. Replace any damaged reflective materials.",
+      "assets": [
+        {
+          "id": "asset_001",
+          "assetId": "sign_101",
+          "type": 1,
+          "statusId": "status_pending",
+          "note": "Stop sign needs cleaning"
+        },
+        {
+          "id": "asset_002",
+          "assetId": "support_201",
+          "type": 2,
+          "statusId": "status_pending",
+          "note": "Support post is rusted"
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    },
+    {
+      "id": "job_002",
+      "name": "Emergency Repair - Highway 101",
+      "typeId": "type_emergency",
+      "typeName": "Emergency Repair",
+      "statusId": "status_in_progress",
+      "statusName": "In Progress",
+      "assignDate": "2026-01-30",
+      "duration": 180,
+      "note": "Speed limit sign knocked down by vehicle. Priority repair needed.",
+      "assets": [
+        {
+          "id": "asset_003",
+          "assetId": "sign_205",
+          "type": 1,
+          "statusId": "status_in_progress",
+          "note": "Sign completely down, needs replacement"
+        },
+        {
+          "id": "asset_004",
+          "assetId": "support_305",
+          "type": 2,
+          "statusId": "status_in_progress",
+          "note": "Support bent, needs straightening"
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    },
+    {
+      "id": "job_003",
+      "name": "Installation - New School Zone",
+      "typeId": "type_installation",
+      "typeName": "New Installation",
+      "statusId": "status_completed",
+      "statusName": "Completed",
+      "assignDate": "2026-01-25",
+      "duration": 240,
+      "note": "Install new school zone signs and pedestrian crossing signs near Lincoln Elementary School. Job completed ahead of schedule.",
+      "assets": [
+        {
+          "id": "asset_005",
+          "assetId": "sign_310",
+          "type": 1,
+          "statusId": "status_completed",
+          "note": "School zone sign installed successfully"
+        },
+        {
+          "id": "asset_006",
+          "assetId": "sign_311",
+          "type": 1,
+          "statusId": "status_completed",
+          "note": "Pedestrian crossing sign installed"
+        },
+        {
+          "id": "asset_007",
+          "assetId": "support_410",
+          "type": 2,
+          "statusId": "status_completed",
+          "note": "New support installed with concrete base"
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    },
+    {
+      "id": "job_004",
+      "name": "Inspection - Downtown District",
+      "typeId": "type_inspection",
+      "typeName": "Annual Inspection",
+      "statusId": "status_pending",
+      "statusName": "Pending",
+      "assignDate": "2026-02-01",
+      "duration": 300,
+      "note": "Annual inspection of all traffic signs in downtown district. Check for visibility, damage, and compliance with current regulations.",
+      "assets": [
+        {
+          "id": "asset_008",
+          "assetId": "sign_450",
+          "type": 1,
+          "statusId": "status_pending",
+          "note": ""
+        },
+        {
+          "id": "asset_009",
+          "assetId": "sign_451",
+          "type": 1,
+          "statusId": "status_pending",
+          "note": ""
+        },
+        {
+          "id": "asset_010",
+          "assetId": "sign_452",
+          "type": 1,
+          "statusId": "status_pending",
+          "note": ""
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    },
+    {
+      "id": "job_005",
+      "name": "Replacement - Faded Warning Signs",
+      "typeId": "type_replacement",
+      "typeName": "Sign Replacement",
+      "statusId": "status_in_progress",
+      "statusName": "In Progress",
+      "assignDate": "2026-01-29",
+      "duration": 150,
+      "note": "Replace faded warning signs along River Road. Signs have lost reflectivity due to sun exposure.",
+      "assets": [
+        {
+          "id": "asset_011",
+          "assetId": "sign_550",
+          "type": 1,
+          "statusId": "status_completed",
+          "note": "Replaced with new reflective sign"
+        },
+        {
+          "id": "asset_012",
+          "assetId": "sign_551",
+          "type": 1,
+          "statusId": "status_in_progress",
+          "note": "Waiting for new sign delivery"
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    },
+    {
+      "id": "job_006",
+      "name": "Storm Damage Assessment",
+      "typeId": "type_emergency",
+      "typeName": "Emergency Repair",
+      "statusId": "status_pending",
+      "statusName": "Pending",
+      "assignDate": "2026-01-31",
+      "duration": 180,
+      "note": "Assess and repair storm damage from yesterday's high winds. Multiple signs reported down.",
+      "assets": [
+        {
+          "id": "asset_013",
+          "assetId": "sign_650",
+          "type": 1,
+          "statusId": "status_pending",
+          "note": "Sign blown over, needs assessment"
+        },
+        {
+          "id": "asset_014",
+          "assetId": "support_650",
+          "type": 2,
+          "statusId": "status_pending",
+          "note": "Support may need replacement"
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    },
+    {
+      "id": "job_007",
+      "name": "Parking Sign Updates - City Hall",
+      "typeId": "type_modification",
+      "typeName": "Sign Modification",
+      "statusId": "status_completed",
+      "statusName": "Completed",
+      "assignDate": "2026-01-26",
+      "duration": 90,
+      "note": "Update parking restriction signs around City Hall. New parking policy in effect.",
+      "assets": [
+        {
+          "id": "asset_015",
+          "assetId": "sign_700",
+          "type": 1,
+          "statusId": "status_completed",
+          "note": "Updated to 2-hour parking"
+        },
+        {
+          "id": "asset_016",
+          "assetId": "sign_701",
+          "type": 1,
+          "statusId": "status_completed",
+          "note": "Updated to no parking zone"
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    },
+    {
+      "id": "job_008",
+      "name": "Night Reflectivity Check",
+      "typeId": "type_inspection",
+      "typeName": "Annual Inspection",
+      "statusId": "status_in_progress",
+      "statusName": "In Progress",
+      "assignDate": "2026-01-30",
+      "duration": 240,
+      "note": "Night-time inspection of sign reflectivity on Highway 5. Part of annual safety audit.",
+      "assets": [
+        {
+          "id": "asset_017",
+          "assetId": "sign_800",
+          "type": 1,
+          "statusId": "status_in_progress",
+          "note": "Reflectivity below standard, needs replacement"
+        },
+        {
+          "id": "asset_018",
+          "assetId": "sign_801",
+          "type": 1,
+          "statusId": "status_completed",
+          "note": "Reflectivity acceptable"
+        }
+      ],
+      "isEdited": false,
+      "isSynced": true
+    }
+  ],
+  "jobStatuses": [
+    {
+      "id": "status_pending",
+      "name": "Pending"
+    },
+    {
+      "id": "status_in_progress",
+      "name": "In Progress"
+    },
+    {
+      "id": "status_completed",
+      "name": "Completed"
+    },
+    {
+      "id": "status_cancelled",
+      "name": "Cancelled"
+    }
+  ],
+  "jobTypes": [
+    {
+      "id": "type_maintenance",
+      "name": "Routine Maintenance"
+    },
+    {
+      "id": "type_emergency",
+      "name": "Emergency Repair"
+    },
+    {
+      "id": "type_installation",
+      "name": "New Installation"
+    },
+    {
+      "id": "type_inspection",
+      "name": "Annual Inspection"
+    },
+    {
+      "id": "type_replacement",
+      "name": "Sign Replacement"
+    },
+    {
+      "id": "type_modification",
+      "name": "Sign Modification"
+    }
+  ]
+}

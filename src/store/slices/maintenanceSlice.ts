@@ -1,0 +1,264 @@
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { apiClient } from "@/src/services/api/apiClient";
+import { ReduxStorage, ImageStorage, TokenStorage } from "../persistence";
+import {
+	MaintenanceJob,
+	MaintenanceImage,
+	JobAsset,
+	JobStatus,
+	JobType,
+} from "@/src/types/models";
+import mockData from "@/src/data/mockJobsData.json";
+interface MaintenanceState {
+	jobs: MaintenanceJob[];
+	jobStatuses: JobStatus[];
+	jobTypes: JobType[];
+	jobImages: MaintenanceImage[];
+	isLoading: boolean;
+	lastFetched: number | null;
+}
+
+const initialState: MaintenanceState = {
+	jobs: [],
+	jobStatuses: [],
+	jobTypes: [],
+	jobImages: [],
+	isLoading: false,
+	lastFetched: null,
+};
+
+const saveToStorage = async (state: MaintenanceState) => {
+	await ReduxStorage.saveState("maintenance_data", {
+		jobs: state.jobs,
+		jobStatuses: state.jobStatuses,
+		jobTypes: state.jobTypes,
+		jobImages: state.jobImages,
+		lastFetched: state.lastFetched,
+	});
+};
+
+export const fetchJobs = createAsyncThunk(
+	"maintenance/fetchJobs",
+	async (_, { rejectWithValue }) => {
+		try {
+			console.log("Using mock data (backend is down)");
+
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			return {
+				jobs: mockData.jobs,
+				jobStatuses: mockData.jobStatuses,
+				jobTypes: mockData.jobTypes,
+			};
+
+			/*
+      const token = await TokenStorage.getToken();
+      if (!token) return rejectWithValue("No token");
+
+      const response = await apiClient.get("/sync/appData", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = response.data;
+
+      return {
+        jobs: data.jobs || [],
+        jobStatuses: data.jobStatuses || [],
+        jobTypes: data.jobTypes || [],
+      };
+      */
+		} catch (error: any) {
+			return rejectWithValue(error.message);
+		}
+	},
+);
+
+export const updateJob = createAsyncThunk(
+	"maintenance/updateJob",
+	async (job: MaintenanceJob, { rejectWithValue }) => {
+		try {
+			const token = await TokenStorage.getToken();
+			if (!token) {
+				return { job, offline: true };
+			}
+
+			const response = await apiClient.put(`/maintenance/jobs/${job.id}`, job, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+
+			return { job: response.data, offline: false };
+		} catch (error: any) {
+			return { job, offline: true };
+		}
+	},
+);
+
+export const updateJobAsset = createAsyncThunk(
+	"maintenance/updateJobAsset",
+	async (
+		{ jobId, asset }: { jobId: string; asset: JobAsset },
+		{ getState, rejectWithValue },
+	) => {
+		try {
+			const token = await TokenStorage.getToken();
+			if (!token) {
+				return { jobId, asset, offline: true };
+			}
+
+			const response = await apiClient.put(
+				`/maintenance/jobs/${jobId}/assets/${asset.id}`,
+				asset,
+				{ headers: { Authorization: `Bearer ${token}` } },
+			);
+
+			return { jobId, asset: response.data, offline: false };
+		} catch (error: any) {
+			return { jobId, asset, offline: true };
+		}
+	},
+);
+
+export const downloadJobAttachments = createAsyncThunk(
+	"maintenance/downloadAttachments",
+	async (jobId: string, { rejectWithValue }) => {
+		try {
+			const token = await TokenStorage.getToken();
+			if (!token) return rejectWithValue("No token");
+
+			const response = await apiClient.get(
+				`/Attachments/DownloadAttachments/${jobId}`,
+				{
+					headers: { Authorization: `Bearer ${token}` },
+				},
+			);
+
+			const files = response.data;
+			const images: MaintenanceImage[] = [];
+
+			return { jobId, images };
+		} catch (error: any) {
+			return rejectWithValue(error.message);
+		}
+	},
+);
+
+const maintenanceSlice = createSlice({
+	name: "maintenance",
+	initialState,
+	reducers: {
+		addJobImagesLocally: (state, action: PayloadAction<MaintenanceImage[]>) => {
+			state.jobImages.push(...action.payload);
+			saveToStorage(state);
+		},
+
+		removeJobImage: (state, action: PayloadAction<string>) => {
+			const imageUri = action.payload;
+			state.jobImages = state.jobImages.filter((img) => img.uri !== imageUri);
+
+			ImageStorage.deleteImage(imageUri);
+			saveToStorage(state);
+		},
+
+		loadSavedData: (
+			state,
+			action: PayloadAction<{
+				jobs: MaintenanceJob[];
+				jobStatuses: JobStatus[];
+				jobTypes: JobType[];
+				jobImages: MaintenanceImage[];
+				lastFetched: number | null;
+			}>,
+		) => {
+			state.jobs = action.payload.jobs;
+			state.jobStatuses = action.payload.jobStatuses;
+			state.jobTypes = action.payload.jobTypes;
+			state.jobImages = action.payload.jobImages;
+			state.lastFetched = action.payload.lastFetched;
+		},
+
+		updateJobLocally: (state, action: PayloadAction<MaintenanceJob>) => {
+			const index = state.jobs.findIndex((j) => j.id === action.payload.id);
+			if (index !== -1) {
+				state.jobs[index] = { ...action.payload, isEdited: true };
+				saveToStorage(state);
+			}
+		},
+
+		markJobSynced: (state, action: PayloadAction<string>) => {
+			const job = state.jobs.find((j) => j.id === action.payload);
+			if (job) {
+				job.isSynced = true;
+				job.isEdited = false;
+				saveToStorage(state);
+			}
+		},
+	},
+	extraReducers: (builder) => {
+		builder
+			.addCase(fetchJobs.pending, (state) => {
+				state.isLoading = true;
+			})
+			.addCase(fetchJobs.fulfilled, (state, action) => {
+				state.jobs = action.payload.jobs;
+				state.jobStatuses = action.payload.jobStatuses;
+				state.jobTypes = action.payload.jobTypes;
+				state.lastFetched = Date.now();
+				state.isLoading = false;
+				saveToStorage(state);
+			})
+			.addCase(fetchJobs.rejected, (state) => {
+				state.isLoading = false;
+			})
+
+			.addCase(updateJob.fulfilled, (state, action) => {
+				const { job, offline } = action.payload;
+				const index = state.jobs.findIndex((j) => j.id === job.id);
+
+				if (index !== -1) {
+					state.jobs[index] = {
+						...job,
+						isSynced: !offline,
+						isEdited: offline,
+					};
+					saveToStorage(state);
+				}
+			})
+
+			.addCase(updateJobAsset.fulfilled, (state, action) => {
+				const { jobId, asset, offline } = action.payload;
+				const job = state.jobs.find((j) => j.id === jobId);
+
+				if (job) {
+					const assetIndex = job.assets.findIndex((a) => a.id === asset.id);
+					if (assetIndex !== -1) {
+						job.assets[assetIndex] = { ...asset, isEdited: offline };
+						job.isEdited = offline;
+						job.isSynced = !offline;
+					}
+					saveToStorage(state);
+				}
+			})
+
+			.addCase(downloadJobAttachments.fulfilled, (state, action) => {
+				const { images } = action.payload;
+
+				images.forEach((img) => {
+					if (!state.jobImages.some((existing) => existing.id === img.id)) {
+						state.jobImages.push(img);
+					}
+				});
+
+				saveToStorage(state);
+			});
+	},
+});
+
+export const {
+	addJobImagesLocally,
+	removeJobImage,
+	loadSavedData,
+	updateJobLocally,
+	markJobSynced,
+} = maintenanceSlice.actions;
+
+export default maintenanceSlice.reducer;
