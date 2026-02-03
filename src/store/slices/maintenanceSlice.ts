@@ -51,22 +51,20 @@ export const fetchJobs = createAsyncThunk(
 				jobTypes: mockData.jobTypes,
 			};
 
-			/*
-      const token = await TokenStorage.getToken();
-      if (!token) return rejectWithValue("No token");
+			const token = await TokenStorage.getToken();
+			if (!token) return rejectWithValue("No token");
 
-      const response = await apiClient.get("/sync/appData", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+			const response = await apiClient.get("/sync/appData", {
+				headers: { Authorization: `Bearer ${token}` },
+			});
 
-      const data = response.data;
+			const data = response.data;
 
-      return {
-        jobs: data.jobs || [],
-        jobStatuses: data.jobStatuses || [],
-        jobTypes: data.jobTypes || [],
-      };
-      */
+			return {
+				jobs: data.jobs || [],
+				jobStatuses: data.jobStatuses || [],
+				jobTypes: data.jobTypes || [],
+			};
 		} catch (error: any) {
 			return rejectWithValue(error.message);
 		}
