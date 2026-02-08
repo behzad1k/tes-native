@@ -12,10 +12,10 @@ import {
   LineVertical,
   TrafficSign,
   XCircle,
+  CloudArrowUp,
 } from "phosphor-react-native";
 import { SYNC_STATUS } from "@/src/constants/global";
 import { useTheme } from "@/src/contexts/ThemeContext";
-import Typography from "@/src/styles/theme/typography";
 import { isSupport } from "..";
 
 interface SignSupportCardProps {
@@ -33,11 +33,11 @@ export default function SignSupportCard({
   const getStatusIcon = () => {
     switch (item.status) {
       case SYNC_STATUS.SYNCED:
-        return <CheckCircle size={20} color={colors.success} weight="fill" />;
+        return <CheckCircle size={18} color={colors.success} weight="fill" />;
       case SYNC_STATUS.NOT_SYNCED:
-        return <XCircle size={20} color={colors.error} weight="fill" />;
-      // case "failed":
-      // return <Clock size={20} color={colors.warning} weight="fill" />;
+        return <CloudArrowUp size={18} color={colors.warning} weight="fill" />;
+      default:
+        return <XCircle size={18} color={colors.error} weight="fill" />;
     }
   };
 
@@ -46,30 +46,83 @@ export default function SignSupportCard({
       case SYNC_STATUS.SYNCED:
         return "Synced";
       case SYNC_STATUS.NOT_SYNCED:
-        return "Pending Failed";
+        return item.isNew ? "New" : "Modified";
+      default:
+        return "Error";
     }
   };
 
+  const getStatusColor = () => {
+    switch (item.status) {
+      case SYNC_STATUS.SYNCED:
+        return colors.success;
+      case SYNC_STATUS.NOT_SYNCED:
+        return colors.warning;
+      default:
+        return colors.error;
+    }
+  };
+
+  // Check if item has new images
+  const hasNewImages = item.images?.some((img) => img.isNew) || false;
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.icon}>
-        {isSupport(item) ? (
-          <LineVertical size={24} color={theme.secondary} />
-        ) : (
-          <TrafficSign size={24} color={theme.secondary} />
+      <View style={styles.iconContainer}>
+        <View
+          style={[
+            styles.icon,
+            item.status === SYNC_STATUS.NOT_SYNCED && styles.iconUnsynced,
+          ]}
+        >
+          {isSupport(item) ? (
+            <LineVertical size={24} color={theme.secondary} />
+          ) : (
+            <TrafficSign size={24} color={theme.secondary} />
+          )}
+        </View>
+        {item.status === SYNC_STATUS.NOT_SYNCED && (
+          <View style={styles.unsyncedBadge} />
         )}
       </View>
+
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <TextView style={styles.signTitle}>{item.localId}</TextView>
-          {/*<View style={styles.statusBadge}>
+          <TextView style={styles.signTitle}>
+            {isSupport(item)
+              ? (item as Support).supportId
+              : (item as Sign).signId}
+          </TextView>
+
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor() + "20" },
+            ]}
+          >
             {getStatusIcon()}
-            <TextView variant="caption" style={styles.statusText}>
+            <TextView
+              variant="caption"
+              style={[styles.statusText, { color: getStatusColor() }]}
+            >
               {getStatusText()}
             </TextView>
-          </View>*/}
+          </View>
         </View>
-        <TextView style={styles.signDescription}>{item.note}</TextView>
+
+        <View style={styles.metaRow}>
+          <TextView style={styles.signDescription} numberOfLines={1}>
+            {item.note || "No description"}
+          </TextView>
+
+          {hasNewImages && (
+            <View style={styles.imageBadge}>
+              <TextView style={styles.imageBadgeText}>
+                +{item.images.filter((img) => img.isNew).length} images
+              </TextView>
+            </View>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -80,69 +133,90 @@ const createStyles = (theme: Theme) =>
     card: {
       flexDirection: "row",
       paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
+      paddingVertical: spacing.sm,
       borderBottomWidth: 1,
       borderColor: theme.border,
-      gap: 10,
+      gap: 12,
+    },
+    iconContainer: {
+      position: "relative",
     },
     icon: {
       margin: "auto",
-      borderRadius: 200,
+      borderRadius: 20,
       backgroundColor: theme.primary,
-      padding: spacing.xxs,
-    },
-    header: {
-      flex: 1,
-    },
-    titleRow: {
-      flex: 1,
-      flexDirection: "row",
-      justifyContent: "space-between",
+      padding: spacing.xs,
+      width: 48,
+      height: 48,
+      justifyContent: "center",
       alignItems: "center",
     },
-    signTitle: {
-      fontWeight: 600,
-      fontSize: 14,
-      lineHeight: 22,
+    iconUnsynced: {
+      borderWidth: 2,
+      borderColor: colors.warning,
     },
-    signDescription: {
-      fontWeight: 400,
-      fontSize: 10,
-      lineHeight: 18,
-      color: theme.secondary,
+    unsyncedBadge: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: colors.warning,
+      borderWidth: 2,
+      borderColor: theme.background,
     },
     content: {
       flex: 1,
+      gap: 4,
     },
-    row: {
+    titleRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
+      gap: 8,
     },
-    label: {
-      color: theme.secondary,
-      fontWeight: "500",
-    },
-    value: {
+    signTitle: {
+      fontWeight: "600",
+      fontSize: 15,
+      lineHeight: 20,
       color: theme.text,
       flex: 1,
-      textAlign: "right",
     },
-    notesContainer: {
-      marginTop: spacing.xs,
+    statusBadge: {
+      flexDirection: "row",
+      alignItems: "center",
       gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
     },
-    notes: {
-      color: theme.text,
-      fontStyle: "italic",
+    statusText: {
+      fontSize: 11,
+      fontWeight: "600",
     },
-    footer: {
-      marginTop: spacing.sm,
-      paddingTop: spacing.sm,
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
     },
-    timestamp: {
+    signDescription: {
+      fontWeight: "400",
+      fontSize: 13,
+      lineHeight: 18,
       color: theme.secondary,
+      flex: 1,
+    },
+    imageBadge: {
+      backgroundColor: colors.info + "20",
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
+    },
+    imageBadgeText: {
+      fontSize: 10,
+      color: colors.info,
+      fontWeight: "600",
     },
   });

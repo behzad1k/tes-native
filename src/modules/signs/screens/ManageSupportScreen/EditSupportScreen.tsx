@@ -14,8 +14,8 @@ import { SupportFormData } from "../../types";
 import { useForm } from "react-hook-form";
 import StepHeader from "./components/StepHeader";
 import {
-  useSupportOperations,
   useSupportForm,
+  useSupportOperations,
 } from "../../hooks/useSupportOperations";
 import { Toast } from "toastify-react-native";
 import TextView from "@/src/components/ui/TextView";
@@ -35,6 +35,7 @@ export default function EditSupportScreen() {
     formState: { errors, isValid },
     trigger,
     reset,
+    getValues,
   } = useForm<SupportFormData>({
     defaultValues: initialValues,
     mode: "onChange",
@@ -148,7 +149,14 @@ export default function EditSupportScreen() {
       <StepHeader step={step} />
       <View style={styles.content}>
         {step === 0 && <DetailsStep supportFormControl={control} />}
-        {step === 1 && <LocationStep supportFormControl={control} />}
+        {step === 1 && (
+          <LocationStep
+            control={control}
+            errors={errors}
+            trigger={trigger}
+            getValues={getValues}
+          />
+        )}
         {step === 2 && (
           <ImageStep supportFormControl={control} supportId={id as string} />
         )}

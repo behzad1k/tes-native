@@ -11,7 +11,7 @@ import ButtonView from "@/src/components/ui/ButtonView";
 import LocationStep from "./components/LocationStep";
 import { ROUTES } from "@/src/constants/navigation";
 import ImageStep from "./components/ImageStep";
-import { SupportFormData } from "../../types";
+import { SignFormData, SupportFormData } from "../../types";
 import { useForm } from "react-hook-form";
 import StepHeader from "./components/StepHeader";
 import { useSupportOperations } from "../../hooks/useSupportOperations";
@@ -33,23 +33,21 @@ export default function CreateSupportScreen() {
     formState: { errors, isValid },
     trigger,
     getValues,
+    setValue,
   } = useForm<SupportFormData>({
     defaultValues: {
-      id: "",
       customerId: "",
       supportLocationTypeId: "",
       locationId: "",
-      latitude: 0,
-      longitude: 0,
+      latitude: undefined,
+      longitude: undefined,
+      address: "",
       supportId: "",
       codeId: "",
       positionId: "",
+      dateInstalled: new Date().toISOString(),
       conditionId: "",
       note: "",
-      dateInstalled: "",
-      images: [],
-      isNew: true,
-      isSynced: false,
     },
     mode: "onChange",
   });
@@ -111,27 +109,25 @@ export default function CreateSupportScreen() {
 
   const onSubmit = async (formData: SupportFormData) => {
     try {
-      const supportData = {
-        customerId: formData.customerId,
-        supportId: formData.supportId,
-        dateInstalled: formData.dateInstalled,
-        conditionId: formData.conditionId,
-        note: formData.note,
-        images: formData.images,
-        id: formData.id,
-        supportLocationTypeId: formData.supportLocationTypeId,
-        locationId: formData.locationId,
+      // Prepare support data with location
+
+      const result = await createSupport({
+        customerId: formData.customerId || "",
+        supportLocationTypeId: formData.supportLocationTypeId || "",
+        locationId: formData.locationId || "",
         latitude: formData.latitude,
         longitude: formData.longitude,
+        address: formData.address || "",
+        supportId: formData.supportId,
         codeId: formData.codeId,
-        positionId: formData.positionId,
-        supports: [],
-        isNew: false,
-        isSynced: false,
+        positionId: formData.positionId || "",
+        dateInstalled: formData.dateInstalled || new Date().toISOString(),
+        conditionId: formData.conditionId,
+        note: formData.note || "",
+        images: tempImages,
         signs: [],
-      };
-
-      const result = await createSupport(supportData);
+        isSynced: false,
+      });
 
       if (result.success) {
         Toast.success("Support created successfully!");
@@ -151,7 +147,14 @@ export default function CreateSupportScreen() {
       <StepHeader step={step} />
       <View style={styles.content}>
         {step === 0 && <DetailsStep supportFormControl={control} />}
-        {step === 1 && <LocationStep supportFormControl={control} />}
+        {step === 1 && (
+          <LocationStep
+            control={control}
+            errors={errors}
+            trigger={trigger}
+            getValues={getValues}
+          />
+        )}
         {step === 2 && (
           <ImageStep
             supportFormControl={control}

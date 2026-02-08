@@ -1,4 +1,3 @@
-// store/slices/authSlice.ts
 import { apiClient } from "@/src/services/api/apiClient";
 import { User } from "@/src/types/models";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
@@ -9,6 +8,7 @@ interface AuthState {
 	isAuthenticated: boolean;
 	isLoading: boolean;
 	tokenLastUpdated: number | null;
+	tokenExpiry: number | null; // ADD THIS
 }
 
 const initialState: AuthState = {
@@ -16,6 +16,18 @@ const initialState: AuthState = {
 	isAuthenticated: false,
 	isLoading: true,
 	tokenLastUpdated: null,
+	tokenExpiry: null, // ADD THIS
+};
+
+// Helper to decode JWT and get expiry
+const getTokenExpiry = (token: string): number | null => {
+	try {
+		const payload = JSON.parse(atob(token.split(".")[1]));
+		return payload.exp ? payload.exp * 1000 : null; // Convert to milliseconds
+	} catch (error) {
+		console.error("Error decoding token:", error);
+		return null;
+	}
 };
 
 // Initialize auth from storage
@@ -27,17 +39,28 @@ export const initializeAuth = createAsyncThunk(
 			const token = await TokenStorage.getToken();
 
 			if (!token) {
-				return { user: null, isAuthenticated: false };
+				return { user: null, isAuthenticated: false, tokenExpiry: null };
 			}
 
-			// 2. Load user data from storage
+			// 2. Check token expiry
+			const expiry = getTokenExpiry(token);
+			const now = Date.now();
+
+			if (expiry && expiry < now) {
+				// Token expired
+				await TokenStorage.clearToken();
+				await ReduxStorage.clearState("auth_user");
+				return { user: null, isAuthenticated: false, tokenExpiry: null };
+			}
+
+			// 3. Load user data from storage
 			const savedUser = await ReduxStorage.loadState<User>("auth_user");
 
 			if (savedUser) {
-				return { user: savedUser, isAuthenticated: true };
+				return { user: savedUser, isAuthenticated: true, tokenExpiry: expiry };
 			}
 
-			return { user: null, isAuthenticated: false };
+			return { user: null, isAuthenticated: false, tokenExpiry: null };
 		} catch (error) {
 			return rejectWithValue("Auth initialization failed");
 		}
@@ -52,26 +75,54 @@ export const loginThunk = createAsyncThunk(
 		{ rejectWithValue },
 	) => {
 		try {
-			// API call to login
-			const response = await apiClient.post("/auth/login", credentials);
+			const formData = new URLSearchParams({
+				username: credentials.username,
+				password: credentials.password,
+				grant_type: "password",
+				client_id: "MainMobileApp",
+				client_secret: "1f1df3dc-bbd6-41be-bb11-34a7bc47a937",
+				scope: "TMC",
+			});
 
-			if (response.token) {
+			const response = await apiClient.post(
+				"connect/token",
+				formData.toString(),
+				{
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded",
+						"skip-auth": true,
+					},
+				},
+			);
+
+			if (response.access_token) {
 				// Save token securely
-				await TokenStorage.saveToken(response.token);
+				await TokenStorage.saveToken(response.access_token);
+
+				// Get token expiry
+				const expiry = getTokenExpiry(response.access_token);
 
 				// Fetch user data
-				const userResponse = await apiClient.get("/user");
-				const user = userResponse.data;
+				const userResponse = await apiClient.get(
+					"api/user/UserProfileMobileApp",
+					{
+						headers: { Authorization: `Bearer ${response.access_token}` },
+					},
+				);
 
 				// Save user to storage
-				await ReduxStorage.saveState("auth_user", user);
+				await ReduxStorage.saveState("auth_user", userResponse);
 
-				return { user, token: response.token };
+				return {
+					user: userResponse,
+					token: response.access_token,
+					tokenExpiry: expiry,
+				};
 			}
 
 			return rejectWithValue("Login failed");
-		} catch (error) {
-			return rejectWithValue(error.message);
+		} catch (error: any) {
+			return rejectWithValue(error.message || "Login failed");
 		}
 	},
 );
@@ -79,28 +130,44 @@ export const loginThunk = createAsyncThunk(
 // Update token when online
 export const updateToken = createAsyncThunk(
 	"auth/updateToken",
-	async (_, { rejectWithValue }) => {
+	async (_, { getState, rejectWithValue }) => {
 		try {
 			const token = await TokenStorage.getToken();
 			if (!token) return rejectWithValue("No token");
 
-			// Verify token with backend
-			const response = await apiClient.get("/auth/verify", {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			// Check if token is still valid
+			const expiry = getTokenExpiry(token);
+			const now = Date.now();
 
-			if (response.valid) {
-				// Optionally refresh token
-				const newToken = response.newToken || token;
-				await TokenStorage.saveToken(newToken);
-
-				return { tokenUpdated: true, timestamp: Date.now() };
+			if (expiry && expiry < now) {
+				// Token expired, need to re-login
+				await TokenStorage.clearToken();
+				await ReduxStorage.clearState("auth_user");
+				return rejectWithValue("Token expired");
 			}
 
-			return rejectWithValue("Token invalid");
+			// Optionally refresh user data
+			try {
+				const userResponse = await apiClient.get(
+					"api/user/UserProfileMobileApp",
+					{
+						headers: { Authorization: `Bearer ${token}` },
+					},
+				);
+
+				await ReduxStorage.saveState("auth_user", userResponse);
+
+				return {
+					tokenUpdated: true,
+					timestamp: Date.now(),
+					user: userResponse,
+				};
+			} catch (error) {
+				// If offline, just return success with existing data
+				return { tokenUpdated: false, timestamp: Date.now() };
+			}
 		} catch (error) {
-			// Still allow offline access
-			return { tokenUpdated: false, timestamp: Date.now() };
+			return rejectWithValue(error.message);
 		}
 	},
 );
@@ -109,15 +176,11 @@ const authSlice = createSlice({
 	name: "auth",
 	initialState,
 	reducers: {
-		setOfflineAuth: (state, action) => {
-			state.user = action.payload.user;
-			state.isAuthenticated = true;
-			state.isLoading = false;
-		},
 		logout: (state) => {
 			state.user = null;
 			state.isAuthenticated = false;
 			state.isLoading = false;
+			state.tokenExpiry = null;
 			TokenStorage.clearToken();
 			ReduxStorage.clearState("auth_user");
 		},
@@ -130,6 +193,7 @@ const authSlice = createSlice({
 			.addCase(initializeAuth.fulfilled, (state, action) => {
 				state.user = action.payload.user;
 				state.isAuthenticated = action.payload.isAuthenticated;
+				state.tokenExpiry = action.payload.tokenExpiry;
 				state.isLoading = false;
 			})
 			.addCase(initializeAuth.rejected, (state) => {
@@ -137,11 +201,24 @@ const authSlice = createSlice({
 				state.isAuthenticated = false;
 				state.isLoading = false;
 			})
+			.addCase(loginThunk.fulfilled, (state, action) => {
+				state.user = action.payload.user;
+				state.isAuthenticated = true;
+				state.tokenExpiry = action.payload.tokenExpiry;
+				state.tokenLastUpdated = Date.now();
+			})
 			.addCase(updateToken.fulfilled, (state, action) => {
 				state.tokenLastUpdated = action.payload.timestamp;
+				if (action.payload.user) {
+					state.user = action.payload.user;
+				}
+			})
+			.addCase(updateToken.rejected, (state) => {
+				// Token update failed, user will be logged out by app initialization
+				state.isAuthenticated = false;
 			});
 	},
 });
 
-export const { setOfflineAuth, logout } = authSlice.actions;
+export const { logout } = authSlice.actions;
 export default authSlice.reducer;

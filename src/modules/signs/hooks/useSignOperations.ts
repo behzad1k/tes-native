@@ -11,6 +11,7 @@ import { useCallback } from "react";
 import { ImageStorage } from "@/src/store/persistence";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
+import { SYNC_STATUS } from "@/src/constants/global";
 
 export function useSignOperations() {
 	const dispatch = useAppDispatch();
@@ -20,7 +21,13 @@ export function useSignOperations() {
 	const createSign = useCallback(
 		async (signData: Omit<Sign, "id" | "status" | "isNew">) => {
 			try {
-				dispatch(addSign(signData));
+				// Create sign with NOT_SYNCED status
+				dispatch(
+					addSign({
+						...signData,
+						// Images should already have isNew: true from form
+					}),
+				);
 				return { success: true };
 			} catch (error) {
 				console.error("Error creating sign:", error);
@@ -31,8 +38,13 @@ export function useSignOperations() {
 	);
 
 	const editSign = useCallback(
-		async (signId: string, updates: Partial<Sign>) => {
+		async (
+			signId: string,
+			updates: Partial<Sign>,
+			locationChanged: boolean,
+		) => {
 			try {
+				// Update sign - status will change to NOT_SYNCED automatically
 				dispatch(
 					updateSign({
 						id: signId,
@@ -51,8 +63,30 @@ export function useSignOperations() {
 	const deleteSign = useCallback(
 		async (signId: string) => {
 			try {
+				const sign = signs.find((s) => s.id === signId);
+
+				if (!sign) {
+					return { success: false, error: "Sign not found" };
+				}
+
+				// If sign is synced, we need to mark it for deletion
+				// If sign is not synced (local only), we can remove it immediately
+				if (sign.status === SYNC_STATUS.SYNCED) {
+					Alert.alert(
+						"Cannot Delete",
+						"This sign is synced with the server. Please sync deletions are not yet implemented.",
+						[{ text: "OK" }],
+					);
+					return {
+						success: false,
+						error: "Synced items cannot be deleted yet",
+					};
+				}
+
+				// Delete local images
 				await ImageStorage.deleteSignImages(signId);
 
+				// Remove from store
 				dispatch(markSignForDeletion(signId));
 
 				return { success: true };
@@ -61,7 +95,7 @@ export function useSignOperations() {
 				return { success: false, error };
 			}
 		},
-		[dispatch],
+		[dispatch, signs],
 	);
 
 	const getSignById = useCallback(
@@ -76,7 +110,7 @@ export function useSignOperations() {
 	}, [signs]);
 
 	const getPendingSigns = useCallback((): Sign[] => {
-		return signs.filter((sign) => sign.status === "NOT_SYNCED");
+		return signs.filter((sign) => sign.status === SYNC_STATUS.NOT_SYNCED);
 	}, [signs]);
 
 	return {
@@ -118,7 +152,7 @@ export function useSignImages() {
 						addImageToSign({
 							signId,
 							imageUri,
-							isNew: true,
+							isNew: true, // Mark as new for syncing
 						}),
 					);
 
@@ -160,7 +194,7 @@ export function useSignImages() {
 						addImageToSign({
 							signId,
 							imageUri,
-							isNew: true,
+							isNew: true, // Mark as new for syncing
 						}),
 					);
 
@@ -195,17 +229,10 @@ export function useSignImages() {
 		[dispatch],
 	);
 
-	const getSignImages = useCallback((signId: string): SignImage[] => {
-		const signs = useAppSelector((state) => state.signs.signs);
-		const sign = signs.find((s) => s.id === signId);
-		return sign?.images || [];
-	}, []);
-
 	return {
 		addImageFromCamera,
 		addImageFromGallery,
 		deleteImage,
-		getSignImages,
 	};
 }
 
@@ -233,7 +260,9 @@ export function useSignForm(signId?: string) {
 			};
 		}
 
-		return {};
+		return {
+			dateInstalled: new Date().toISOString(),
+		};
 	}, [sign]);
 
 	return {

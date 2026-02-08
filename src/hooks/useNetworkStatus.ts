@@ -1,19 +1,32 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
-import { useSyncStore } from "@/src/store/sync";
+
+export interface NetworkStatus {
+	isOnline: boolean;
+	isInternetReachable: boolean | null;
+	type: string | null;
+}
 
 export function useNetworkStatus() {
-	const { isOnline, setOnline } = useSyncStore();
+	const [networkStatus, setNetworkStatus] = useState<NetworkStatus>({
+		isOnline: true,
+		isInternetReachable: null,
+		type: null,
+	});
 
 	useEffect(() => {
 		const unsubscribe = NetInfo.addEventListener((state) => {
-			setOnline(state.isConnected ?? false);
+			setNetworkStatus({
+				isOnline: state.isConnected ?? false,
+				isInternetReachable: state.isInternetReachable,
+				type: state.type,
+			});
 		});
 
 		return () => {
 			unsubscribe();
 		};
-	}, [setOnline]);
+	}, []);
 
-	return { isOnline };
+	return networkStatus;
 }

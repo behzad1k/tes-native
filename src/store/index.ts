@@ -14,6 +14,7 @@ import authReducer from "./slices/authSlice";
 import signsReducer from "./slices/signSlice";
 import supportReducer from "./slices/supportSlice";
 import syncReducer from "./slices/syncSlice";
+import appDataReducer from "./slices/appData";
 import maintenanceReducer from "./slices/maintenanceSlice";
 
 const signsPersistConfig = {
@@ -39,12 +40,18 @@ const maintenancesPersistConfig = {
 	storage: AsyncStorage,
 	whitelist: ["maintenances", "backendImages", "lastFetched"],
 };
+const appDataPersistConfig = {
+	key: "appData",
+	storage: AsyncStorage,
+	whitelist: ["customers", "locationTypes", "lastFetched"],
+};
 
 const rootReducer = combineReducers({
 	auth: persistReducer(authPersistConfig, authReducer),
 	signs: persistReducer(signsPersistConfig, signsReducer),
 	supports: persistReducer(supportsPersistConfig, supportReducer),
 	maintenances: persistReducer(maintenancesPersistConfig, maintenanceReducer),
+	appData: persistReducer(appDataPersistConfig, appDataReducer),
 	sync: syncReducer,
 });
 

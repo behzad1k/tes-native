@@ -52,8 +52,25 @@ export function useSupportOperations() {
 	const deleteSupport = useCallback(
 		async (supportId: string) => {
 			try {
-				await ImageStorage.deleteSignImages(supportId);
+				const support = supports.find((s) => s.id === supportId);
 
+				if (!support) {
+					return { success: false, error: "Support not found" };
+				}
+
+				if (support.status === SYNC_STATUS.SYNCED) {
+					Alert.alert(
+						"Cannot Delete",
+						"This support is synced with the server. Synced deletions are not yet implemented.",
+						[{ text: "OK" }],
+					);
+					return {
+						success: false,
+						error: "Synced items cannot be deleted yet",
+					};
+				}
+
+				// await ImageStorage.deleteImages(supportId);
 				dispatch(markSupportForDeletion(supportId));
 
 				return { success: true };
@@ -62,7 +79,7 @@ export function useSupportOperations() {
 				return { success: false, error };
 			}
 		},
-		[dispatch],
+		[dispatch, supports],
 	);
 
 	const getSupportById = useCallback(
@@ -90,6 +107,41 @@ export function useSupportOperations() {
 		getAllSupports,
 		getPendingSupports,
 		isLoading,
+	};
+}
+
+export function useSupportForm(supportId?: string) {
+	const { getSupportById } = useSupportOperations();
+	const support = supportId ? getSupportById(supportId) : undefined;
+
+	const getInitialValues = useCallback((): Support => {
+		if (support) {
+			return support;
+		}
+
+		return {
+			dateInstalled: new Date().toISOString(),
+			id: "",
+			customerId: "",
+			supportLocationTypeId: "",
+			locationId: "",
+			supportId: "",
+			codeId: "",
+			positionId: "",
+			conditionId: "",
+			note: "",
+			signs: [],
+			images: [],
+			isNew: false,
+			isSynced: false,
+			status: SYNC_STATUS.NOT_SYNCED,
+		};
+	}, [support]);
+
+	return {
+		support,
+		initialValues: getInitialValues(),
+		isEditMode: !!supportId,
 	};
 }
 
@@ -121,7 +173,7 @@ export function useSupportImages() {
 						addImageToSupport({
 							supportId,
 							imageUri,
-							isNew: true,
+							isNew: true, // Mark as new for syncing
 						}),
 					);
 
@@ -163,7 +215,7 @@ export function useSupportImages() {
 						addImageToSupport({
 							supportId,
 							imageUri,
-							isNew: true,
+							isNew: true, // Mark as new for syncing
 						}),
 					);
 
@@ -198,42 +250,9 @@ export function useSupportImages() {
 		[dispatch],
 	);
 
-	const getSupportImages = useCallback((supportId: string): SupportImage[] => {
-		const supports = useAppSelector((state) => state.supports.supports);
-		const support = supports.find((s) => s.id === supportId);
-		return support?.images || [];
-	}, []);
-
 	return {
 		addImageFromCamera,
 		addImageFromGallery,
 		deleteImage,
-		getSupportImages,
-	};
-}
-
-export function useSupportForm(supportId?: string) {
-	const { getSupportById } = useSupportOperations();
-	const support = supportId ? getSupportById(supportId) : undefined;
-
-	const getInitialValues = useCallback((): Partial<Support> => {
-		if (support) {
-			return {
-				customerId: support.customerId,
-				locationId: support.locationId,
-				supportId: support.supportId,
-				codeId: support.codeId,
-				conditionId: support.conditionId,
-				note: support.note,
-			};
-		}
-
-		return {};
-	}, [support]);
-
-	return {
-		support,
-		initialValues: getInitialValues(),
-		isEditMode: !!supportId,
 	};
 }

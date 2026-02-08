@@ -27,6 +27,8 @@
   "dimension": "Dimension",
   "note": "Note",
   "height": "Height",
+  "name": "Name",
+  "type": "Type",
   "pressToSelect": "Press to select",
   "buttons": {
     "submit": "Submit",

@@ -1,5 +1,10 @@
-import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
@@ -18,11 +23,16 @@ import FilterSignForm from "./components/FilterSignForm";
 import NewSignType from "./components/NewSignType";
 import SortSignForm from "./components/SignSortForm";
 import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
-import { startSync } from "@/src/store/slices/syncSlice";
+import {
+  startSync,
+  calculatePendingOperations,
+} from "@/src/store/slices/syncSlice";
 import { ROUTES } from "@/src/constants/navigation";
 import { Sign, Support } from "@/src/types/models";
 import { Toast } from "toastify-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
+import NetInfo from "@react-native-community/netinfo";
+import SyncStatusSummary from "@/src/components/ui/SyncStatusSummary";
 
 export const isSupport = (item: Sign | Support) =>
   Array.isArray((item as Support)?.signs);
@@ -39,6 +49,7 @@ export default function SignsListScreen() {
   const dispatch = useAppDispatch();
   const [tab, setTab] = useState(Object.keys(TABS)[0]);
   const { openDrawer } = useDrawer();
+  const [isOnline, setIsOnline] = useState(true);
 
   // Get signs from Redux store
   const signs = useAppSelector((state) => state.signs.signs);
@@ -46,6 +57,7 @@ export default function SignsListScreen() {
   const fullList: Array<Sign | Support> = [...supports, ...signs];
   const isLoading = useAppSelector((state) => state.signs.isLoading);
   const isSyncing = useAppSelector((state) => state.sync.isSyncing);
+  const syncProgress = useAppSelector((state) => state.sync.syncProgress);
   const pendingOperations = useAppSelector(
     (state) => state.sync.pendingOperations,
   );
@@ -56,6 +68,20 @@ export default function SignsListScreen() {
     key: "id",
     dir: "DESC",
   });
+
+  // Check network status
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOnline(state.isConnected ?? false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Calculate pending operations on mount and when data changes
+  useEffect(() => {
+    dispatch(calculatePendingOperations());
+  }, [signs, supports, dispatch]);
 
   // Apply filters and sorting
   const filteredSigns = React.useMemo(() => {
@@ -86,7 +112,7 @@ export default function SignsListScreen() {
     });
 
     return result;
-  }, [signs, filters, sort]);
+  }, [fullList, filters, sort]);
 
   const handleSortPress = () => {
     openDrawer("sort-sign", <SortSignForm sort={sort} setSort={setSort} />, {
@@ -113,6 +139,12 @@ export default function SignsListScreen() {
   };
 
   const handleSync = async () => {
+    // Check if online
+    if (!isOnline) {
+      Toast.error("No internet connection. Please connect to sync.");
+      return;
+    }
+
     const totalPending =
       pendingOperations.creates +
       pendingOperations.updates +
@@ -128,11 +160,13 @@ export default function SignsListScreen() {
       const result = await dispatch(startSync()).unwrap();
       if (result.synced) {
         Toast.success(`Successfully synced ${result.syncedCount} items`);
+        // Recalculate pending operations
+        dispatch(calculatePendingOperations());
       } else {
         Toast.info(result.message || "Nothing to sync");
       }
-    } catch (error) {
-      Toast.error("Sync failed. Please try again.");
+    } catch (error: any) {
+      Toast.error(error || "Sync failed. Please try again.");
     }
   };
 
@@ -158,23 +192,68 @@ export default function SignsListScreen() {
           <TouchableOpacity
             key="sync"
             onPress={handleSync}
-            disabled={isSyncing || totalPending === 0}
+            disabled={isSyncing || totalPending === 0 || !isOnline}
           >
             <View style={styles.syncButton}>
-              <Repeat
-                size={24}
-                color={theme.secondary}
-                weight={isSyncing ? "bold" : "regular"}
-              />
+              {isSyncing ? (
+                <ActivityIndicator size="small" color={colors.lightGreen} />
+              ) : (
+                <>
+                  <Repeat
+                    size={24}
+                    color={
+                      !isOnline || totalPending === 0
+                        ? colors.placeholder
+                        : theme.secondary
+                    }
+                    weight="regular"
+                  />
+                  {totalPending > 0 && (
+                    <View style={styles.badge}>
+                      <TextView style={styles.badgeText}>
+                        {totalPending}
+                      </TextView>
+                    </View>
+                  )}
+                </>
+              )}
             </View>
           </TouchableOpacity>,
         ]}
       />
+      {/* Network Status Indicator */}
+      {!isOnline && (
+        <View style={styles.offlineBar}>
+          <TextView style={styles.offlineText}>
+            Working Offline - Changes will sync when online
+          </TextView>
+        </View>
+      )}
+      {/* Sync Progress */}
+      {isSyncing && (
+        <View style={styles.syncProgressBar}>
+          <View
+            style={[styles.syncProgressFill, { width: `${syncProgress}%` }]}
+          />
+          <TextView style={styles.syncProgressText}>
+            Syncing... {Math.round(syncProgress)}%
+          </TextView>
+        </View>
+      )}
       <Tabs setTab={setTab} tab={tab} tabs={TABS} />
+      import SyncStatusSummary from "@/src/components/ui/SyncStatusSummary"; //
+      In the render, before the list:
       <View style={styles.listHeader}>
-        <TextView style={styles.itemsLengthText}>
-          {filteredSigns.length} {t("items")}
-        </TextView>
+        <View style={styles.listHeaderLeft}>
+          <TextView style={styles.itemsLengthText}>
+            {filteredSigns.length} {t("items")}
+          </TextView>
+          <SyncStatusSummary
+            pendingCreates={pendingOperations.creates}
+            pendingUpdates={pendingOperations.updates}
+            pendingImages={pendingOperations.images}
+          />
+        </View>
         <View style={styles.listActions}>
           <TouchableOpacity onPress={handleSortPress}>
             <TextView style={styles.listActionText}>{t("sort")}</TextView>
@@ -184,13 +263,11 @@ export default function SignsListScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
       <SignSupportList
         list={filteredSigns}
         onItemPress={handleItemPress}
         loading={isLoading}
       />
-
       <TouchableOpacity style={styles.createButton} onPress={handleCreateSign}>
         <Plus size={60} color={colors.white} weight="bold" />
       </TouchableOpacity>
@@ -224,16 +301,47 @@ const createStyles = (theme: Theme) =>
       fontSize: 12,
       fontWeight: "bold",
     },
-    listHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      padding: 12,
-      borderBottomWidth: 2,
-      borderColor: theme.primary,
+    offlineBar: {
+      backgroundColor: colors.warning,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      alignItems: "center",
     },
+    offlineText: {
+      color: colors.white,
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    syncProgressBar: {
+      height: 4,
+      backgroundColor: theme.border,
+      position: "relative",
+    },
+    syncProgressFill: {
+      height: "100%",
+      backgroundColor: colors.lightGreen,
+    },
+    syncProgressText: {
+      position: "absolute",
+      right: 16,
+      top: 8,
+      fontSize: 12,
+      color: theme.secondary,
+    },
+    // listHeader: {
+    //   flexDirection: "row",
+    //   justifyContent: "space-between",
+    //   padding: 12,
+    //   borderBottomWidth: 2,
+    //   borderColor: theme.primary,
+    // },
     itemsLengthText: {
       fontSize: 16,
       color: theme.secondary,
+    },
+    pendingText: {
+      color: colors.warning,
+      fontWeight: "600",
     },
     listActions: {
       flexDirection: "row",
@@ -261,5 +369,19 @@ const createStyles = (theme: Theme) =>
       },
       shadowOpacity: 0.25,
       shadowRadius: 3.84,
+    },
+    listHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 12,
+      borderBottomWidth: 2,
+      borderColor: theme.primary,
+    },
+    listHeaderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      flex: 1,
     },
   });

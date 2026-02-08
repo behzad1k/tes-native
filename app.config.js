@@ -55,9 +55,19 @@ export default {
     ],
     "expo-location",
     {
-      locationAlwaysAndWhenInUsePermission:
-        "Allow $(PRODUCT_NAME) to use your location.",
+      ios: {
+        infoPlist: {
+          NSLocationWhenInUseUsageDescription:
+            "This app needs access to your location to mark sign and support positions.",
+          NSLocationAlwaysUsageDescription:
+            "This app needs access to your location to mark sign and support positions.",
+        },
+      },
+      android: {
+        permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      },
     },
+
     [
       "expo-dev-client",
       {

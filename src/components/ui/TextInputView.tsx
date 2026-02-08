@@ -8,6 +8,7 @@ import {
   View,
   StyleSheet,
   ViewStyle,
+  TextStyle,
 } from "react-native";
 import TextView from "./TextView";
 import { colors } from "@/src/styles/theme/colors";
@@ -40,6 +41,7 @@ const TextInputView = forwardRef<TextInput, TextInputViewProps>(
                 color: theme.text,
                 borderColor: error ? colors.error : theme.border,
               },
+              props.editable == false && styles.disabled,
               style,
             ]}
             placeholderTextColor={"rgba(109, 119, 122, 0.4)"}
@@ -81,6 +83,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 14,
     height: scale(36),
+  },
+  disabled: {
+    backgroundColor: colors.disabled,
+    color: colors.disabledText,
   },
   error: {
     color: colors.error,

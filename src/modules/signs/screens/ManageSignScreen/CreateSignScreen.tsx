@@ -34,10 +34,14 @@ export default function CreateSignScreen() {
     formState: { errors, isValid },
     trigger,
     getValues,
+    setValue,
   } = useForm<SignFormData>({
     defaultValues: {
       customerId: "",
       locationTypeId: "",
+      latitude: undefined,
+      longitude: undefined,
+      address: "",
       signId: "",
       supportId: "",
       codeId: "",
@@ -47,7 +51,7 @@ export default function CreateSignScreen() {
       reflectiveCoatingId: "",
       reflectiveRatingId: "",
       dimensionId: "",
-      dateInstalled: new Date().toISOString(), // Use ISO string
+      dateInstalled: new Date().toISOString(),
       conditionId: "",
       note: "",
     },
@@ -122,21 +126,25 @@ export default function CreateSignScreen() {
 
   const onSubmit = async (formData: SignFormData) => {
     try {
+      // Prepare sign data with location
       const signData = {
-        customerId: formData.customerId,
-        locationTypeId: formData.locationTypeId,
+        customerId: formData.customerId || "",
+        locationTypeId: formData.locationTypeId || "",
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        address: formData.address || "",
         signId: formData.signId,
-        supportId: formData.supportId,
+        supportId: formData.supportId || "",
         codeId: formData.codeId,
-        height: formData.height,
-        facingDirectionId: formData.facingDirectionId,
-        faceMaterialId: formData.faceMaterialId,
-        reflectiveCoatingId: formData.reflectiveCoatingId,
-        reflectiveRatingId: formData.reflectiveRatingId,
+        height: formData.height || "",
+        facingDirectionId: formData.facingDirectionId || "",
+        faceMaterialId: formData.faceMaterialId || "",
+        reflectiveCoatingId: formData.reflectiveCoatingId || "",
+        reflectiveRatingId: formData.reflectiveRatingId || "",
         dimensionId: formData.dimensionId,
-        dateInstalled: formData.dateInstalled,
+        dateInstalled: formData.dateInstalled || new Date().toISOString(),
         conditionId: formData.conditionId,
-        note: formData.note,
+        note: formData.note || "",
         images: tempImages,
       };
 
@@ -153,17 +161,22 @@ export default function CreateSignScreen() {
       Toast.error("An error occurred while creating the sign");
     }
   };
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Header title={t("signs.addNewSign")} />
       <StepHeader step={step} />
       <View style={styles.content}>
         {step === 0 && <DetailsStep signFormControl={control} />}
-        {step === 1 && <LocationStep signFormControl={control} />}
+        {step === 1 && (
+          <LocationStep
+            control={control}
+            errors={errors}
+            trigger={trigger}
+            getValues={getValues}
+          />
+        )}
         {step === 2 && (
           <ImageStep
-            signFormControl={control}
             tempImages={tempImages}
             setTempImages={setTempImages}
             isCreateMode={true}

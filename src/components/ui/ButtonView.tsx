@@ -110,7 +110,7 @@ const createStyles = (theme: Theme) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: 8,
+      borderRadius: spacing.xxs,
     },
     primary: {
       backgroundColor: colors.lightGreen,

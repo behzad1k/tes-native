@@ -46,17 +46,21 @@ export const fetchSigns = createAsyncThunk(
 			const token = await TokenStorage.getToken();
 			if (!token) return rejectWithValue("No token");
 
-			const response = await apiClient.get("/signs", {
+			const response = await apiClient.get("api/Sign/GetSigns", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
 
-			const signs: Sign[] = response.data.map((sign: any) => ({
+			const signs: Sign[] = (response.data || response).map((sign: any) => ({
 				...sign,
+				id: sign.id,
+				serverId: sign.id,
 				dateInstalled: sign.dateInstalled,
 				isNew: false,
 				status: SYNC_STATUS.SYNCED,
-				images: sign.images.map((img: any) => ({
-					...img,
+				images: (sign.images || []).map((img: any) => ({
+					uri: img.url || img.uri,
+					imageId: img.id,
+					signId: sign.id,
 					isNew: false,
 					status: SYNC_STATUS.SYNCED,
 				})),
@@ -72,32 +76,32 @@ export const fetchSigns = createAsyncThunk(
 			});
 
 			return { signs, backendImages };
-		} catch (error) {
-			return rejectWithValue(error.message);
+		} catch (error: any) {
+			return rejectWithValue(error.message || "Failed to fetch signs");
 		}
 	},
 );
-
 const signsSlice = createSlice({
 	name: "signs",
 	initialState,
 	reducers: {
+		// In the signSlice reducers section, update these:
+
 		addSign: (
 			state,
 			action: PayloadAction<Omit<Sign, "id" | "status" | "isNew">>,
 		) => {
-			const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-			const dateInstalled = action.payload.dateInstalled;
+			const localId = `local_sign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 			const processedImages = (action.payload.images || []).map((img) => ({
 				...img,
 				signId: localId,
+				isNew: true, // Ensure images are marked as new
+				status: SYNC_STATUS.NOT_SYNCED,
 			}));
 
 			const newSign: Sign = {
 				...action.payload,
-				dateInstalled,
 				id: localId,
 				localId,
 				isNew: true,
@@ -123,27 +127,65 @@ const signsSlice = createSlice({
 			if (signIndex !== -1) {
 				const sign = state.signs[signIndex];
 
-				const serializedUpdates = { ...updates };
-				if (updates.dateInstalled) {
-					serializedUpdates.dateInstalled = updates.dateInstalled;
-				}
-
-				const status =
+				// Only update status to NOT_SYNCED if:
+				// 1. The sign was previously SYNCED, AND
+				// 2. There are actual changes (new image or data updates)
+				const shouldMarkUnsynced =
 					sign.status === SYNC_STATUS.SYNCED &&
-					(isNewImage || Object.keys(serializedUpdates).length > 0)
-						? SYNC_STATUS.NOT_SYNCED
-						: sign.status;
+					(isNewImage || Object.keys(updates).length > 0);
 
 				state.signs[signIndex] = {
 					...sign,
-					...serializedUpdates,
-					status,
+					...updates,
+					status: shouldMarkUnsynced ? SYNC_STATUS.NOT_SYNCED : sign.status,
 				};
 
 				saveSignsToStorage(state);
 			}
 		},
 
+		updateAfterSync: (
+			state,
+			action: PayloadAction<{
+				localId: string;
+				serverId: string;
+				imageUpdates: Array<{ localImageId: string; serverImageId: string }>;
+			}>,
+		) => {
+			const { localId, serverId, imageUpdates } = action.payload;
+			const signIndex = state.signs.findIndex(
+				(s) => s.id === localId || s.localId === localId,
+			);
+
+			if (signIndex !== -1) {
+				const sign = state.signs[signIndex];
+
+				// Update sign with server ID
+				sign.id = serverId;
+				sign.serverId = serverId;
+				delete sign.localId;
+				sign.status = SYNC_STATUS.SYNCED;
+				sign.isNew = false;
+
+				// Update images with server IDs
+				sign.images.forEach((img) => {
+					const update = imageUpdates.find(
+						(u) =>
+							img.imageId === u.localImageId ||
+							img.uri.includes(u.localImageId) ||
+							img.localPath?.includes(u.localImageId),
+					);
+
+					if (update) {
+						img.imageId = update.serverImageId;
+						img.status = SYNC_STATUS.SYNCED;
+						img.isNew = false;
+					}
+				});
+
+				saveSignsToStorage(state);
+			}
+		},
 		addImageToSign: (
 			state,
 			action: PayloadAction<{
@@ -237,47 +279,6 @@ const signsSlice = createSlice({
 			state.signs = action.payload.signs;
 			state.backendImages = action.payload.backendImages;
 			state.lastFetched = action.payload.lastFetched;
-		},
-
-		updateAfterSync: (
-			state,
-			action: PayloadAction<{
-				localId: string;
-				serverId: string;
-				imageUpdates: Array<{ localImageId: string; serverImageId: string }>;
-			}>,
-		) => {
-			const { localId, serverId, imageUpdates } = action.payload;
-			const signIndex = state.signs.findIndex((s) => s.localId === localId);
-
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
-
-				sign.id = serverId;
-				sign.serverId = serverId;
-				delete sign.localId;
-				sign.status = SYNC_STATUS.SYNCED;
-				sign.isNew = false;
-
-				sign.images.forEach((img, idx) => {
-					const update = imageUpdates.find(
-						(u) =>
-							img.uri.includes(u.localImageId) ||
-							img.localPath?.includes(u.localImageId),
-					);
-					if (update) {
-						img.imageId = update.serverImageId;
-						img.status = SYNC_STATUS.SYNCED;
-						img.isNew = false;
-
-						if (img.uri.startsWith("http")) {
-							state.backendImages[update.serverImageId] = img.uri;
-						}
-					}
-				});
-
-				saveSignsToStorage(state);
-			}
 		},
 	},
 	extraReducers: (builder) => {

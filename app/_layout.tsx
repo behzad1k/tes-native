@@ -29,6 +29,8 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import ToastManager from "toastify-react-native";
 import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
+import { fetchSupports } from "@/src/store/slices/supportSlice";
+import { fetchJobs } from "@/src/store/slices/maintenanceSlice";
 
 function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
@@ -51,17 +53,16 @@ function AppContent() {
         await AsyncStorage.setItem(STORAGE_KEYS.THEME, "light");
       }
 
-      // 1. Initialize auth from storage (handled by Redux Persist)
+      // 1. Initialize auth from storage
       await store.dispatch(initializeAuth());
 
       const authState = store.getState().auth;
 
       if (!authState.isAuthenticated) {
         if (router && router.canGoBack()) {
-          router.navigate(ROUTES.HOME); // For Development
-          // router.navigate(ROUTES.LOGIN);
+          router.navigate(ROUTES.LOGIN);
         } else {
-          setTimeout(() => router.navigate(ROUTES.HOME), 200);
+          setTimeout(() => router.navigate(ROUTES.LOGIN), 200);
         }
         return;
       }
@@ -71,38 +72,32 @@ function AppContent() {
       const isOnline = netState.isConnected ?? false;
 
       if (isOnline) {
-        // 3. Update token if online
-        await store.dispatch(updateToken());
+        try {
+          // 3. Update token if online
+          await store.dispatch(updateToken());
 
-        // 4. Fetch latest signs from backend
-        await store.dispatch(fetchSigns());
+          // 4. Fetch latest data from backend
+          await Promise.all([
+            store.dispatch(fetchSigns()),
+            store.dispatch(fetchSupports()),
+            store.dispatch(fetchJobs()),
+          ]);
+        } catch (error) {
+          console.error("Failed to fetch data:", error);
+          // Continue with offline data
+        }
+      } else {
+        // Load saved data from Redux Persist (automatic)
+        console.log("Working offline with cached data");
       }
-      // Redux Persist will automatically load saved signs
 
-      // 5. Calculate pending sync counts (handled by syncSlice)
-      const signsState = store.getState().signs;
-      const unsyncedSigns = signsState.signs.filter(
-        (s) => s.status === SYNC_STATUS.NOT_SYNCED,
-      );
-
-      const pendingCounts = {
-        creates: unsyncedSigns.filter((s) => s.isNew).length,
-        updates: unsyncedSigns.filter((s) => !s.isNew).length,
-        deletes: 0, // Track deletions separately if needed
-        images: unsyncedSigns.reduce(
-          (count, sign) =>
-            count + sign.images.filter((img) => img.isNew).length,
-          0,
-        ),
-      };
-
-      // Update sync state with counts
-      // dispatch(updatePendingCounts(pendingCounts));
+      // Navigate to main screen
+      router.replace(ROUTES.SIGNS_LIST);
     } catch (error) {
       console.error("App initialization failed:", error);
+      router.navigate(ROUTES.LOGIN);
     }
   };
-
   useEffect(() => {
     if (router && isLanguageLoaded) {
       initializeApp();

@@ -13,14 +13,21 @@
       "assets": [
         {
           "id": "asset_001",
-          "assetId": "sign_101",
+          "assetId": "local_1769333129643_mjh9bz393",
           "type": 1,
           "statusId": "status_pending",
           "note": "Stop sign needs cleaning"
         },
         {
           "id": "asset_002",
-          "assetId": "support_201",
+          "assetId": "local_1769828740608_jwko3za9t",
+          "type": 2,
+          "statusId": "status_pending",
+          "note": "Support post is rusted"
+        },
+        {
+          "id": "asset_003",
+          "assetId": "local_1769418775892_996v6c94a",
           "type": 2,
           "statusId": "status_pending",
           "note": "Support post is rusted"

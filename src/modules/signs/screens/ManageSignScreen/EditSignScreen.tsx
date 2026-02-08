@@ -31,8 +31,28 @@ export default function EditSignScreen() {
     handleSubmit,
     formState: { errors, isValid },
     trigger,
+    getValues,
+    setValue,
   } = useForm<SignFormData>({
-    defaultValues: initialValues,
+    defaultValues: {
+      customerId: sign.customerId,
+      locationTypeId: sign.locationTypeId,
+      latitude: sign.latitude,
+      longitude: sign.longitude,
+      address: sign.address || "",
+      signId: sign.signId,
+      supportId: sign.supportId,
+      codeId: sign.codeId,
+      height: sign.height,
+      facingDirectionId: sign.facingDirectionId,
+      faceMaterialId: sign.faceMaterialId,
+      reflectiveCoatingId: sign.reflectiveCoatingId,
+      reflectiveRatingId: sign.reflectiveRatingId,
+      dimensionId: sign.dimensionId,
+      dateInstalled: sign.dateInstalled,
+      conditionId: sign.conditionId,
+      note: sign.note,
+    },
     mode: "onChange",
   });
 
@@ -114,23 +134,19 @@ export default function EditSignScreen() {
   const onSubmit = async (formData: SignFormData) => {
     try {
       const updates = {
-        customerId: formData.customerId,
-        locationTypeId: formData.locationTypeId,
-        signId: formData.signId,
-        supportId: formData.supportId,
-        codeId: formData.codeId,
-        height: formData.height,
-        facingDirectionId: formData.facingDirectionId,
-        faceMaterialId: formData.faceMaterialId,
-        reflectiveCoatingId: formData.reflectiveCoatingId,
-        reflectiveRatingId: formData.reflectiveRatingId,
-        dimensionId: formData.dimensionId,
-        dateInstalled: formData.dateInstalled,
-        conditionId: formData.conditionId,
-        note: formData.note,
+        ...formData,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        address: formData.address,
+        // images: [...images, ...tempImages],
       };
 
-      const result = await editSign(id as string, updates);
+      // Check if location changed
+      const locationChanged =
+        formData.latitude !== sign.latitude ||
+        formData.longitude !== sign.longitude;
+
+      const result = await editSign(sign.id, updates, locationChanged);
 
       if (result.success) {
         Toast.success("Sign updated successfully!");
@@ -150,10 +166,15 @@ export default function EditSignScreen() {
       <StepHeader step={step} />
       <View style={styles.content}>
         {step === 0 && <DetailsStep signFormControl={control} />}
-        {step === 1 && <LocationStep signFormControl={control} />}
-        {step === 2 && (
-          <ImageStep signFormControl={control} signId={id as string} />
+        {step === 1 && (
+          <LocationStep
+            control={control}
+            errors={errors}
+            trigger={trigger}
+            getValues={getValues}
+          />
         )}
+        {step === 2 && <ImageStep signId={id as string} />}
       </View>
       <View style={styles.buttonContainer}>
         <ButtonView
