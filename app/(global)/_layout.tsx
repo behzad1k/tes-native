@@ -1,13 +1,13 @@
 import { Stack } from "expo-router";
 import React from "react";
-import { useTheme } from "@/src/contexts/ThemeContext";
+// import { useTheme } from "@/src/contexts/ThemeContext";
 
 export default function GlobalLayout() {
-  const { isThemeReady } = useTheme();
+  // const { isThemeReady } = useTheme();
 
-  if (!isThemeReady) {
-    return null;
-  }
+  // if (!isThemeReady) {
+  //   return null;
+  // }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

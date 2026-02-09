@@ -17,6 +17,8 @@ import StepHeader from "./components/StepHeader";
 import { useSignOperations } from "../../hooks/useSignOperations";
 import { Toast } from "toastify-react-native";
 import { SignImage } from "@/src/types/models";
+import { scale } from "@/src/styles/theme/spacing";
+import { v4 as uuidv4 } from "uuid";
 
 export default function CreateSignScreen() {
   const { t } = useTranslation();
@@ -42,7 +44,7 @@ export default function CreateSignScreen() {
       latitude: undefined,
       longitude: undefined,
       address: "",
-      signId: "",
+      signId: uuidv4(),
       supportId: "",
       codeId: "",
       height: "",
@@ -180,6 +182,7 @@ export default function CreateSignScreen() {
             tempImages={tempImages}
             setTempImages={setTempImages}
             isCreateMode={true}
+            signId={getValues().signId}
           />
         )}
       </View>
@@ -210,6 +213,7 @@ const createStyles = (theme: Theme) =>
     },
     content: {
       flex: 1,
+      paddingBottom: scale(100),
     },
     buttonContainer: {
       backgroundColor: theme.background,

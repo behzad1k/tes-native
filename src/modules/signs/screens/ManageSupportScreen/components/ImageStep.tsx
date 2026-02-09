@@ -151,7 +151,6 @@ const ImageStep = ({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.8,
-        allowsMultipleSelection: false,
       });
 
       if (!result.canceled && result.assets[0]) {

@@ -18,7 +18,7 @@ import { fetchSigns, loadSavedSigns } from "@/src/store/slices/signSlice";
 import { STORAGE_KEYS } from "@/src/utils/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
-import { Slot, useRouter } from "expo-router";
+import { Slot, useRouter, Stack } from "expo-router";
 import { useEffect } from "react";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -31,6 +31,7 @@ import ToastManager from "toastify-react-native";
 import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
 import { fetchSupports } from "@/src/store/slices/supportSlice";
 import { fetchJobs } from "@/src/store/slices/maintenanceSlice";
+import { fetchAppData } from "@/src/store/slices/appData";
 
 function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
@@ -64,7 +65,7 @@ function AppContent() {
         } else {
           setTimeout(() => router.navigate(ROUTES.HOME), 200);
         }
-        return;
+        // return;
       }
 
       // 2. Check network status
@@ -76,8 +77,9 @@ function AppContent() {
           // 3. Update token if online
           await store.dispatch(updateToken());
 
-          // 4. Fetch latest data from backend
+          // 4. Fetch latest data from backend (including appData with vehicleTypes)
           await Promise.all([
+            store.dispatch(fetchAppData()),
             store.dispatch(fetchSigns()),
             store.dispatch(fetchSupports()),
             store.dispatch(fetchJobs()),
@@ -92,10 +94,10 @@ function AppContent() {
       }
 
       // Navigate to main screen
-      router.replace(ROUTES.SIGNS_LIST);
+      router.replace(ROUTES.HOME);
     } catch (error) {
       console.error("App initialization failed:", error);
-      router.navigate(ROUTES.LOGIN);
+      // router.navigate(ROUTES.LOGIN);
     }
   };
   useEffect(() => {
@@ -119,6 +121,10 @@ function AppContent() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <DrawerProvider>
           <Drawer>
+            {/*<Stack>
+              <Stack.Screen name="(global)" />
+              <Stack.Screen name="(protected)" />
+            </Stack>*/}
             <Slot />
             <StatusBar
               barStyle={isDark ? "light-content" : "dark-content"}

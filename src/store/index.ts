@@ -51,7 +51,7 @@ const trafficCountPersistConfig = {
 const appDataPersistConfig = {
 	key: "appData",
 	storage: AsyncStorage,
-	whitelist: ["customers", "locationTypes", "lastFetched"],
+	whitelist: ["customers", "locationTypes", "vehicleTypes", "lastFetched"],
 };
 
 const rootReducer = combineReducers({

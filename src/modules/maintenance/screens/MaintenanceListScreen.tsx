@@ -68,9 +68,9 @@ export default function MaintenanceListScreen() {
   const supports = useAppSelector((state) => state.supports.supports);
   const isLoading = useAppSelector((state) => state.maintenances.isLoading);
 
-  useEffect(() => {
-    handleRefresh();
-  }, []);
+  // useEffect(() => {
+  //   handleRefresh();
+  // }, []);
 
   const filteredJobs = useMemo(() => {
     let result = [...jobs];

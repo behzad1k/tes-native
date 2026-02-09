@@ -26,10 +26,15 @@
   "latitude": "Latitude",
   "dimension": "Dimension",
   "note": "Note",
+  "notes": "Notes",
+  "duration": "Duration",
+  "assignDate": "Assign Date",
   "height": "Height",
   "name": "Name",
   "type": "Type",
   "pressToSelect": "Press to select",
+  "locationType": "Location Type",
+  "customer": "Customer",
   "buttons": {
     "submit": "Submit",
     "cancel": "Cancel",
@@ -122,7 +127,8 @@
     "completedDate": "Completed Date",
     "description": "Description",
     "noMaintenances": "No maintenance records found",
-    "createFirst": "Create your first maintenance record to get started"
+    "createFirst": "Create your first maintenance record to get started",
+    "jobDetails": "Job Details"
   },
   "error": {
     "phoneNumberInvalid": "Phone number is invalid",

@@ -14,18 +14,17 @@ import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { colors } from "@/src/styles/theme/colors";
 import { spacing } from "@/src/styles/theme/spacing";
-import {
-  MapPin,
-  NavigationArrow,
-  CheckCircle,
-  X,
-} from "phosphor-react-native";
+import { MapPin, NavigationArrow, CheckCircle, X } from "phosphor-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
 
 interface MapLocationPickerProps {
   initialLatitude?: number;
   initialLongitude?: number;
-  onLocationSelect: (latitude: number, longitude: number, address?: string) => void;
+  onLocationSelect: (
+    latitude: number,
+    longitude: number,
+    address?: string,
+  ) => void;
   onCancel?: () => void;
   height?: number;
 }
@@ -47,7 +46,7 @@ export default function MapLocationPicker({
   } | null>(
     initialLatitude && initialLongitude
       ? { latitude: initialLatitude, longitude: initialLongitude }
-      : null
+      : null,
   );
 
   const [region, setRegion] = useState<Region>({
@@ -67,6 +66,15 @@ export default function MapLocationPicker({
     }
   }, []);
 
+  useEffect(() => {
+    if (selectedLocation)
+      onLocationSelect(
+        selectedLocation.latitude,
+        selectedLocation.longitude,
+        address,
+      );
+  }, [selectedLocation]);
+
   const getCurrentLocation = async () => {
     try {
       setLoading(true);
@@ -76,7 +84,7 @@ export default function MapLocationPicker({
       if (status !== "granted") {
         Alert.alert(
           "Permission Denied",
-          "Location permission is required to use this feature"
+          "Location permission is required to use this feature",
         );
         setLoading(false);
         return;
@@ -104,10 +112,7 @@ export default function MapLocationPicker({
       mapRef.current?.animateToRegion(newRegion, 1000);
 
       // Get address for current location
-      await reverseGeocode(
-        location.coords.latitude,
-        location.coords.longitude
-      );
+      await reverseGeocode(location.coords.latitude, location.coords.longitude);
     } catch (error) {
       console.error("Error getting current location:", error);
       Alert.alert("Error", "Failed to get current location");
@@ -132,7 +137,7 @@ export default function MapLocationPicker({
           result.postalCode,
           result.country,
         ].filter(Boolean);
-        
+
         setAddress(addressParts.join(", "));
       }
     } catch (error) {
@@ -142,9 +147,9 @@ export default function MapLocationPicker({
 
   const handleMapPress = async (event: any) => {
     const { latitude, longitude } = event.nativeEvent.coordinate;
-    
+
     setSelectedLocation({ latitude, longitude });
-    
+
     // Get address for selected location
     await reverseGeocode(latitude, longitude);
   };
@@ -154,10 +159,13 @@ export default function MapLocationPicker({
       onLocationSelect(
         selectedLocation.latitude,
         selectedLocation.longitude,
-        address
+        address,
       );
     } else {
-      Alert.alert("No Location Selected", "Please select a location on the map");
+      Alert.alert(
+        "No Location Selected",
+        "Please select a location on the map",
+      );
     }
   };
 
@@ -178,13 +186,15 @@ export default function MapLocationPicker({
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <TextView style={styles.loadingText}>Getting your location...</TextView>
+          <TextView style={styles.loadingText}>
+            Getting your location...
+          </TextView>
         </View>
       )}
 
       <MapView
         ref={mapRef}
-        provider={PROVIDER_GOOGLE}
+        // provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={region}
         onRegionChangeComplete={setRegion}
@@ -220,7 +230,8 @@ export default function MapLocationPicker({
         <View style={styles.coordsCard}>
           <TextView style={styles.coordsLabel}>Coordinates:</TextView>
           <TextView style={styles.coordsText}>
-            {selectedLocation.latitude.toFixed(6)}, {selectedLocation.longitude.toFixed(6)}
+            {selectedLocation.latitude.toFixed(6)},{" "}
+            {selectedLocation.longitude.toFixed(6)}
           </TextView>
         </View>
       )}
@@ -244,28 +255,6 @@ export default function MapLocationPicker({
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
-        {onCancel && (
-          <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={onCancel}
-          >
-            <X size={20} color={theme.text} weight="bold" />
-            <TextView style={styles.cancelButtonText}>Cancel</TextView>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.button, styles.confirmButton]}
-          onPress={handleConfirm}
-          disabled={!selectedLocation}
-        >
-          <CheckCircle size={20} color={colors.white} weight="fill" />
-          <TextView style={styles.confirmButtonText}>Confirm Location</TextView>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -273,7 +262,8 @@ export default function MapLocationPicker({
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
-      width: "100%",
+      flex: 1,
+      height: "100%",
       borderRadius: 12,
       overflow: "hidden",
       backgroundColor: theme.background,
@@ -325,7 +315,7 @@ const createStyles = (theme: Theme) =>
     },
     coordsCard: {
       position: "absolute",
-      bottom: 80,
+      bottom: 30,
       left: spacing.md,
       backgroundColor: theme.background,
       padding: spacing.sm,
@@ -349,7 +339,7 @@ const createStyles = (theme: Theme) =>
     actionButtons: {
       position: "absolute",
       right: spacing.md,
-      bottom: 80,
+      bottom: 30,
       gap: spacing.sm,
     },
     currentLocationButton: {
@@ -384,7 +374,7 @@ const createStyles = (theme: Theme) =>
       left: 0,
       right: 0,
       flexDirection: "row",
-      padding: spacing.md,
+      padding: spacing.sm,
       backgroundColor: theme.background,
       gap: spacing.sm,
       borderTopWidth: 1,

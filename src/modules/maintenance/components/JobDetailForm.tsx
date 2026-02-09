@@ -110,12 +110,18 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
               label={`${t("duration")} :`}
               value={editedJob.duration.toString()}
               containerStyle={{ maxWidth: "20%" }}
+              onChangeText={(text) =>
+                setEditedJob({
+                  ...editedJob,
+                  duration: Number(text) || editedJob.duration,
+                })
+              }
             />
-            <TextInputView
+            {/*<TextInputView
               label={`-`}
               value={editedJob.duration.toString()}
               containerStyle={{ maxWidth: "20%" }}
-            />
+            />*/}
           </View>
 
           <TextView style={styles.label}>{t("status")} :</TextView>

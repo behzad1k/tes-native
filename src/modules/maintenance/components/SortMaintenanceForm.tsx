@@ -119,7 +119,7 @@ const createStyles = (theme: Theme) =>
       paddingVertical: spacing.sm,
       borderRadius: 4,
       borderWidth: 2,
-      borderColor: theme.secondary,
+      borderColor: colors.lightGreen,
       backgroundColor: theme.background,
       alignItems: "center",
     },
@@ -128,7 +128,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: colors.lightGreen,
     },
     optionText: {
-      color: theme.secondary,
+      color: colors.lightGreen,
       fontWeight: "bold",
       textAlign: "center",
     },

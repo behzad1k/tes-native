@@ -124,7 +124,6 @@ const ImagePicker = ({
         mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.8,
-        allowsMultipleSelection: true, // Allow multiple
       });
 
       if (!result.canceled && result.assets) {

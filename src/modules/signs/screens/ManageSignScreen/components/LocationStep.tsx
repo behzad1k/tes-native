@@ -4,7 +4,7 @@ import { Control, Controller } from "react-hook-form";
 import TextView from "@/src/components/ui/TextView";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
-import { spacing } from "@/src/styles/theme/spacing";
+import { scale, spacing } from "@/src/styles/theme/spacing";
 import { SignFormData } from "../../../types";
 import SelectBoxView from "@/src/components/ui/SelectBoxView";
 import { useAppSelector } from "@/src/store/hooks";
@@ -12,6 +12,8 @@ import MapLocationPicker from "@/src/components/ui/MapLocationPicker";
 import { colors } from "@/src/styles/theme/colors";
 import { MapPin, MapTrifold } from "phosphor-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
+import FormSelectBox from "@/src/components/ui/FormSelectBox";
 
 interface LocationStepProps {
   control: Control<SignFormData>;
@@ -28,13 +30,9 @@ export default function LocationStep({
 }: LocationStepProps) {
   const styles = useThemedStyles(createStyles);
   const { theme } = useTheme();
-  const [showMap, setShowMap] = useState(false);
-
-  // Get dropdown data from Redux
+  const { t } = useTranslation();
   const customers = useAppSelector((state) => state.appData.customers);
   const locationTypes = useAppSelector((state) => state.appData.locationTypes);
-
-  // Convert to select options
   const customerOptions = customers.map((customer) => ({
     label: customer.name,
     value: customer.id,
@@ -52,9 +50,6 @@ export default function LocationStep({
   ) => {
     // Update form values with selected coordinates
     const currentValues = getValues();
-
-    // Store latitude and longitude in the form
-    // You may need to add these fields to your SignFormData type
     control._formValues.latitude = latitude;
     control._formValues.longitude = longitude;
 
@@ -62,7 +57,6 @@ export default function LocationStep({
       control._formValues.address = address;
     }
 
-    setShowMap(false);
     trigger(["latitude", "longitude"]);
   };
 
@@ -77,108 +71,37 @@ export default function LocationStep({
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.section}>
-        <TextView style={styles.sectionTitle}>
-          Customer & Location Type
-        </TextView>
-
-        <Controller
+        <FormSelectBox
+          id={"customer"}
+          label={`${t("customer")} :`}
           control={control}
           name="customerId"
-          rules={{ required: "Customer is required" }}
-          render={({ field: { onChange, value } }) => (
-            <SelectBoxView
-              label="Customer *"
-              placeholder="Select customer"
-              value={value}
-              onChange={onChange}
-              options={customerOptions}
-              error={errors.customerId?.message}
-            />
-          )}
+          options={customerOptions}
+          placeholder={t("pressToSelect")}
+          title={t("customer")}
+          searchable={true}
         />
-
-        <Controller
+        <FormSelectBox
+          id={"location-type"}
+          label={`${t("locationType")} :`}
           control={control}
           name="locationTypeId"
-          rules={{ required: "Location type is required" }}
-          render={({ field: { onChange, value } }) => (
-            <SelectBoxView
-              label="Location Type *"
-              placeholder="Select location type"
-              value={value}
-              onChange={onChange}
-              options={locationTypeOptions}
-              error={errors.locationTypeId?.message}
-            />
-          )}
+          options={locationTypeOptions}
+          placeholder={t("pressToSelect")}
+          title={t("locationType")}
+          searchable={true}
         />
-      </View>
-
-      <View style={styles.section}>
-        <TextView style={styles.sectionTitle}>Geographic Location</TextView>
-
-        {/* Map Toggle Button */}
-        <TouchableOpacity
-          style={styles.mapToggleButton}
-          onPress={() => setShowMap(!showMap)}
-        >
-          <MapTrifold size={24} color={theme.secondary} weight="duotone" />
-          <TextView style={styles.mapToggleText}>
-            {showMap ? "Hide Map" : "Pick Location on Map"}
-          </TextView>
-        </TouchableOpacity>
-
-        {/* Selected Location Display */}
-        {currentLatitude && currentLongitude && !showMap && (
-          <View style={styles.selectedLocationCard}>
-            <View style={styles.selectedLocationHeader}>
-              <MapPin size={20} color={colors.success} weight="fill" />
-              <TextView style={styles.selectedLocationTitle}>
-                Selected Location
-              </TextView>
-            </View>
-
-            {currentAddress && (
-              <TextView style={styles.addressText}>{currentAddress}</TextView>
-            )}
-
-            <View style={styles.coordsRow}>
-              <TextView style={styles.coordsLabel}>Latitude:</TextView>
-              <TextView style={styles.coordsValue}>
-                {currentLatitude.toFixed(6)}
-              </TextView>
-            </View>
-
-            <View style={styles.coordsRow}>
-              <TextView style={styles.coordsLabel}>Longitude:</TextView>
-              <TextView style={styles.coordsValue}>
-                {currentLongitude.toFixed(6)}
-              </TextView>
-            </View>
-
-            <TouchableOpacity
-              style={styles.changeLocationButton}
-              onPress={() => setShowMap(true)}
-            >
-              <TextView style={styles.changeLocationText}>
-                Change Location
-              </TextView>
-            </TouchableOpacity>
-          </View>
-        )}
+        <TextView style={styles.sectionTitle}>{t("location")}</TextView>
 
         {/* Map View */}
-        {showMap && (
-          <View style={styles.mapContainer}>
-            <MapLocationPicker
-              initialLatitude={currentLatitude}
-              initialLongitude={currentLongitude}
-              onLocationSelect={handleLocationSelect}
-              onCancel={() => setShowMap(false)}
-              height={500}
-            />
-          </View>
-        )}
+        <View style={styles.mapContainer}>
+          <MapLocationPicker
+            initialLatitude={currentLatitude}
+            initialLongitude={currentLongitude}
+            onLocationSelect={handleLocationSelect}
+            height={500}
+          />
+        </View>
 
         {/* Validation Message */}
         {!currentLatitude && !currentLongitude && (
@@ -215,16 +138,14 @@ const createStyles = (theme: Theme) =>
     },
     contentContainer: {
       padding: spacing.md,
-      paddingBottom: 100,
     },
     section: {
-      marginBottom: spacing.lg,
+      gap: spacing.sm,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",
       color: theme.text,
-      marginBottom: spacing.md,
     },
     mapToggleButton: {
       flexDirection: "row",
@@ -247,8 +168,8 @@ const createStyles = (theme: Theme) =>
     mapContainer: {
       marginBottom: spacing.md,
       borderRadius: 12,
-      overflow: "hidden",
       borderWidth: 1,
+      height: scale(300),
       borderColor: theme.border,
     },
     selectedLocationCard: {

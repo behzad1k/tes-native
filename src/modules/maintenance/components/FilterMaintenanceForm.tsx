@@ -171,7 +171,6 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.background,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
-      maxHeight: "80%",
     },
     header: {
       flexDirection: "row",
@@ -198,7 +197,7 @@ const createStyles = (theme: Theme) =>
     filterGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: spacing.xxs,
     },
     filterButtonWrapper: {
       marginRight: spacing.sm,
@@ -209,7 +208,7 @@ const createStyles = (theme: Theme) =>
       paddingVertical: spacing.sm,
       borderRadius: 4,
       borderWidth: 2,
-      borderColor: theme.secondary,
+      borderColor: colors.lightGreen,
       backgroundColor: theme.background,
     },
     filterButtonActive: {
@@ -217,7 +216,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: colors.lightGreen,
     },
     filterText: {
-      color: theme.secondary,
+      color: colors.lightGreen,
       fontWeight: "bold",
     },
     filterTextActive: {

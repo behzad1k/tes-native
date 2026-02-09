@@ -402,7 +402,6 @@ export const useSiteTypeSelector = () => {
       {
         position: "bottom",
         transitionType: "slide",
-        drawerHeight: SCREEN_HEIGHT * 0.7,
         enableGestures: true,
         enableOverlay: true,
         overlayOpacity: 0.6,

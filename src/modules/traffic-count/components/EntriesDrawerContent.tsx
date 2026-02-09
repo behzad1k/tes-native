@@ -2,11 +2,14 @@ import TextView from "@/src/components/ui/TextView";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
 import { spacing } from "@/src/styles/theme/spacing";
+import { colors } from "@/src/styles/theme/colors";
 import { ListBullets } from "phosphor-react-native";
 import { useMemo, useCallback } from "react";
 import { View, FlatList, Dimensions, StyleSheet } from "react-native";
 import { TrafficCountWorkOrder, TrafficCount } from "../types";
 import { Theme } from "@/src/types/theme";
+import { getVehicleIcon } from "../components/VehicleIcons";
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface EntriesDrawerContentProps {
@@ -21,7 +24,7 @@ const formatMovement = (
   for (const [movement, classes] of Object.entries(movements)) {
     const [from, to] = movement.split("_");
     for (const [classId, count] of Object.entries(classes)) {
-      parts.push(`${from} → ${to} (×${count})`);
+      parts.push(`${from} → ${to}`);
     }
   }
   return parts.join(", ") || "—";
@@ -51,31 +54,47 @@ const EntriesDrawerContent = ({
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: TrafficCount; index: number }) => (
-      <View style={[styles.entryRow, index % 2 === 0 && styles.entryRowAlt]}>
-        <View style={styles.entryIndex}>
-          <TextView style={styles.entryIndexText}>
-            {sortedCounts.length - index}
-          </TextView>
+    ({ item, index }: { item: TrafficCount; index: number }) => {
+      // Get the vehicle icon based on classificationName
+      const vehicleName = item.classificationName || "Car";
+      const VehicleIcon = getVehicleIcon(vehicleName);
+
+      return (
+        <View style={[styles.entryRow, index % 2 === 0 && styles.entryRowAlt]}>
+          <View style={styles.entryIndex}>
+            <TextView style={styles.entryIndexText}>
+              {sortedCounts.length - index}
+            </TextView>
+          </View>
+
+          {/* Vehicle icon */}
+          <View style={styles.vehicleIconContainer}>
+            <VehicleIcon size={22} color={colors.lightGreen} />
+          </View>
+
+          <View style={styles.entryContent}>
+            {/* Vehicle type name */}
+            <TextView style={styles.vehicleName}>{vehicleName}</TextView>
+            {/* Movement direction */}
+            <TextView style={styles.entryMovement}>
+              {formatMovement(item.movements)}
+            </TextView>
+            <TextView style={styles.entryTime}>
+              {formatEntryTime(item.dateTime)}
+            </TextView>
+          </View>
+
+          <View style={styles.entrySyncBadge}>
+            <View
+              style={[
+                styles.syncDot,
+                item.isSynced ? styles.syncDotGreen : styles.syncDotOrange,
+              ]}
+            />
+          </View>
         </View>
-        <View style={styles.entryContent}>
-          <TextView style={styles.entryMovement}>
-            {formatMovement(item.movements)}
-          </TextView>
-          <TextView style={styles.entryTime}>
-            {formatEntryTime(item.dateTime)}
-          </TextView>
-        </View>
-        <View style={styles.entrySyncBadge}>
-          <View
-            style={[
-              styles.syncDot,
-              item.isSynced ? styles.syncDotGreen : styles.syncDotOrange,
-            ]}
-          />
-        </View>
-      </View>
-    ),
+      );
+    },
     [styles, sortedCounts.length],
   );
 
@@ -155,13 +174,26 @@ const createEntriesStyles = (theme: Theme) =>
       fontWeight: FontWeights.bold,
       color: theme.text,
     },
+    vehicleIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: "rgba(155, 198, 49, 0.12)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
     entryContent: {
       flex: 1,
-      gap: 2,
+      gap: 1,
+    },
+    vehicleName: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.semiBold,
+      color: colors.lightGreen,
     },
     entryMovement: {
       fontSize: FontSizes.sm,
-      fontWeight: FontWeights.semiBold,
+      fontWeight: FontWeights.medium,
       color: theme.text,
     },
     entryTime: {
@@ -193,4 +225,5 @@ const createEntriesStyles = (theme: Theme) =>
       color: theme.secondary,
     },
   });
+
 export default EntriesDrawerContent;

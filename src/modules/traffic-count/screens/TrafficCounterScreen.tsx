@@ -49,6 +49,7 @@ import {
 } from "phosphor-react-native";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
+import { VehicleType } from "@/src/store/slices/appData";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ interface RecordEntry {
   from: Direction;
   to: Direction;
   vehicle: string;
+  vehicleId: string;
   timestamp: number;
 }
 
@@ -87,6 +89,33 @@ const getStreetNames = (locationName: string): { ns: string; ew: string } => {
 // ─── Fast spring config for near-instant snap-back ───────────────────────────
 const FAST_SPRING = { damping: 40, stiffness: 600, mass: 0.3 };
 const DRAG_START_SPRING = { damping: 20, stiffness: 400 };
+
+// ─── Fallback vehicle types if appData hasn't loaded yet ─────────────────────
+const FALLBACK_VEHICLE_TYPES: VehicleType[] = [
+  {
+    id: "fb_1",
+    name: "Scooter",
+    icon: "Scooter",
+    isPedestrian: false,
+    sortOrder: 1,
+  },
+  { id: "fb_2", name: "Car", icon: "Car", isPedestrian: false, sortOrder: 2 },
+  {
+    id: "fb_3",
+    name: "Truck",
+    icon: "Truck",
+    isPedestrian: false,
+    sortOrder: 3,
+  },
+  { id: "fb_4", name: "Van", icon: "Van", isPedestrian: false, sortOrder: 4 },
+  {
+    id: "fb_5",
+    name: "Bicycle",
+    icon: "Cyclist",
+    isPedestrian: false,
+    sortOrder: 5,
+  },
+];
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
@@ -118,9 +147,19 @@ export default function TrafficCounterScreen() {
   const workOrder = useAppSelector((state) =>
     state.trafficCount.workOrders.find((wo) => wo.id === workOrderId),
   );
-  const classifications = useAppSelector(
-    (state) => state.trafficCount.classifications,
+
+  // ── Vehicle types from appData (persisted) ─────────────────────────────
+  const vehicleTypesFromStore = useAppSelector(
+    (state) => state.appData.vehicleTypes,
   );
+  const vehicleTypes = useMemo(() => {
+    if (vehicleTypesFromStore && vehicleTypesFromStore.length > 0) {
+      return [...vehicleTypesFromStore].sort(
+        (a, b) => a.sortOrder - b.sortOrder,
+      );
+    }
+    return FALLBACK_VEHICLE_TYPES;
+  }, [vehicleTypesFromStore]);
 
   const siteConfig = getSiteTypeConfig(siteType);
   const activeDirections = siteConfig.directions as Direction[];
@@ -211,8 +250,6 @@ export default function TrafficCounterScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     }
-    // Sound mode: would integrate Audio here if expo-av is available
-    // "none" mode: no feedback
   }, []);
 
   // ── Drag state (ref-based so gesture callbacks always see latest) ──────
@@ -232,16 +269,12 @@ export default function TrafficCounterScreen() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((record: RecordEntry) => {
-    // Clear any existing timer
     if (toastTimerRef.current) {
       clearTimeout(toastTimerRef.current);
     }
-    // Instantly replace toast
     setLastRecord(record);
-    // Auto-hide after 2.5s
     toastTimerRef.current = setTimeout(() => {
       setLastRecord((current) => {
-        // Only hide if it's still the same record
         if (current?.id === record.id) return null;
         return current;
       });
@@ -319,6 +352,8 @@ export default function TrafficCounterScreen() {
         dateTime: new Date().toISOString(),
         slot: workOrder?.aggregationInterval || 15,
         movements: { [`${from}_${to}`]: { [classId]: 1 } },
+        classificationId: classId,
+        classificationName: className,
       };
 
       dispatch(addCountToWorkOrder({ workOrderId, count: newCount }));
@@ -329,6 +364,7 @@ export default function TrafficCounterScreen() {
         from,
         to,
         vehicle: className,
+        vehicleId: classId,
         timestamp: Date.now(),
       };
       recordHistoryRef.current.push(record);
@@ -345,7 +381,6 @@ export default function TrafficCounterScreen() {
     const lastEntry = history.pop()!;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Remove from redux store
     dispatch(
       removeLastCountFromWorkOrder({
         workOrderId,
@@ -355,7 +390,6 @@ export default function TrafficCounterScreen() {
 
     setTotalCount((p) => Math.max(0, p - 1));
 
-    // Clear toast if it was showing the undone record
     if (toastTimerRef.current) {
       clearTimeout(toastTimerRef.current);
     }
@@ -408,28 +442,23 @@ export default function TrafficCounterScreen() {
     [findDropZone, recordMovement],
   );
 
-  // ── Vehicle rows ───────────────────────────────────────────────────────
+  // ── Vehicle rows built from appData vehicleTypes ───────────────────────
   const vehicleRows = useMemo(() => {
-    if (!classifications || classifications.length === 0) {
-      return {
-        row1: [
-          { id: "1", name: "Car" },
-          { id: "2", name: "Truck" },
-          { id: "3", name: "Bus" },
-        ],
-        row2: [
-          { id: "4", name: "Cyclist" },
-          { id: "5", name: "Pedestrian" },
-        ],
-      };
-    }
-    const nonPed = classifications.filter((c) => !c.isPedestrian);
-    const ped = classifications.filter((c) => c.isPedestrian);
-    return {
-      row1: nonPed.slice(0, 3),
-      row2: [...ped, ...nonPed.slice(3)],
-    };
-  }, [classifications]);
+    const nonPed = vehicleTypes.filter((v) => !v.isPedestrian);
+    const ped = vehicleTypes.filter((v) => v.isPedestrian);
+
+    // Split non-pedestrian into two rows
+    const row1 = nonPed
+      .slice(0, 3)
+      .map((v) => ({ id: v.id, name: v.name, icon: v.icon }));
+    const row2 = [...ped, ...nonPed.slice(3)].map((v) => ({
+      id: v.id,
+      name: v.name,
+      icon: v.icon,
+    }));
+
+    return { row1, row2 };
+  }, [vehicleTypes]);
 
   // ══════════════════════════════════════════════════════════════════════════
   //  PORTRAIT GUARD — stays until device actually reaches landscape
@@ -455,8 +484,6 @@ export default function TrafficCounterScreen() {
     );
   }
 
-  // If user rotates back to portrait after having been in landscape,
-  // show a minimal reminder but don't block
   if (!isLandscape && hasBeenLandscape) {
     return (
       <GestureHandlerRootView style={portraitGuard.root}>
@@ -669,7 +696,7 @@ const dl = StyleSheet.create({
 // ── Draggable Vehicle ────────────────────────────────────────────────────────
 
 interface DraggableVehicleProps {
-  classification: { id: string; name: string };
+  classification: { id: string; name: string; icon?: string };
   direction: Direction;
   onDragStart: (dir: Direction, classId: string, className: string) => void;
   onDragEnd: () => void;
@@ -689,7 +716,10 @@ const DraggableVehicle = React.memo(
     const sc = useSharedValue(1);
     const op = useSharedValue(1);
 
-    const IconComponent = getVehicleIcon(classification.name);
+    // Use icon field to look up the vehicle icon, fallback to name
+    const IconComponent = getVehicleIcon(
+      classification.icon || classification.name,
+    );
 
     const cbRef = useRef({ onDragStart, onDragEnd, onDrop });
     cbRef.current = { onDragStart, onDragEnd, onDrop };
@@ -733,7 +763,6 @@ const DraggableVehicle = React.memo(
           .onEnd((e) => {
             "worklet";
             runOnJS(jsDrop)(e.absoluteX, e.absoluteY);
-            // Near-instant snap back — critical for 1.5 records/sec throughput
             tx.value = withSpring(0, FAST_SPRING);
             ty.value = withSpring(0, FAST_SPRING);
             sc.value = withSpring(1, FAST_SPRING);
@@ -772,7 +801,7 @@ const dv = StyleSheet.create({
 
 interface VehicleRowProps {
   direction: Direction;
-  vehicles: { id: string; name: string }[];
+  vehicles: { id: string; name: string; icon?: string }[];
   onDragStart: (dir: Direction, classId: string, className: string) => void;
   onDragEnd: () => void;
   onDrop: (fromDir: Direction, absX: number, absY: number) => void;
@@ -886,7 +915,6 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#2A2A2A" },
   container: { flex: 1, backgroundColor: "#2A2A2A" },
 
-  // Header
   header: {
     position: "absolute",
     top: 10,
@@ -905,10 +933,8 @@ const s = StyleSheet.create({
   timerText: { fontSize: 14, fontWeight: "700", color: "#D4D4B0" },
   dateText: { fontSize: 11, color: "#999" },
 
-  // Intersection
   intersection: { flex: 1 },
 
-  // Corner green blocks
   corner: {
     position: "absolute",
     backgroundColor: "rgba(60,80,40,0.5)",
@@ -920,7 +946,6 @@ const s = StyleSheet.create({
   cBL: { bottom: 0, left: 0, width: "28%", height: "30%" },
   cBR: { bottom: 0, right: 0, width: "28%", height: "30%" },
 
-  // Vertical road
   vRoad: {
     position: "absolute",
     left: "50%",
@@ -935,7 +960,6 @@ const s = StyleSheet.create({
   vDash: { width: 2, height: 8, backgroundColor: "#C4A635" },
   vGap: { width: 2, height: 6, backgroundColor: "transparent" },
 
-  // Horizontal road
   hRoad: {
     position: "absolute",
     top: "50%",
@@ -950,7 +974,6 @@ const s = StyleSheet.create({
   hDash: { width: 8, height: 2, backgroundColor: "#C4A635" },
   hGap: { width: 6, height: 2, backgroundColor: "transparent" },
 
-  // Direction areas
   northArea: {
     position: "absolute",
     top: 8,
@@ -991,7 +1014,6 @@ const s = StyleSheet.create({
   },
   sideVehicles: { gap: 3 },
 
-  // Toolbar
   toolbar: {
     position: "absolute",
     bottom: 14,
@@ -1010,7 +1032,6 @@ const s = StyleSheet.create({
     borderRadius: 6,
   },
 
-  // Toast with undo
   toast: {
     position: "absolute",
     top: "45%",

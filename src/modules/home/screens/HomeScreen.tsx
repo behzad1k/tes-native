@@ -1,4 +1,3 @@
-import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { useAppSelector } from "@/src/store/hooks";
 import { Theme } from "@/src/types/theme";
 import React, { useEffect } from "react";
@@ -16,8 +15,9 @@ import { LOCAL_IMAGES } from "@/src/constants/images";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/src/constants/navigation";
+import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 
-export function HomeScreen() {
+export default function HomeScreen() {
   const styles = useThemedStyles(createStyles);
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const { t } = useTranslation();
@@ -29,7 +29,7 @@ export function HomeScreen() {
         // router.replace("/(protected)/signs/create");
         // router.replace("/(global)");
       } else {
-        router.replace(ROUTES.SIGNS_LIST);
+        // router.replace(ROUTES.SIGNS_LIST);
       }
     }
   }, [isAuthenticated, isLoading]);
