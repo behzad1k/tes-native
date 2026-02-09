@@ -16,6 +16,7 @@ import supportReducer from "./slices/supportSlice";
 import syncReducer from "./slices/syncSlice";
 import appDataReducer from "./slices/appData";
 import maintenanceReducer from "./slices/maintenanceSlice";
+import trafficCountReducer from "./slices/trafficCountSlice";
 
 const signsPersistConfig = {
 	key: "signs",
@@ -40,6 +41,13 @@ const maintenancesPersistConfig = {
 	storage: AsyncStorage,
 	whitelist: ["maintenances", "backendImages", "lastFetched"],
 };
+
+const trafficCountPersistConfig = {
+	key: "trafficCount",
+	storage: AsyncStorage,
+	whitelist: ["workOrders", "classifications", "lastFetched"],
+};
+
 const appDataPersistConfig = {
 	key: "appData",
 	storage: AsyncStorage,
@@ -51,6 +59,7 @@ const rootReducer = combineReducers({
 	signs: persistReducer(signsPersistConfig, signsReducer),
 	supports: persistReducer(supportsPersistConfig, supportReducer),
 	maintenances: persistReducer(maintenancesPersistConfig, maintenanceReducer),
+	trafficCount: persistReducer(trafficCountPersistConfig, trafficCountReducer),
 	appData: persistReducer(appDataPersistConfig, appDataReducer),
 	sync: syncReducer,
 });

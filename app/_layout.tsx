@@ -60,9 +60,9 @@ function AppContent() {
 
       if (!authState.isAuthenticated) {
         if (router && router.canGoBack()) {
-          router.navigate(ROUTES.LOGIN);
+          router.navigate(ROUTES.HOME);
         } else {
-          setTimeout(() => router.navigate(ROUTES.LOGIN), 200);
+          setTimeout(() => router.navigate(ROUTES.HOME), 200);
         }
         return;
       }

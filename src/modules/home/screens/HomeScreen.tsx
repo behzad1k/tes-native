@@ -58,7 +58,7 @@ export function HomeScreen() {
           title="Traffic Counter"
           description="You can count the number of vehicles and determine the direction of each one."
           backgroundImage={LOCAL_IMAGES.TRAFFIC_COUNTER_CARD}
-          onPress={() => {}}
+          onPress={() => router.push(ROUTES.TRAFFIC_COUNT_LIST)}
         />
         <ModuleCard
           title="Maintenance"

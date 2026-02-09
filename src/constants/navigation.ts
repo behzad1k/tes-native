@@ -13,6 +13,10 @@ export const PROTECTED_ROUTES = {
 	SUPPORT_EDIT: "/(protected)/sign-inventory/support/[id]",
 	// Maintenance
 	MAINTENCANCE_LIST: "/(protected)/maintenance",
+	// Traffic Count
+	TRAFFIC_COUNT_LIST: "/(protected)/traffic-count",
+	TRAFFIC_COUNT_COUNTER: "/(protected)/traffic-count/counter",
+	// Profile
 	PROFILE: "/(protected)/profile",
 	PROFILE_EDIT: "/(protected)/profile/edit",
 	PROFILE_SETTINGS: "/(protected)/profile/settings",

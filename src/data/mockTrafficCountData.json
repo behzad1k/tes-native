@@ -1,0 +1,84 @@
+{
+  "workOrders": [
+    {
+      "id": "wo-001",
+      "studyId": "study-001",
+      "no": "24197",
+      "locationName": "RAINBOW DR @ STAR AV",
+      "startDT": "2025-11-10T07:30:00.000Z",
+      "endDT": "2025-11-10T17:30:00.000Z",
+      "latitude": 43.6532,
+      "longitude": -79.3832,
+      "note": "You are about to export the data for",
+      "siteType": 1,
+      "aggregationInterval": 15,
+      "isCompleted": false,
+      "isSynced": false,
+      "isEdited": false,
+      "status": "To Do",
+      "syncStatus": "Not Synced",
+      "daysLeft": 5,
+      "counts": []
+    },
+    {
+      "id": "wo-002",
+      "studyId": "study-002",
+      "no": "24197",
+      "locationName": "RAINBOW DR @ STAR AV",
+      "startDT": "2025-11-10T07:30:00.000Z",
+      "endDT": "2025-11-10T17:30:00.000Z",
+      "latitude": 43.6532,
+      "longitude": -79.3832,
+      "note": "You are about to export the data for",
+      "siteType": 1,
+      "aggregationInterval": 15,
+      "isCompleted": false,
+      "isSynced": true,
+      "isEdited": false,
+      "status": "In Progress",
+      "syncStatus": "Synced",
+      "daysLeft": 5,
+      "counts": [
+        {
+          "id": "count-001",
+          "siteId": "study-002",
+          "isSynced": true,
+          "videoId": "",
+          "lat": 43.6532,
+          "long": -79.3832,
+          "userId": "user-001",
+          "dateTime": "2025-11-10T07:30:00.000Z",
+          "slot": 15,
+          "movements": {}
+        }
+      ]
+    },
+    {
+      "id": "wo-003",
+      "studyId": "study-003",
+      "no": "24197",
+      "locationName": "RAINBOW DR @ STAR AV",
+      "startDT": "2025-11-10T07:30:00.000Z",
+      "endDT": "2025-11-10T17:30:00.000Z",
+      "latitude": 43.6532,
+      "longitude": -79.3832,
+      "note": "You are about to export the data for",
+      "siteType": 2,
+      "aggregationInterval": 5,
+      "isCompleted": true,
+      "isSynced": false,
+      "isEdited": false,
+      "status": "Done",
+      "syncStatus": "Not Synced",
+      "daysLeft": 5,
+      "counts": []
+    }
+  ],
+  "classifications": [
+    { "id": "1", "in": "c1", "name": "Car", "isPedestrian": false, "applicationClassification": 1 },
+    { "id": "2", "in": "c2", "name": "Truck", "isPedestrian": false, "applicationClassification": 2 },
+    { "id": "3", "in": "c3", "name": "Bus", "isPedestrian": false, "applicationClassification": 3 },
+    { "id": "4", "in": "c4", "name": "Cyclist", "isPedestrian": false, "applicationClassification": 4 },
+    { "id": "5", "in": "c5", "name": "Pedestrian", "isPedestrian": true, "applicationClassification": 5 }
+  ]
+}

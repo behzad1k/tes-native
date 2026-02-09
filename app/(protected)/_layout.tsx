@@ -6,6 +6,7 @@ export default function ProtectedLayout() {
       <Stack.Screen name="maintenance" />
       <Stack.Screen name="sign-inventory" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="traffic-count" />
     </Stack>
   );
 }
