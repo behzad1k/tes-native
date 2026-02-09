@@ -31,7 +31,10 @@ import * as Haptics from "expo-haptics";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useLocalSearchParams, router } from "expo-router";
 import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
-import { addCountToWorkOrder } from "@/src/store/slices/trafficCountSlice";
+import {
+  addCountToWorkOrder,
+  removeLastCountFromWorkOrder,
+} from "@/src/store/slices/trafficCountSlice";
 import { TrafficCount } from "../types";
 import { getVehicleIcon } from "../components/VehicleIcons";
 import { getSiteTypeConfig } from "../components/SiteTypeSelector";
@@ -42,6 +45,7 @@ import {
   SpeakerHigh,
   Vibrate,
   DeviceRotate,
+  ArrowCounterClockwise,
 } from "phosphor-react-native";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
@@ -65,12 +69,24 @@ interface DragInfo {
   classificationName: string | null;
 }
 
+interface RecordEntry {
+  id: string;
+  from: Direction;
+  to: Direction;
+  vehicle: string;
+  timestamp: number;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const getStreetNames = (locationName: string): { ns: string; ew: string } => {
   const parts = locationName.split("@").map((s) => s.trim());
   return { ns: parts[0] || "Main St", ew: parts[1] || "Cross St" };
 };
+
+// ─── Fast spring config for near-instant snap-back ───────────────────────────
+const FAST_SPRING = { damping: 40, stiffness: 600, mass: 0.3 };
+const DRAG_START_SPRING = { damping: 20, stiffness: 400 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
@@ -82,9 +98,22 @@ export default function TrafficCounterScreen() {
   const params = useLocalSearchParams<{
     workOrderId: string;
     siteType: string;
+    streetNames: string;
   }>();
   const workOrderId = params.workOrderId;
   const siteType = parseInt(params.siteType || "1", 10);
+
+  // Parse custom street names if provided
+  const customStreetNames = useMemo(() => {
+    if (params.streetNames) {
+      try {
+        return JSON.parse(params.streetNames) as Record<string, string>;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [params.streetNames]);
 
   const workOrder = useAppSelector((state) =>
     state.trafficCount.workOrders.find((wo) => wo.id === workOrderId),
@@ -96,12 +125,27 @@ export default function TrafficCounterScreen() {
   const siteConfig = getSiteTypeConfig(siteType);
   const activeDirections = siteConfig.directions as Direction[];
 
-  const streetNames = useMemo(
+  const defaultStreetNames = useMemo(
     () => getStreetNames(workOrder?.locationName || "RAINBOW DR @ STAR AV"),
     [workOrder?.locationName],
   );
 
+  // Build direction labels from custom names or defaults
+  const directionLabels = useMemo(() => {
+    if (customStreetNames) {
+      return customStreetNames;
+    }
+    const labels: Record<string, string> = {};
+    activeDirections.forEach((d) => {
+      if (d === "N" || d === "S") labels[d] = defaultStreetNames.ns;
+      else labels[d] = defaultStreetNames.ew;
+    });
+    return labels;
+  }, [customStreetNames, activeDirections, defaultStreetNames]);
+
   // ── Orientation lock ───────────────────────────────────────────────────
+  const [hasBeenLandscape, setHasBeenLandscape] = useState(false);
+
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
     return () => {
@@ -110,6 +154,13 @@ export default function TrafficCounterScreen() {
       );
     };
   }, []);
+
+  // Track when we actually reach landscape
+  useEffect(() => {
+    if (isLandscape && !hasBeenLandscape) {
+      setHasBeenLandscape(true);
+    }
+  }, [isLandscape, hasBeenLandscape]);
 
   // ── Timer ──────────────────────────────────────────────────────────────
   const [elapsed, setElapsed] = useState(0);
@@ -135,6 +186,35 @@ export default function TrafficCounterScreen() {
     return `${h}:${m}:${ss}`;
   };
 
+  // ── Feedback mode (vibration / sound / none) ────────────────────────
+  type FeedbackMode = "vibrate" | "sound" | "none";
+  const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>("vibrate");
+  const feedbackModeRef = useRef<FeedbackMode>("vibrate");
+  useEffect(() => {
+    feedbackModeRef.current = feedbackMode;
+  }, [feedbackMode]);
+
+  const cycleFeedbackMode = useCallback(() => {
+    setFeedbackMode((prev) => {
+      if (prev === "vibrate") return "sound";
+      if (prev === "sound") return "none";
+      return "vibrate";
+    });
+  }, []);
+
+  const triggerFeedback = useCallback((type: "drag" | "drop") => {
+    const mode = feedbackModeRef.current;
+    if (mode === "vibrate") {
+      if (type === "drag") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    }
+    // Sound mode: would integrate Audio here if expo-av is available
+    // "none" mode: no feedback
+  }, []);
+
   // ── Drag state (ref-based so gesture callbacks always see latest) ──────
   const dragRef = useRef<DragInfo>({
     isDragging: false,
@@ -144,12 +224,29 @@ export default function TrafficCounterScreen() {
   });
   const [dragUi, setDragUi] = useState<DragInfo>(dragRef.current);
 
-  // ── Feedback toast ─────────────────────────────────────────────────────
-  const [lastRecord, setLastRecord] = useState<{
-    from: Direction;
-    to: Direction;
-    vehicle: string;
-  } | null>(null);
+  // ── Record history for undo ────────────────────────────────────────────
+  const recordHistoryRef = useRef<RecordEntry[]>([]);
+
+  // ── Toast state (instantly replaced) ───────────────────────────────────
+  const [lastRecord, setLastRecord] = useState<RecordEntry | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((record: RecordEntry) => {
+    // Clear any existing timer
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    // Instantly replace toast
+    setLastRecord(record);
+    // Auto-hide after 2.5s
+    toastTimerRef.current = setTimeout(() => {
+      setLastRecord((current) => {
+        // Only hide if it's still the same record
+        if (current?.id === record.id) return null;
+        return current;
+      });
+    }, 2500);
+  }, []);
 
   // ── Drop zones (recomputed on dimension change) ────────────────────────
   const dropZonesRef = useRef<DropZone[]>([]);
@@ -208,10 +305,11 @@ export default function TrafficCounterScreen() {
   const recordMovement = useCallback(
     (from: Direction, to: Direction, classId: string, className: string) => {
       if (from === to) return;
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      triggerFeedback("drop");
 
+      const countId = uuidv4();
       const newCount: TrafficCount = {
-        id: uuidv4(),
+        id: countId,
         siteId: workOrder?.studyId || "",
         isSynced: false,
         videoId: "",
@@ -225,11 +323,44 @@ export default function TrafficCounterScreen() {
 
       dispatch(addCountToWorkOrder({ workOrderId, count: newCount }));
       setTotalCount((p) => p + 1);
-      setLastRecord({ from, to, vehicle: className });
-      setTimeout(() => setLastRecord(null), 1200);
+
+      const record: RecordEntry = {
+        id: countId,
+        from,
+        to,
+        vehicle: className,
+        timestamp: Date.now(),
+      };
+      recordHistoryRef.current.push(record);
+      showToast(record);
     },
-    [dispatch, workOrderId, workOrder],
+    [dispatch, workOrderId, workOrder, showToast, triggerFeedback],
   );
+
+  // ── Undo last record ──────────────────────────────────────────────────
+  const handleUndo = useCallback(() => {
+    const history = recordHistoryRef.current;
+    if (history.length === 0) return;
+
+    const lastEntry = history.pop()!;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Remove from redux store
+    dispatch(
+      removeLastCountFromWorkOrder({
+        workOrderId,
+        countId: lastEntry.id,
+      }),
+    );
+
+    setTotalCount((p) => Math.max(0, p - 1));
+
+    // Clear toast if it was showing the undone record
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    setLastRecord(null);
+  }, [dispatch, workOrderId]);
 
   // ── Stable callbacks for DraggableVehicle ──────────────────────────────
   const onDragStartCb = useCallback(
@@ -241,9 +372,9 @@ export default function TrafficCounterScreen() {
         classificationName: className,
       };
       setDragUi({ ...dragRef.current });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      triggerFeedback("drag");
     },
-    [],
+    [triggerFeedback],
   );
 
   const onDragEndCb = useCallback(() => {
@@ -301,9 +432,9 @@ export default function TrafficCounterScreen() {
   }, [classifications]);
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  PORTRAIT GUARD
+  //  PORTRAIT GUARD — stays until device actually reaches landscape
   // ══════════════════════════════════════════════════════════════════════════
-  if (!isLandscape) {
+  if (!isLandscape && !hasBeenLandscape) {
     return (
       <GestureHandlerRootView style={portraitGuard.root}>
         <StatusBar hidden />
@@ -312,6 +443,29 @@ export default function TrafficCounterScreen() {
           <Text style={portraitGuard.title}>Rotate Your Device</Text>
           <Text style={portraitGuard.sub}>
             Please rotate to landscape mode{"\n"}to use the Traffic Counter
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={portraitGuard.backBtn}
+          >
+            <Text style={portraitGuard.backText}>← Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </GestureHandlerRootView>
+    );
+  }
+
+  // If user rotates back to portrait after having been in landscape,
+  // show a minimal reminder but don't block
+  if (!isLandscape && hasBeenLandscape) {
+    return (
+      <GestureHandlerRootView style={portraitGuard.root}>
+        <StatusBar hidden />
+        <View style={portraitGuard.container}>
+          <DeviceRotate size={64} color="#C4A635" weight="light" />
+          <Text style={portraitGuard.title}>Rotate Your Device</Text>
+          <Text style={portraitGuard.sub}>
+            Please rotate back to landscape mode
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -365,7 +519,7 @@ export default function TrafficCounterScreen() {
 
         {/* ── Intersection ──────────────────────────────────────── */}
         <View style={s.intersection}>
-          {/* Corner blocks (green areas like Figma) */}
+          {/* Corner blocks */}
           <View style={[s.corner, s.cTL]} />
           <View style={[s.corner, s.cTR]} />
           <View style={[s.corner, s.cBL]} />
@@ -394,7 +548,7 @@ export default function TrafficCounterScreen() {
           {/* ── NORTH ──────────────────────────────────────────── */}
           {activeDirections.includes("N") && (
             <View style={s.northArea}>
-              <DirLabel dir="N" street={streetNames.ns} />
+              <DirLabel dir="N" street={directionLabels["N"]} />
               {renderVehicles("N")}
             </View>
           )}
@@ -403,14 +557,14 @@ export default function TrafficCounterScreen() {
           {activeDirections.includes("S") && (
             <View style={s.southArea}>
               {renderVehicles("S")}
-              <DirLabel dir="S" street={streetNames.ns} />
+              <DirLabel dir="S" street={directionLabels["S"]} />
             </View>
           )}
 
           {/* ── WEST ───────────────────────────────────────────── */}
           {activeDirections.includes("W") && (
             <View style={s.westArea}>
-              <DirLabel dir="W" street={streetNames.ew} />
+              <DirLabel dir="W" street={directionLabels["W"]} />
               <View style={s.sideVehicles}>{renderVehicles("W")}</View>
             </View>
           )}
@@ -419,7 +573,7 @@ export default function TrafficCounterScreen() {
           {activeDirections.includes("E") && (
             <View style={s.eastArea}>
               <View style={s.sideVehicles}>{renderVehicles("E")}</View>
-              <DirLabel dir="E" street={streetNames.ew} />
+              <DirLabel dir="E" street={directionLabels["E"]} />
             </View>
           )}
 
@@ -430,25 +584,58 @@ export default function TrafficCounterScreen() {
               .map((d) => <DropOverlay key={d} direction={d} />)}
         </View>
 
-        {/* ── Bottom-right toolbar ──────────────────────────────── */}
+        {/* ── Bottom-right toolbar: feedback mode toggle ────────── */}
         <View style={s.toolbar}>
-          <TouchableOpacity style={s.tbBtn}>
-            <Prohibit size={22} color="#D4D4B0" />
+          <TouchableOpacity
+            style={[s.tbBtn, feedbackMode === "none" && s.tbBtnActive]}
+            onPress={
+              feedbackMode === "none"
+                ? () => setFeedbackMode("vibrate")
+                : () => setFeedbackMode("none")
+            }
+          >
+            <Prohibit
+              size={22}
+              color={feedbackMode === "none" ? "#C4A635" : "#D4D4B0"}
+              weight={feedbackMode === "none" ? "bold" : "regular"}
+            />
           </TouchableOpacity>
-          <TouchableOpacity style={s.tbBtn}>
-            <SpeakerHigh size={22} color="#D4D4B0" />
+          <TouchableOpacity
+            style={[s.tbBtn, feedbackMode === "sound" && s.tbBtnActive]}
+            onPress={() => setFeedbackMode("sound")}
+          >
+            <SpeakerHigh
+              size={22}
+              color={feedbackMode === "sound" ? "#C4A635" : "#D4D4B0"}
+              weight={feedbackMode === "sound" ? "bold" : "regular"}
+            />
           </TouchableOpacity>
-          <TouchableOpacity style={s.tbBtn}>
-            <Vibrate size={22} color="#D4D4B0" />
+          <TouchableOpacity
+            style={[s.tbBtn, feedbackMode === "vibrate" && s.tbBtnActive]}
+            onPress={() => setFeedbackMode("vibrate")}
+          >
+            <Vibrate
+              size={22}
+              color={feedbackMode === "vibrate" ? "#C4A635" : "#D4D4B0"}
+              weight={feedbackMode === "vibrate" ? "bold" : "regular"}
+            />
           </TouchableOpacity>
         </View>
 
-        {/* ── Success toast ──────────────────────────────────────── */}
+        {/* ── Success toast with undo ─────────────────────────────── */}
         {lastRecord && (
           <View style={s.toast}>
             <Text style={s.toastText}>
               ✓ {lastRecord.vehicle}: {lastRecord.from} → {lastRecord.to}
             </Text>
+            <TouchableOpacity
+              onPress={handleUndo}
+              style={s.undoBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <ArrowCounterClockwise size={16} color="#FFF" weight="bold" />
+              <Text style={s.undoText}>Undo</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -504,8 +691,6 @@ const DraggableVehicle = React.memo(
 
     const IconComponent = getVehicleIcon(classification.name);
 
-    // Store callbacks in refs so the gesture object doesn't need to be
-    // recreated when parent re-renders.
     const cbRef = useRef({ onDragStart, onDragEnd, onDrop });
     cbRef.current = { onDragStart, onDragEnd, onDrop };
 
@@ -514,7 +699,6 @@ const DraggableVehicle = React.memo(
     const classRef = useRef(classification);
     classRef.current = classification;
 
-    // Plain JS callback wrappers (stable identity)
     const jsStart = useCallback(() => {
       cbRef.current.onDragStart(
         dirRef.current,
@@ -531,14 +715,13 @@ const DraggableVehicle = React.memo(
       cbRef.current.onDrop(dirRef.current, absX, absY);
     }, []);
 
-    // Gesture — uses runOnJS with stable wrapper functions
     const gesture = useMemo(
       () =>
         Gesture.Pan()
-          .activateAfterLongPress(150)
+          .activateAfterLongPress(0)
           .onStart(() => {
             "worklet";
-            sc.value = withSpring(1.3, { damping: 12 });
+            sc.value = withSpring(1.2, DRAG_START_SPRING);
             op.value = 0.85;
             runOnJS(jsStart)();
           })
@@ -550,23 +733,26 @@ const DraggableVehicle = React.memo(
           .onEnd((e) => {
             "worklet";
             runOnJS(jsDrop)(e.absoluteX, e.absoluteY);
-            tx.value = withSpring(0, { damping: 15, stiffness: 150 });
-            ty.value = withSpring(0, { damping: 15, stiffness: 150 });
-            sc.value = withSpring(1, { damping: 12 });
-            op.value = withTiming(1, { duration: 150 });
+            // Near-instant snap back — critical for 1.5 records/sec throughput
+            tx.value = withSpring(0, FAST_SPRING);
+            ty.value = withSpring(0, FAST_SPRING);
+            sc.value = withSpring(1, FAST_SPRING);
+            op.value = withTiming(1, { duration: 50 });
             runOnJS(jsEnd)();
           }),
       [jsStart, jsEnd, jsDrop],
     );
 
-    const aStyle = useAnimatedStyle(() => ({
-      transform: [
-        { translateX: tx.value },
-        { translateY: ty.value },
-        { scale: sc.value },
-      ],
-      opacity: op.value,
-    }));
+    const aStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { translateX: tx.value } as const,
+          { translateY: ty.value } as const,
+          { scale: sc.value } as const,
+        ],
+        opacity: op.value,
+      } as any;
+    });
 
     return (
       <GestureDetector gesture={gesture}>
@@ -734,7 +920,7 @@ const s = StyleSheet.create({
   cBL: { bottom: 0, left: 0, width: "28%", height: "30%" },
   cBR: { bottom: 0, right: 0, width: "28%", height: "30%" },
 
-  // Vertical road (manual dashes — no borderStyle)
+  // Vertical road
   vRoad: {
     position: "absolute",
     left: "50%",
@@ -749,7 +935,7 @@ const s = StyleSheet.create({
   vDash: { width: 2, height: 8, backgroundColor: "#C4A635" },
   vGap: { width: 2, height: 6, backgroundColor: "transparent" },
 
-  // Horizontal road (manual dashes)
+  // Horizontal road
   hRoad: {
     position: "absolute",
     top: "50%",
@@ -819,17 +1005,35 @@ const s = StyleSheet.create({
     zIndex: 100,
   },
   tbBtn: { padding: 4 },
+  tbBtnActive: {
+    backgroundColor: "rgba(196,166,53,0.2)",
+    borderRadius: 6,
+  },
 
-  // Toast
+  // Toast with undo
   toast: {
     position: "absolute",
     top: "45%",
     alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "rgba(60,120,40,0.9)",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingLeft: 16,
+    paddingRight: 6,
+    paddingVertical: 6,
     borderRadius: 8,
     zIndex: 2000,
+    gap: 12,
   },
   toastText: { color: "#FFF", fontSize: 14, fontWeight: "600" },
+  undoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(220,50,50,0.9)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  undoText: { color: "#FFF", fontSize: 12, fontWeight: "700" },
 });

@@ -16,7 +16,9 @@ import {
 } from "phosphor-react-native";
 import { SYNC_STATUS } from "@/src/constants/global";
 import { useTheme } from "@/src/contexts/ThemeContext";
-import { isSupport } from "..";
+
+export const isSupport = (item: Sign | Support) =>
+  Array.isArray((item as Support)?.signs);
 
 interface SignSupportCardProps {
   item: Sign | Support;

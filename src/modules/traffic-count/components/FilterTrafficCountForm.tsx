@@ -48,9 +48,7 @@ const FilterTrafficCountForm = ({
 
   const toggleSyncStatus = (syncStatus: SyncStatusType) => {
     if (filterBySyncStatus.includes(syncStatus)) {
-      setFilterBySyncStatus(
-        filterBySyncStatus.filter((s) => s !== syncStatus),
-      );
+      setFilterBySyncStatus(filterBySyncStatus.filter((s) => s !== syncStatus));
     } else {
       setFilterBySyncStatus([...filterBySyncStatus, syncStatus]);
     }
@@ -173,7 +171,6 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.background,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
-      maxHeight: "80%",
     },
     header: {
       flexDirection: "row",

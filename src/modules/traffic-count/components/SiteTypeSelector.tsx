@@ -3,19 +3,22 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   Dimensions,
+  TextInput,
+  ScrollView,
 } from "react-native";
 import Svg, { Line, Path } from "react-native-svg";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import TextView from "@/src/components/ui/TextView";
 import ButtonView from "@/src/components/ui/ButtonView";
-import { spacing } from "@/src/styles/theme/spacing";
+import { spacing, scale } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
 import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
+import { useDrawer } from "@/src/contexts/DrawerContext";
+import { X } from "phosphor-react-native";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 /**
  * Site types representing different intersection configurations:
@@ -50,7 +53,6 @@ interface IntersectionPreviewProps {
   selected?: boolean;
 }
 
-// Mini intersection preview for selector
 const IntersectionPreview = ({
   siteType,
   size = 80,
@@ -68,7 +70,6 @@ const IntersectionPreview = ({
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Roads as gray lines with curves at corners */}
       {hasN && (
         <Line
           x1={mid}
@@ -109,7 +110,6 @@ const IntersectionPreview = ({
           strokeWidth={2}
         />
       )}
-      {/* Center dashed lines */}
       {hasN && (
         <Line
           x1={mid}
@@ -154,7 +154,6 @@ const IntersectionPreview = ({
           strokeDasharray="3,3"
         />
       )}
-      {/* Corner curves where roads DON'T exist */}
       {!hasN && !hasW && (
         <Path
           d={`M ${mid - 10} ${mid} Q ${mid - 10} ${mid - 10} ${mid} ${mid - 10}`}
@@ -191,135 +190,315 @@ const IntersectionPreview = ({
   );
 };
 
-interface SiteTypeSelectorProps {
-  visible: boolean;
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Drawer Content — Two-step flow
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const DIRECTION_FULL_NAMES: Record<string, string> = {
+  N: "North",
+  S: "South",
+  E: "East",
+  W: "West",
+};
+
+interface SiteTypeDrawerContentProps {
   currentSiteType: number;
-  onSelect: (siteType: number) => void;
-  onCancel: () => void;
+  defaultLocationName?: string;
+  onComplete: (siteType: number, streetNames: Record<string, string>) => void;
 }
 
-const SiteTypeSelector = ({
-  visible,
+const SiteTypeDrawerContent = ({
   currentSiteType,
-  onSelect,
-  onCancel,
-}: SiteTypeSelectorProps) => {
+  defaultLocationName,
+  onComplete,
+}: SiteTypeDrawerContentProps) => {
   const styles = useThemedStyles(createStyles);
+  const { closeDrawer } = useDrawer();
+  const [step, setStep] = useState<1 | 2>(1);
   const [selectedType, setSelectedType] = useState(currentSiteType);
 
+  // Parse default street names from location
+  const defaultParts = (defaultLocationName || "")
+    .split("@")
+    .map((s) => s.trim());
+  const defaultNS = defaultParts[0] || "";
+  const defaultEW = defaultParts[1] || "";
+
+  const selectedConfig = getSiteTypeConfig(selectedType);
+  const activeDirections = selectedConfig.directions;
+
+  // Street name state for each direction
+  const [streetNames, setStreetNames] = useState<Record<string, string>>(() => {
+    const names: Record<string, string> = {};
+    ["N", "S", "E", "W"].forEach((d) => {
+      if (d === "N" || d === "S") names[d] = defaultNS;
+      else names[d] = defaultEW;
+    });
+    return names;
+  });
+
   const handleNext = () => {
-    onSelect(selectedType);
+    setStep(2);
   };
 
-  return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.modal}>
-          <TextView style={styles.title}>Site Type :</TextView>
-          <View style={styles.divider} />
-          <TextView style={styles.subtitle}>
-            Please choose the site type you want to work with :
-          </TextView>
+  const handleBack = () => {
+    setStep(1);
+  };
 
-          <View style={styles.grid}>
-            {SITE_TYPES.map((siteType) => (
-              <TouchableOpacity
-                key={siteType.type}
+  const handleStart = () => {
+    // Only pass names for active directions
+    const finalNames: Record<string, string> = {};
+    activeDirections.forEach((d) => {
+      finalNames[d] = streetNames[d] || DIRECTION_FULL_NAMES[d] || d;
+    });
+    onComplete(selectedType, finalNames);
+  };
+
+  const handleCancel = () => {
+    closeDrawer("site-type-selector");
+  };
+
+  const updateStreetName = (dir: string, value: string) => {
+    setStreetNames((prev) => ({ ...prev, [dir]: value }));
+  };
+
+  // ── Step 1: Site type selection ──────────────────────────────────────
+  if (step === 1) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TextView style={styles.title}>Site Type</TextView>
+          <TouchableOpacity onPress={handleCancel}>
+            <X size={24} color={colors.lightGreen} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.divider} />
+
+        <TextView style={styles.subtitle}>
+          Choose the intersection type for this site:
+        </TextView>
+
+        <View style={styles.grid}>
+          {SITE_TYPES.map((siteType) => (
+            <TouchableOpacity
+              key={siteType.type}
+              style={[
+                styles.siteOption,
+                selectedType === siteType.type && styles.siteOptionSelected,
+              ]}
+              onPress={() => setSelectedType(siteType.type)}
+              activeOpacity={0.7}
+            >
+              <IntersectionPreview
+                siteType={siteType.type}
+                size={70}
+                selected={selectedType === siteType.type}
+              />
+              <TextView
                 style={[
-                  styles.siteOption,
-                  selectedType === siteType.type && styles.siteOptionSelected,
+                  styles.siteLabel,
+                  selectedType === siteType.type && styles.siteLabelSelected,
                 ]}
-                onPress={() => setSelectedType(siteType.type)}
-                activeOpacity={0.7}
               >
-                <IntersectionPreview
-                  siteType={siteType.type}
-                  size={80}
-                  selected={selectedType === siteType.type}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
+                {siteType.label}
+              </TextView>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-              <TextView style={styles.cancelText}>Cancel</TextView>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-              <TextView style={styles.nextText}>Next</TextView>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+            <TextView style={styles.cancelText}>Cancel</TextView>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+            <TextView style={styles.nextText}>Next</TextView>
+          </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    );
+  }
+
+  // ── Step 2: Name each direction ──────────────────────────────────────
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TextView style={styles.title}>Name Each Side</TextView>
+        <TouchableOpacity onPress={handleCancel}>
+          <X size={24} color={colors.lightGreen} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.divider} />
+
+      <TextView style={styles.subtitle}>
+        Enter a street name for each direction of the intersection:
+      </TextView>
+
+      <ScrollView
+        style={styles.namesContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Preview of selected intersection */}
+        <View style={styles.previewRow}>
+          <IntersectionPreview siteType={selectedType} size={90} selected />
+        </View>
+
+        {activeDirections.map((dir) => (
+          <View key={dir} style={styles.nameField}>
+            <View style={styles.nameLabel}>
+              <View style={styles.dirBadge}>
+                <TextView style={styles.dirBadgeText}>{dir}</TextView>
+              </View>
+              <TextView style={styles.dirFullName}>
+                {DIRECTION_FULL_NAMES[dir]}
+              </TextView>
+            </View>
+            <TextInput
+              style={styles.nameInput}
+              value={streetNames[dir]}
+              onChangeText={(v) => updateStreetName(dir, v)}
+              placeholder={`e.g. ${dir === "N" || dir === "S" ? "Main St" : "Cross Ave"}`}
+              placeholderTextColor="rgba(109, 119, 122, 0.4)"
+            />
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
+          <TextView style={styles.cancelText}>Back</TextView>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.nextButton} onPress={handleStart}>
+          <TextView style={styles.nextText}>Start Counting</TextView>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Hook to open the site type selector drawer
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const useSiteTypeSelector = () => {
+  const { openDrawer, closeDrawer } = useDrawer();
+
+  const showSiteTypeSelector = (
+    currentSiteType: number,
+    defaultLocationName: string,
+    onComplete: (siteType: number, streetNames: Record<string, string>) => void,
+  ) => {
+    openDrawer(
+      "site-type-selector",
+      <SiteTypeDrawerContent
+        currentSiteType={currentSiteType}
+        defaultLocationName={defaultLocationName}
+        onComplete={(siteType, streetNames) => {
+          closeDrawer("site-type-selector");
+          onComplete(siteType, streetNames);
+        }}
+      />,
+      {
+        position: "bottom",
+        transitionType: "slide",
+        drawerHeight: SCREEN_HEIGHT * 0.7,
+        enableGestures: true,
+        enableOverlay: true,
+        overlayOpacity: 0.6,
+      },
+    );
+  };
+
+  return { showSiteTypeSelector };
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Styles
+// ═══════════════════════════════════════════════════════════════════════════════
+
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
-    overlay: {
+    container: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.6)",
-      justifyContent: "center",
-      alignItems: "center",
-      padding: spacing.lg,
+      backgroundColor: theme.background,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      overflow: "hidden",
     },
-    modal: {
-      backgroundColor: "#FFFFFF",
-      borderRadius: 12,
-      width: SCREEN_WIDTH * 0.85,
-      padding: spacing.lg,
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.xs,
     },
     title: {
       fontSize: FontSizes.lg,
       fontWeight: FontWeights.bold,
-      color: "#1A1A1A",
-      marginBottom: spacing.xs,
+      color: theme.text,
     },
     divider: {
       height: 1,
-      backgroundColor: "#E0E0E0",
-      marginBottom: spacing.md,
+      backgroundColor: theme.border,
+      marginHorizontal: spacing.md,
+      marginBottom: spacing.sm,
     },
     subtitle: {
       fontSize: FontSizes.sm,
-      color: "#666",
-      marginBottom: spacing.lg,
+      color: theme.secondary,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.md,
     },
     grid: {
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "center",
-      gap: spacing.md,
-      marginBottom: spacing.xl,
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.md,
     },
     siteOption: {
       width: 100,
-      height: 100,
-      justifyContent: "center",
       alignItems: "center",
+      justifyContent: "center",
       borderRadius: 8,
       borderWidth: 1.5,
       borderColor: "transparent",
+      paddingVertical: spacing.xs,
+      gap: 4,
     },
     siteOptionSelected: {
       borderColor: colors.lightGreen,
       backgroundColor: "rgba(184,184,120, 0.08)",
     },
+    siteLabel: {
+      fontSize: FontSizes.xxs,
+      color: theme.secondary,
+    },
+    siteLabelSelected: {
+      color: colors.lightGreen,
+      fontWeight: FontWeights.semiBold,
+    },
     actions: {
       flexDirection: "row",
       gap: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
     },
     cancelButton: {
       flex: 1,
       paddingVertical: 14,
       borderRadius: 8,
       borderWidth: 1.5,
-      borderColor: "#E0E0E0",
+      borderColor: theme.border,
       alignItems: "center",
     },
     cancelText: {
-      fontSize: FontSizes.md,
+      fontSize: FontSizes.base,
       fontWeight: FontWeights.semiBold,
       color: colors.lightGreen,
     },
@@ -331,10 +510,57 @@ const createStyles = (theme: Theme) =>
       alignItems: "center",
     },
     nextText: {
-      fontSize: FontSizes.md,
+      fontSize: FontSizes.base,
       fontWeight: FontWeights.semiBold,
       color: "#FFFFFF",
     },
+    // Step 2 styles
+    namesContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+    },
+    previewRow: {
+      alignItems: "center",
+      marginBottom: spacing.md,
+    },
+    nameField: {
+      marginBottom: spacing.sm,
+    },
+    nameLabel: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      marginBottom: 6,
+    },
+    dirBadge: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.lightGreen,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    dirBadgeText: {
+      color: "#FFF",
+      fontWeight: FontWeights.bold,
+      fontSize: FontSizes.sm,
+    },
+    dirFullName: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.semiBold,
+      color: theme.text,
+    },
+    nameInput: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 6,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      fontSize: FontSizes.sm,
+      color: theme.text,
+      backgroundColor: theme.background,
+      height: scale(36),
+    },
   });
 
-export default SiteTypeSelector;
+export default SiteTypeDrawerContent;

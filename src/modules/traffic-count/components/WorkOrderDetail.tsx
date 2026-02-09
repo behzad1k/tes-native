@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   Dimensions,
   Linking,
   Platform,
+  FlatList,
 } from "react-native";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
@@ -15,15 +16,16 @@ import { scale, spacing } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
-import { TrafficCountWorkOrder } from "../types";
+import { TrafficCountWorkOrder, TrafficCount } from "../types";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
-import { MapPin } from "phosphor-react-native";
+import { MapPin, ListBullets, ArrowRight } from "phosphor-react-native";
 import { router } from "expo-router";
 import { ROUTES } from "@/src/constants/navigation";
-import SiteTypeSelector from "./SiteTypeSelector";
+import { useSiteTypeSelector } from "./SiteTypeSelector";
+import { useAppSelector } from "@/src/store/hooks";
+import EntriesDrawerContent from "./EntriesDrawerContent";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
-  Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface WorkOrderDetailProps {
   workOrder: TrafficCountWorkOrder;
@@ -33,8 +35,18 @@ interface WorkOrderDetailProps {
 const formatDateTimeDisplay = (dateStr: string): string => {
   const date = new Date(dateStr);
   const months = [
-    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
   ];
   const day = String(date.getDate()).padStart(2, "0");
   const month = months[date.getMonth()];
@@ -44,10 +56,18 @@ const formatDateTimeDisplay = (dateStr: string): string => {
   return `${day} ${month} ${year} - ${hours}:${minutes}`;
 };
 
+// ── Work Order Detail ─────────────────────────────────────────────────────
+
 const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
   const styles = useThemedStyles(createStyles);
-  const { closeDrawer } = useDrawer();
-  const [showSiteTypeSelector, setShowSiteTypeSelector] = useState(false);
+  const { openDrawer, closeDrawer } = useDrawer();
+  const { showSiteTypeSelector } = useSiteTypeSelector();
+
+  // Read counts from Redux (live data, not stale prop)
+  const counts = useAppSelector((state) => {
+    const wo = state.trafficCount.workOrders.find((w) => w.id === workOrder.id);
+    return wo?.counts || [];
+  });
 
   const hasValidLocation =
     workOrder.latitude !== 0 &&
@@ -71,22 +91,42 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
   };
 
   const handleClaim = () => {
-    // Show site type selector first
-    setShowSiteTypeSelector(true);
+    // Close the work order detail drawer first
+    closeDrawer(`wo-detail-${workOrder.id}`);
+
+    // Open site type selector drawer (step 1: type, step 2: names)
+    setTimeout(() => {
+      showSiteTypeSelector(
+        workOrder.siteType || 1,
+        workOrder.locationName || "",
+        (siteType, streetNames) => {
+          // Navigate to counter with selected site type and custom street names
+          router.push({
+            pathname: ROUTES.TRAFFIC_COUNT_COUNTER,
+            params: {
+              workOrderId: workOrder.id,
+              siteType: String(siteType),
+              streetNames: JSON.stringify(streetNames),
+            },
+          });
+        },
+      );
+    }, 350); // Small delay to let the first drawer close smoothly
   };
 
-  const handleSiteTypeSelected = (siteType: number) => {
-    setShowSiteTypeSelector(false);
-    closeDrawer();
-
-    // Navigate to the counter screen with work order ID and selected site type
-    router.push({
-      pathname: ROUTES.TRAFFIC_COUNT_COUNTER,
-      params: {
-        workOrderId: workOrder.id,
-        siteType: String(siteType),
+  const showEntries = () => {
+    openDrawer(
+      `wo-entries-${workOrder.id}`,
+      <EntriesDrawerContent workOrder={workOrder} counts={counts} />,
+      {
+        position: "bottom",
+        transitionType: "slide",
+        drawerHeight: SCREEN_HEIGHT * 0.75,
+        enableGestures: true,
+        enableOverlay: true,
+        overlayOpacity: 0.6,
       },
-    });
+    );
   };
 
   return (
@@ -185,27 +225,26 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
             </View>
           )}
         </View>
-
-        {/* Claim Button */}
-        <View style={styles.claimButtonContainer}>
-          <ButtonView
-            variant="primary"
-            size="large"
-            onPress={handleClaim}
-            style={styles.claimButton}
-          >
-            Claim
-          </ButtonView>
-        </View>
       </ScrollView>
-
-      {/* Site Type Selector Modal */}
-      <SiteTypeSelector
-        visible={showSiteTypeSelector}
-        currentSiteType={workOrder.siteType || 1}
-        onSelect={handleSiteTypeSelected}
-        onCancel={() => setShowSiteTypeSelector(false)}
-      />
+      <View style={styles.claimButtonContainer}>
+        <ButtonView
+          size="medium"
+          onPress={handleClaim}
+          style={styles.claimButton}
+        >
+          Claim
+        </ButtonView>
+        {counts.length > 0 && (
+          <ButtonView variant="outline" size="medium" onPress={showEntries}>
+            <View style={styles.entriesBtnContent}>
+              <ListBullets size={18} color={colors.text} />
+              <TextView style={styles.entriesBtnText}>
+                Show Entries ({counts.length})
+              </TextView>
+            </View>
+          </ButtonView>
+        )}
+      </View>
     </View>
   );
 };
@@ -217,8 +256,6 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.background,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
-      height: SCREEN_HEIGHT * 0.85,
-      paddingBottom: scale(20),
     },
     header: {
       flexDirection: "row",
@@ -236,6 +273,7 @@ const createStyles = (theme: Theme) =>
     content: {
       flex: 1,
       paddingHorizontal: spacing.md,
+      paddingBottom: scale(100),
     },
     fieldGroup: {
       marginTop: spacing.sm,
@@ -319,14 +357,35 @@ const createStyles = (theme: Theme) =>
       fontSize: FontSizes.sm,
     },
     claimButtonContainer: {
-      marginTop: spacing.lg,
-      marginBottom: spacing.xl,
+      paddingTop: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.xxl,
+      position: "absolute",
+      bottom: 0,
+      backgroundColor: theme.background,
       alignItems: "center",
+      gap: 5,
+      justifyContent: "space-between",
+      flexDirection: "row",
     },
     claimButton: {
-      width: SCREEN_WIDTH * 0.5,
-      borderRadius: 25,
-      paddingVertical: spacing.sm,
+      flex: 1,
+    },
+    entriesButton: {
+      flex: 1,
+      width: "40%",
+      paddingHorizontal: 0,
+    },
+    entriesBtnContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    entriesBtnText: {
+      fontSize: FontSizes.sm,
+      fontWeight: FontWeights.semiBold,
+      color: theme.text,
     },
   });
 

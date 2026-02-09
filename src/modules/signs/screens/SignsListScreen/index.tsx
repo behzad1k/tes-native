@@ -33,9 +33,7 @@ import { Toast } from "toastify-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
 import NetInfo from "@react-native-community/netinfo";
 import SyncStatusSummary from "@/src/components/ui/SyncStatusSummary";
-
-export const isSupport = (item: Sign | Support) =>
-  Array.isArray((item as Support)?.signs);
+import { isSupport } from "./components/SignCard";
 
 export default function SignsListScreen() {
   const { t } = useTranslation();
@@ -241,8 +239,6 @@ export default function SignsListScreen() {
         </View>
       )}
       <Tabs setTab={setTab} tab={tab} tabs={TABS} />
-      import SyncStatusSummary from "@/src/components/ui/SyncStatusSummary"; //
-      In the render, before the list:
       <View style={styles.listHeader}>
         <View style={styles.listHeaderLeft}>
           <TextView style={styles.itemsLengthText}>

@@ -1,11 +1,11 @@
 import { Stack } from "expo-router";
 
-export default function SignsLayout() {
+export default function SignSupportsLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="create" />
-      <Stack.Screen name="[id]" />
+      <Stack.Screen name="sign" />
+      <Stack.Screen name="support" />
     </Stack>
   );
 }
