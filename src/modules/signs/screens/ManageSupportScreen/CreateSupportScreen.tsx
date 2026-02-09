@@ -11,7 +11,7 @@ import ButtonView from "@/src/components/ui/ButtonView";
 import LocationStep from "./components/LocationStep";
 import { ROUTES } from "@/src/constants/navigation";
 import ImageStep from "./components/ImageStep";
-import { SignFormData, SupportFormData } from "../../types";
+import { SupportFormData } from "../../types";
 import { useForm } from "react-hook-form";
 import StepHeader from "./components/StepHeader";
 import { useSupportOperations } from "../../hooks/useSupportOperations";
@@ -155,17 +155,9 @@ export default function CreateSupportScreen() {
             getValues={getValues}
           />
         )}
-        {step === 2 && (
-          <ImageStep
-            supportFormControl={control}
-            tempImages={tempImages}
-            setTempImages={setTempImages}
-            isCreateMode={true}
-          />
-        )}
+        {step === 2 && <ImageStep isCreateMode={true} />}
         {step === 3 && (
           <ImageStep
-            supportFormControl={control}
             tempImages={tempImages}
             setTempImages={setTempImages}
             isCreateMode={true}

@@ -34,6 +34,7 @@
   "type": "Type",
   "pressToSelect": "Press to select",
   "locationType": "Location Type",
+  "position": "Position",
   "customer": "Customer",
   "buttons": {
     "submit": "Submit",

@@ -34,9 +34,10 @@ const ImageStep = ({
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <ImagePicker
-        images={images}
-        itemId={signId}
+        images={images} // combined: existingImages + tempImages
+        itemId={signId} // will be undefined in create mode — that's fine now
         setTempImages={setTempImages}
+        isCreateMode={isCreateMode} // ← THIS WAS MISSING — pass it through
       />
     </ScrollView>
   );

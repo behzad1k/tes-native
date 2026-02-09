@@ -1,7 +1,6 @@
 export default {
   expo: {
     name: "Tes",
-    slug: "Tes",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./src/assets/images/logo.png",
@@ -9,6 +8,8 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     jsEngine: "hermes",
+    owner: "tes_info_tech",
+    slug: "tes-new",
     splash: {
       image: "./src/assets/images/logo.png",
       resizeMode: "contain",
@@ -16,8 +17,11 @@ export default {
     },
     assetBundlePatterns: ["**/*"],
     ios: {
-      bundleIdentifier: "com.bhzd1k.tes",
+      bundleIdentifier: "com.tes.rain",
       supportsTablet: true,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     android: {
       package: "com.tes.app",
@@ -38,7 +42,7 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: "e74d8537-a1e8-432b-acb0-0e6d62eddb89",
+        projectId: "81770c42-2d90-4d59-81ad-dd4b7ab4901d",
       },
       API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
       API_TIMEOUT: process.env.EXPO_PUBLIC_API_TIMEOUT,

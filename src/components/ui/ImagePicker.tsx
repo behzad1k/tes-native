@@ -22,12 +22,12 @@ import * as ExpoImagePicker from "expo-image-picker";
 
 interface ImagePickerProps {
   images: any[];
-  itemId: string;
-  setTempImages?: React.Dispatch<React.SetStateAction<SignImage[]>>;
+  itemId?: string; // ✅ FIX 1: made optional so create mode works without an ID
+  setTempImages?: React.Dispatch<React.SetStateAction<any[]>>;
   isCreateMode?: boolean;
 }
 const ImagePicker = ({
-  isCreateMode,
+  isCreateMode = false, // ✅ FIX 2: explicit default so it's never undefined
   itemId,
   setTempImages,
   images,
@@ -79,7 +79,7 @@ const ImagePicker = ({
       }
 
       const result = await ExpoImagePicker.launchCameraAsync({
-        mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"], // ✅ FIX 3a: replaced deprecated MediaTypeOptions.Images
         allowsEditing: true,
         quality: 0.8,
       });
@@ -121,8 +121,9 @@ const ImagePicker = ({
       }
 
       const result = await ExpoImagePicker.launchImageLibraryAsync({
-        mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
+        mediaTypes: ["images"], // ✅ FIX 3b: replaced deprecated MediaTypeOptions.Images
+        // ✅ FIX 4: removed allowsEditing (incompatible with gallery multi-select,
+        //    and was preventing images from being returned on some platforms)
         quality: 0.8,
       });
 

@@ -10,6 +10,7 @@ import {
 import TextView from "../ui/TextView";
 import { ArrowRight } from "phosphor-react-native";
 import { BlurView } from "expo-blur";
+import { colors } from "@/src/styles/theme/colors";
 
 interface ModuleCardProps {
   title: string;
@@ -72,10 +73,12 @@ const styles = StyleSheet.create({
   titleText: {
     fontWeight: 700,
     fontSize: 26,
+    color: colors.white,
   },
   descriptionText: {
     fontWeight: 400,
     fontSize: 11,
+    color: colors.white,
   },
 });
 

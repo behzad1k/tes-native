@@ -163,10 +163,10 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
           />
           <View>
             <ImagePicker
-              images={images}
-              itemId={job.id}
+              images={images} // combined: existingImages + tempImages
+              itemId={job.id} // will be undefined in create mode — that's fine now
               setTempImages={setTempImages}
-              isCreateMode={true}
+              isCreateMode={true} // ← THIS WAS MISSING — pass it through
             />
           </View>
         </View>
