@@ -1,0 +1,47 @@
+{
+  "vehicleTypes": [
+    {
+      "id": "vt_001",
+      "name": "Scooter",
+      "icon": "Scooter",
+      "isPedestrian": false,
+      "sortOrder": 1
+    },
+    {
+      "id": "vt_002",
+      "name": "Car",
+      "icon": "Car",
+      "isPedestrian": false,
+      "sortOrder": 2
+    },
+    {
+      "id": "vt_003",
+      "name": "Truck",
+      "icon": "Truck",
+      "isPedestrian": false,
+      "sortOrder": 3
+    },
+    {
+      "id": "vt_004",
+      "name": "Van",
+      "icon": "Van",
+      "isPedestrian": false,
+      "sortOrder": 4
+    },
+    {
+      "id": "vt_005",
+      "name": "Bicycle",
+      "icon": "Cyclist",
+      "isPedestrian": false,
+      "sortOrder": 5
+    }
+  ],
+  "customers": [
+    { "id": "c_001", "name": "Customer 1" },
+    { "id": "c_002", "name": "Customer 2" }
+  ],
+  "locationTypes": [
+    { "id": "lc_001", "name": "Location 1" },
+    { "id": "lc_002", "name": "Location 2" }
+  ]
+}
