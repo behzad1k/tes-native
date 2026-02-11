@@ -70,13 +70,8 @@ export default function WorkOrderCard({ item, onPress }: WorkOrderCardProps) {
   };
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.content}>
-        {/* Top Row: WO Number + Sync Badge + Status */}
         <View style={styles.topRow}>
           <View style={styles.woInfo}>
             <TextView style={styles.woNumber}>Work NO : {item.no}</TextView>
@@ -97,17 +92,14 @@ export default function WorkOrderCard({ item, onPress }: WorkOrderCardProps) {
           </TextView>
         </View>
 
-        {/* Site Name */}
         <TextView style={styles.siteName}>
           Site Name : {item.locationName}
         </TextView>
 
-        {/* Date Range */}
         <TextView style={styles.dateRange}>
           {formatDateTime(item.startDT)} / {formatDateTime(item.endDT)}
         </TextView>
 
-        {/* Days Left */}
         <TextView style={styles.daysLeft}>{item.daysLeft} Days Left</TextView>
       </View>
     </TouchableOpacity>

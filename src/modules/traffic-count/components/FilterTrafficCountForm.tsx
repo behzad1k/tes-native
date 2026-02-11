@@ -13,11 +13,8 @@ import ButtonView from "@/src/components/ui/ButtonView";
 import { spacing } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
 import { useDrawer } from "@/src/contexts/DrawerContext";
-import { X } from "phosphor-react-native";
 import { FontWeights } from "@/src/styles/theme/fonts";
 import { WorkOrderStatus, SyncStatusType } from "../types";
-
-const { width } = Dimensions.get("screen");
 
 const STATUS_OPTIONS: WorkOrderStatus[] = ["To Do", "In Progress", "Done"];
 const SYNC_OPTIONS: SyncStatusType[] = ["Synced", "Not Synced"];
@@ -79,7 +76,6 @@ const FilterTrafficCountForm = ({
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Status Filter */}
         <View style={styles.section}>
           <TextView style={styles.sectionTitle}>Status</TextView>
           <View style={styles.filterGrid}>
@@ -111,7 +107,6 @@ const FilterTrafficCountForm = ({
           </View>
         </View>
 
-        {/* Sync Status Filter */}
         <View style={styles.section}>
           <TextView style={styles.sectionTitle}>Sync Status</TextView>
           <View style={styles.filterGrid}>
@@ -144,7 +139,6 @@ const FilterTrafficCountForm = ({
         </View>
       </ScrollView>
 
-      {/* Actions */}
       <View style={styles.actions}>
         <ButtonView
           variant="outline"

@@ -37,7 +37,7 @@ const authPersistConfig = {
 };
 
 const maintenancesPersistConfig = {
-	key: "maintenances",
+	key: "maintenance",
 	storage: AsyncStorage,
 	whitelist: ["maintenances", "backendImages", "lastFetched"],
 };
@@ -58,7 +58,7 @@ const rootReducer = combineReducers({
 	auth: persistReducer(authPersistConfig, authReducer),
 	signs: persistReducer(signsPersistConfig, signsReducer),
 	supports: persistReducer(supportsPersistConfig, supportReducer),
-	maintenances: persistReducer(maintenancesPersistConfig, maintenanceReducer),
+	maintenance: persistReducer(maintenancesPersistConfig, maintenanceReducer),
 	trafficCount: persistReducer(trafficCountPersistConfig, trafficCountReducer),
 	appData: persistReducer(appDataPersistConfig, appDataReducer),
 	sync: syncReducer,

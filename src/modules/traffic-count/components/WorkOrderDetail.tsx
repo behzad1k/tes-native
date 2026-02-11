@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
@@ -6,7 +6,6 @@ import {
   Dimensions,
   Linking,
   Platform,
-  FlatList,
 } from "react-native";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
@@ -16,9 +15,9 @@ import { scale, spacing } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
-import { TrafficCountWorkOrder, TrafficCount } from "../types";
+import { TrafficCountWorkOrder } from "../types";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
-import { MapPin, ListBullets, ArrowRight } from "phosphor-react-native";
+import { MapPin, ListBullets } from "phosphor-react-native";
 import { router } from "expo-router";
 import { ROUTES } from "@/src/constants/navigation";
 import { useSiteTypeSelector } from "./SiteTypeSelector";
@@ -56,14 +55,11 @@ const formatDateTimeDisplay = (dateStr: string): string => {
   return `${day} ${month} ${year} - ${hours}:${minutes}`;
 };
 
-// ── Work Order Detail ─────────────────────────────────────────────────────
-
 const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
   const styles = useThemedStyles(createStyles);
   const { openDrawer, closeDrawer } = useDrawer();
   const { showSiteTypeSelector } = useSiteTypeSelector();
 
-  // Read counts from Redux (live data, not stale prop)
   const counts = useAppSelector((state) => {
     const wo = state.trafficCount.workOrders.find((w) => w.id === workOrder.id);
     return wo?.counts || [];
@@ -91,16 +87,13 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
   };
 
   const handleClaim = () => {
-    // Close the work order detail drawer first
     closeDrawer(`wo-detail-${workOrder.id}`);
 
-    // Open site type selector drawer (step 1: type, step 2: names)
     setTimeout(() => {
       showSiteTypeSelector(
         workOrder.siteType || 1,
         workOrder.locationName || "",
         (siteType, streetNames) => {
-          // Navigate to counter with selected site type and custom street names
           router.push({
             pathname: ROUTES.TRAFFIC_COUNT_COUNTER,
             params: {
@@ -111,7 +104,7 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
           });
         },
       );
-    }, 350); // Small delay to let the first drawer close smoothly
+    }, 350);
   };
 
   const showEntries = () => {
@@ -131,13 +124,11 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TextView style={styles.title}>Work Order Details</TextView>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Work Order NO */}
         <View style={styles.fieldGroup}>
           <TextView style={styles.label}>Work Order NO :</TextView>
           <View style={styles.fieldValue}>
@@ -145,7 +136,6 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
           </View>
         </View>
 
-        {/* Site Name */}
         <View style={styles.fieldGroup}>
           <TextView style={styles.label}>Site Name :</TextView>
           <View style={styles.fieldValue}>
@@ -155,7 +145,6 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
           </View>
         </View>
 
-        {/* Date Time Row */}
         <View style={styles.dateRow}>
           <View style={styles.dateField}>
             <TextView style={styles.label}>Start Date Time:</TextView>
@@ -175,7 +164,6 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
           </View>
         </View>
 
-        {/* Note */}
         <View style={styles.fieldGroup}>
           <TextView style={styles.label}>Note :</TextView>
           <View style={styles.noteField}>
@@ -185,7 +173,6 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
           </View>
         </View>
 
-        {/* Location Map */}
         <View style={styles.fieldGroup}>
           <TextView style={styles.label}>Location :</TextView>
           {hasValidLocation ? (

@@ -30,9 +30,7 @@ export interface TrafficCount {
 	dateTime: string;
 	slot: number;
 	movements: Record<string, Record<string, number>>;
-	/** The vehicle type ID from appData.vehicleTypes */
 	classificationId: string;
-	/** The vehicle type display name (e.g. "Car", "Truck") */
 	classificationName: string;
 }
 

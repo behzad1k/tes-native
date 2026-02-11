@@ -6,7 +6,6 @@ interface IconProps {
   color?: string;
 }
 
-// Scooter / Motorcycle icon
 export const ScooterIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="5" cy="18" r="2.5" stroke={color} strokeWidth="1.5" />
@@ -36,7 +35,6 @@ export const ScooterIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   </Svg>
 );
 
-// Car icon
 export const CarIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -69,7 +67,6 @@ export const CarIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   </Svg>
 );
 
-// Bus / Large vehicle icon
 export const BusIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect
@@ -106,7 +103,6 @@ export const BusIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   </Svg>
 );
 
-// Truck icon
 export const TruckIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -153,7 +149,6 @@ export const TruckIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   </Svg>
 );
 
-// Bicycle icon
 export const BicycleIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="6" cy="16" r="3" stroke={color} strokeWidth="1.5" />
@@ -170,7 +165,6 @@ export const BicycleIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   </Svg>
 );
 
-// Van / Medium vehicle icon
 export const VanIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -199,7 +193,6 @@ export const VanIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   </Svg>
 );
 
-// Pedestrian icon
 export const PedestrianIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth="1.5" />
@@ -226,13 +219,7 @@ export const PedestrianIcon = ({ size = 28, color = "#D4D4B0" }: IconProps) => (
   </Svg>
 );
 
-/**
- * Map icon key (from appData vehicleTypes.icon or classificationName) -> icon component.
- * Keys match the `icon` field in mockAppData.json vehicleTypes and also
- * the classificationName that gets saved on each TrafficCount.
- */
 export const VEHICLE_ICON_MAP: Record<string, React.FC<IconProps>> = {
-  // By icon key (from appData vehicleTypes.icon)
   Scooter: ScooterIcon,
   Car: CarIcon,
   Truck: TruckIcon,
@@ -240,8 +227,6 @@ export const VEHICLE_ICON_MAP: Record<string, React.FC<IconProps>> = {
   Cyclist: BicycleIcon,
   Pedestrian: PedestrianIcon,
   Bus: BusIcon,
-
-  // By vehicle name (for classificationName lookup)
   Bicycle: BicycleIcon,
   Motorcycle: ScooterIcon,
 };

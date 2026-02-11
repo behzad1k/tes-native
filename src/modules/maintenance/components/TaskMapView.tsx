@@ -91,7 +91,6 @@ const TaskMapView = ({ jobs, supports }: TaskMapViewProps) => {
     .filter((pin) => pin !== null);
 
   const allPins = [...supportPins, ...signPins];
-
   const legend: MapLegendItem[] = [
     {
       label: "Pending",

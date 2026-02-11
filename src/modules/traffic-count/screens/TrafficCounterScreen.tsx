@@ -51,8 +51,6 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { VehicleType } from "@/src/store/slices/appData";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 type Direction = "N" | "S" | "E" | "W";
 
 interface DropZone {
@@ -79,18 +77,14 @@ interface RecordEntry {
   timestamp: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const getStreetNames = (locationName: string): { ns: string; ew: string } => {
   const parts = locationName.split("@").map((s) => s.trim());
   return { ns: parts[0] || "Main St", ew: parts[1] || "Cross St" };
 };
 
-// ─── Fast spring config for near-instant snap-back ───────────────────────────
 const FAST_SPRING = { damping: 40, stiffness: 600, mass: 0.3 };
 const DRAG_START_SPRING = { damping: 20, stiffness: 400 };
 
-// ─── Fallback vehicle types if appData hasn't loaded yet ─────────────────────
 const FALLBACK_VEHICLE_TYPES: VehicleType[] = [
   {
     id: "fb_1",
@@ -117,8 +111,6 @@ const FALLBACK_VEHICLE_TYPES: VehicleType[] = [
   },
 ];
 
-// ─── Main Component ──────────────────────────────────────────────────────────
-
 export default function TrafficCounterScreen() {
   const dispatch = useAppDispatch();
   const { width, height } = useWindowDimensions();
@@ -132,7 +124,6 @@ export default function TrafficCounterScreen() {
   const workOrderId = params.workOrderId;
   const siteType = parseInt(params.siteType || "1", 10);
 
-  // Parse custom street names if provided
   const customStreetNames = useMemo(() => {
     if (params.streetNames) {
       try {
@@ -148,7 +139,6 @@ export default function TrafficCounterScreen() {
     state.trafficCount.workOrders.find((wo) => wo.id === workOrderId),
   );
 
-  // ── Vehicle types from appData (persisted) ─────────────────────────────
   const vehicleTypesFromStore = useAppSelector(
     (state) => state.appData.vehicleTypes,
   );
@@ -169,7 +159,6 @@ export default function TrafficCounterScreen() {
     [workOrder?.locationName],
   );
 
-  // Build direction labels from custom names or defaults
   const directionLabels = useMemo(() => {
     if (customStreetNames) {
       return customStreetNames;
@@ -182,7 +171,6 @@ export default function TrafficCounterScreen() {
     return labels;
   }, [customStreetNames, activeDirections, defaultStreetNames]);
 
-  // ── Orientation lock ───────────────────────────────────────────────────
   const [hasBeenLandscape, setHasBeenLandscape] = useState(false);
 
   useEffect(() => {
@@ -194,14 +182,12 @@ export default function TrafficCounterScreen() {
     };
   }, []);
 
-  // Track when we actually reach landscape
   useEffect(() => {
     if (isLandscape && !hasBeenLandscape) {
       setHasBeenLandscape(true);
     }
   }, [isLandscape, hasBeenLandscape]);
 
-  // ── Timer ──────────────────────────────────────────────────────────────
   const [elapsed, setElapsed] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -225,7 +211,6 @@ export default function TrafficCounterScreen() {
     return `${h}:${m}:${ss}`;
   };
 
-  // ── Feedback mode (vibration / sound / none) ────────────────────────
   type FeedbackMode = "vibrate" | "sound" | "none";
   const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>("vibrate");
   const feedbackModeRef = useRef<FeedbackMode>("vibrate");
@@ -252,7 +237,6 @@ export default function TrafficCounterScreen() {
     }
   }, []);
 
-  // ── Drag state (ref-based so gesture callbacks always see latest) ──────
   const dragRef = useRef<DragInfo>({
     isDragging: false,
     originDirection: null,
@@ -261,10 +245,8 @@ export default function TrafficCounterScreen() {
   });
   const [dragUi, setDragUi] = useState<DragInfo>(dragRef.current);
 
-  // ── Record history for undo ────────────────────────────────────────────
   const recordHistoryRef = useRef<RecordEntry[]>([]);
 
-  // ── Toast state (instantly replaced) ───────────────────────────────────
   const [lastRecord, setLastRecord] = useState<RecordEntry | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -281,7 +263,6 @@ export default function TrafficCounterScreen() {
     }, 2500);
   }, []);
 
-  // ── Drop zones (recomputed on dimension change) ────────────────────────
   const dropZonesRef = useRef<DropZone[]>([]);
 
   useEffect(() => {
@@ -334,7 +315,6 @@ export default function TrafficCounterScreen() {
     return null;
   }, []);
 
-  // ── Record a movement ──────────────────────────────────────────────────
   const recordMovement = useCallback(
     (from: Direction, to: Direction, classId: string, className: string) => {
       if (from === to) return;
@@ -373,7 +353,6 @@ export default function TrafficCounterScreen() {
     [dispatch, workOrderId, workOrder, showToast, triggerFeedback],
   );
 
-  // ── Undo last record ──────────────────────────────────────────────────
   const handleUndo = useCallback(() => {
     const history = recordHistoryRef.current;
     if (history.length === 0) return;
@@ -396,7 +375,6 @@ export default function TrafficCounterScreen() {
     setLastRecord(null);
   }, [dispatch, workOrderId]);
 
-  // ── Stable callbacks for DraggableVehicle ──────────────────────────────
   const onDragStartCb = useCallback(
     (dir: Direction, classId: string, className: string) => {
       dragRef.current = {
@@ -442,12 +420,10 @@ export default function TrafficCounterScreen() {
     [findDropZone, recordMovement],
   );
 
-  // ── Vehicle rows built from appData vehicleTypes ───────────────────────
   const vehicleRows = useMemo(() => {
     const nonPed = vehicleTypes.filter((v) => !v.isPedestrian);
     const ped = vehicleTypes.filter((v) => v.isPedestrian);
 
-    // Split non-pedestrian into two rows
     const row1 = nonPed
       .slice(0, 3)
       .map((v) => ({ id: v.id, name: v.name, icon: v.icon }));
@@ -460,9 +436,6 @@ export default function TrafficCounterScreen() {
     return { row1, row2 };
   }, [vehicleTypes]);
 
-  // ══════════════════════════════════════════════════════════════════════════
-  //  PORTRAIT GUARD — stays until device actually reaches landscape
-  // ══════════════════════════════════════════════════════════════════════════
   if (!isLandscape && !hasBeenLandscape) {
     return (
       <GestureHandlerRootView style={portraitGuard.root}>
@@ -505,10 +478,6 @@ export default function TrafficCounterScreen() {
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  //  LANDSCAPE RENDER
-  // ══════════════════════════════════════════════════════════════════════════
-
   const renderVehicles = (dir: Direction) => (
     <>
       <VehicleRow
@@ -532,7 +501,6 @@ export default function TrafficCounterScreen() {
     <GestureHandlerRootView style={s.root}>
       <StatusBar hidden />
       <View style={s.container}>
-        {/* ── Header ────────────────────────────────────────────── */}
         <View style={s.header}>
           <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
             <ArrowLeft size={22} color="#D4D4B0" />
@@ -544,15 +512,12 @@ export default function TrafficCounterScreen() {
           </View>
         </View>
 
-        {/* ── Intersection ──────────────────────────────────────── */}
         <View style={s.intersection}>
-          {/* Corner blocks */}
           <View style={[s.corner, s.cTL]} />
           <View style={[s.corner, s.cTR]} />
           <View style={[s.corner, s.cBL]} />
           <View style={[s.corner, s.cBR]} />
 
-          {/* Vertical road dashes (N-S) */}
           {(activeDirections.includes("N") ||
             activeDirections.includes("S")) && (
             <View style={s.vRoad}>
@@ -562,7 +527,6 @@ export default function TrafficCounterScreen() {
             </View>
           )}
 
-          {/* Horizontal road dashes (W-E) */}
           {(activeDirections.includes("W") ||
             activeDirections.includes("E")) && (
             <View style={s.hRoad}>
@@ -572,7 +536,6 @@ export default function TrafficCounterScreen() {
             </View>
           )}
 
-          {/* ── NORTH ──────────────────────────────────────────── */}
           {activeDirections.includes("N") && (
             <View style={s.northArea}>
               <DirLabel dir="N" street={directionLabels["N"]} />
@@ -580,7 +543,6 @@ export default function TrafficCounterScreen() {
             </View>
           )}
 
-          {/* ── SOUTH ──────────────────────────────────────────── */}
           {activeDirections.includes("S") && (
             <View style={s.southArea}>
               {renderVehicles("S")}
@@ -588,7 +550,6 @@ export default function TrafficCounterScreen() {
             </View>
           )}
 
-          {/* ── WEST ───────────────────────────────────────────── */}
           {activeDirections.includes("W") && (
             <View style={s.westArea}>
               <DirLabel dir="W" street={directionLabels["W"]} />
@@ -596,7 +557,6 @@ export default function TrafficCounterScreen() {
             </View>
           )}
 
-          {/* ── EAST ───────────────────────────────────────────── */}
           {activeDirections.includes("E") && (
             <View style={s.eastArea}>
               <View style={s.sideVehicles}>{renderVehicles("E")}</View>
@@ -604,14 +564,12 @@ export default function TrafficCounterScreen() {
             </View>
           )}
 
-          {/* ── Drop zone overlays (visible while dragging) ────── */}
           {dragUi.isDragging &&
             activeDirections
               .filter((d) => d !== dragUi.originDirection)
               .map((d) => <DropOverlay key={d} direction={d} />)}
         </View>
 
-        {/* ── Bottom-right toolbar: feedback mode toggle ────────── */}
         <View style={s.toolbar}>
           <TouchableOpacity
             style={[s.tbBtn, feedbackMode === "none" && s.tbBtnActive]}
@@ -649,7 +607,6 @@ export default function TrafficCounterScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Success toast with undo ─────────────────────────────── */}
         {lastRecord && (
           <View style={s.toast}>
             <Text style={s.toastText}>
@@ -670,12 +627,6 @@ export default function TrafficCounterScreen() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  SUB-COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ── Direction Label ──────────────────────────────────────────────────────────
-
 const DirLabel = ({ dir, street }: { dir: Direction; street?: string }) => (
   <View style={dl.wrap}>
     <View style={dl.row}>
@@ -692,8 +643,6 @@ const dl = StyleSheet.create({
   letter: { fontSize: 16, fontWeight: "700", color: "#D4D4B0" },
   street: { fontSize: 9, color: "#999", marginTop: 1 },
 });
-
-// ── Draggable Vehicle ────────────────────────────────────────────────────────
 
 interface DraggableVehicleProps {
   classification: { id: string; name: string; icon?: string };
@@ -716,7 +665,6 @@ const DraggableVehicle = React.memo(
     const sc = useSharedValue(1);
     const op = useSharedValue(1);
 
-    // Use icon field to look up the vehicle icon, fallback to name
     const IconComponent = getVehicleIcon(
       classification.icon || classification.name,
     );
@@ -797,8 +745,6 @@ const dv = StyleSheet.create({
   wrap: { padding: 6, borderRadius: 4 },
 });
 
-// ── Vehicle Row ──────────────────────────────────────────────────────────────
-
 interface VehicleRowProps {
   direction: Direction;
   vehicles: { id: string; name: string; icon?: string }[];
@@ -839,8 +785,6 @@ const vr = StyleSheet.create({
   },
 });
 
-// ── Drop Zone Overlay ────────────────────────────────────────────────────────
-
 const DropOverlay = ({ direction }: { direction: Direction }) => {
   const pos = useMemo(() => {
     switch (direction) {
@@ -879,10 +823,6 @@ const dz = StyleSheet.create({
   east: { right: 8, top: "25%", bottom: "25%", width: "22%" },
   label: { fontSize: 22, fontWeight: "700", color: "rgba(196,166,53,0.4)" },
 });
-
-// ═══════════════════════════════════════════════════════════════════════════════
-//  STYLES
-// ═══════════════════════════════════════════════════════════════════════════════
 
 const portraitGuard = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#1E1E1E" },

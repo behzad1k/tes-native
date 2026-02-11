@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import TextView from "@/src/components/ui/TextView";
@@ -8,7 +14,6 @@ import { scale, spacing } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
 import { MaintenanceJob, JobAsset, MaintenanceImage } from "@/src/types/models";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { updateJob } from "@/src/store/slices/maintenanceSlice";
 import { Toast } from "toastify-react-native";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { Dimensions } from "react-native";
@@ -17,6 +22,7 @@ import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
 import TextInputView from "@/src/components/ui/TextInputView";
 import SignSupportCard from "../../signs/screens/SignsListScreen/components/SignCard";
 import ImagePicker from "@/src/components/ui/ImagePicker";
+import { useMaintenanceOperations } from "../hooks/useMaintenanceOperations";
 
 interface JobDetailFormProps {
   job: MaintenanceJob;
@@ -24,40 +30,51 @@ interface JobDetailFormProps {
 
 const JobDetailForm = ({ job }: JobDetailFormProps) => {
   const styles = useThemedStyles(createStyles);
-  const dispatch = useAppDispatch();
   const { closeDrawer } = useDrawer();
-
   const [editedJob, setEditedJob] = useState(job);
-  const [hours, setHours] = useState(Math.floor(job.duration / 60).toString());
-  const [minutes, setMinutes] = useState((job.duration % 60).toString());
   const { t } = useTranslation();
-  const jobStatuses = useAppSelector((state) => state.maintenances.jobStatuses);
   const supports = useAppSelector((state) => state.supports.supports);
   const signs = useAppSelector((state) => state.signs.signs);
-  const jobImages = useAppSelector((state) => state.maintenances.jobImages);
-  const currentJobImages = jobImages.filter((img) => img.jobId === job.id);
-  const [tempImages, setTempImages] = useState<any[]>([]);
-  const [images, setImages] = useState<any[]>(currentJobImages);
+  const { editJob, getJobImages, saveJobImages, jobStatuses } =
+    useMaintenanceOperations();
+  const [images, setImages] = useState<MaintenanceImage[]>(
+    getJobImages(job.id || ""),
+  );
 
-  const handleUpdate = async () => {
-    try {
-      const totalDuration =
-        parseInt(hours || "0") * 60 + parseInt(minutes || "0");
+  const handleCancel = () => {
+    const imagesChanged = images.length !== getJobImages(job.id || "").length;
 
-      const updatedJob: MaintenanceJob = {
-        ...editedJob,
-        duration: totalDuration,
-        statusName:
-          jobStatuses.find((s) => s.id === editedJob.statusId)?.name ||
-          editedJob.statusName,
-      };
-
-      await dispatch(updateJob(updatedJob)).unwrap();
-
-      Toast.success("Job updated successfully");
+    if (imagesChanged) {
+      Alert.alert(t("cancel"), "Discard unsaved changes?", [
+        { text: t("buttons.cancel"), style: "cancel" },
+        { text: "Discard", style: "destructive", onPress: () => closeDrawer() },
+      ]);
+    } else {
       closeDrawer();
+    }
+  };
+
+  const onSubmit = async () => {
+    if (!job.id || !job) return;
+
+    try {
+      const result = await editJob(job.id, {
+        statusId: editedJob.statusId,
+        duration: job.duration,
+        note: editedJob.note,
+      });
+
+      saveJobImages(job.id, images);
+
+      if (result.success) {
+        Toast.success("Job updated successfully!");
+        closeDrawer();
+      } else {
+        Toast.error("Failed to update job");
+      }
     } catch (error) {
-      Toast.error("Failed to update job");
+      console.error("Error updating job:", error);
+      Toast.error("An error occurred while updating the job");
     }
   };
 
@@ -67,10 +84,6 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
 
     return <SignSupportCard item={item} />;
   };
-
-  // useEffect(() => {
-  //   setImages([...currentJobImages, ...tempImages]);
-  // }, [currentJobImages, tempImages]);
 
   return (
     <View style={styles.container}>
@@ -163,10 +176,12 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
           />
           <View>
             <ImagePicker
-              images={images} // combined: existingImages + tempImages
-              itemId={job.id} // will be undefined in create mode — that's fine now
-              setTempImages={setTempImages}
-              isCreateMode={true} // ← THIS WAS MISSING — pass it through
+              images={images}
+              onChange={setImages}
+              extraImageFields={{
+                jobId: job.id || "",
+                isSynced: false,
+              }}
             />
           </View>
         </View>
@@ -174,14 +189,14 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
       <View style={styles.actions}>
         <ButtonView
           variant="outline"
-          onPress={() => closeDrawer()}
+          onPress={handleCancel}
           style={styles.actionButton}
         >
           Cancel
         </ButtonView>
         <ButtonView
           variant="primary"
-          onPress={handleUpdate}
+          onPress={onSubmit}
           style={styles.actionButton}
         >
           Update

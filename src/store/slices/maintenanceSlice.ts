@@ -9,6 +9,7 @@ import {
 	JobType,
 } from "@/src/types/models";
 import mockData from "@/src/data/mockJobsData.json";
+
 interface MaintenanceState {
 	jobs: MaintenanceJob[];
 	jobStatuses: JobStatus[];
@@ -131,6 +132,7 @@ export const downloadJobAttachments = createAsyncThunk(
 			);
 
 			const files = response.data;
+			// TODO: add backend jobImages
 			const images: MaintenanceImage[] = [];
 
 			return { jobId, images };
@@ -144,16 +146,30 @@ const maintenanceSlice = createSlice({
 	name: "maintenance",
 	initialState,
 	reducers: {
-		addJobImagesLocally: (state, action: PayloadAction<MaintenanceImage[]>) => {
-			state.jobImages.push(...action.payload);
-			saveToStorage(state);
-		},
+		updateJobImages: (
+			state,
+			action: PayloadAction<{ jobId: string; images: MaintenanceImage[] }>,
+		) => {
+			const { jobId, images: nextImages } = action.payload;
+			const nextImageIds = new Set(nextImages.map((img) => img.imageId));
 
-		removeJobImage: (state, action: PayloadAction<string>) => {
-			const imageUri = action.payload;
-			state.jobImages = state.jobImages.filter((img) => img.uri !== imageUri);
+			// Clean up local files for removed images
+			state.jobImages.forEach((existing) => {
+				if (
+					existing.jobId === jobId &&
+					!nextImageIds.has(existing.imageId) &&
+					existing.localPath
+				) {
+					ImageStorage.deleteImage(existing.localPath);
+				}
+			});
 
-			ImageStorage.deleteImage(imageUri);
+			// Replace: keep images from other jobs, set new ones for this job
+			state.jobImages = [
+				...state.jobImages.filter((img) => img.jobId !== jobId),
+				...nextImages,
+			];
+
 			saveToStorage(state);
 		},
 
@@ -241,7 +257,11 @@ const maintenanceSlice = createSlice({
 				const { images } = action.payload;
 
 				images.forEach((img) => {
-					if (!state.jobImages.some((existing) => existing.id === img.id)) {
+					if (
+						!state.jobImages.some(
+							(existing) => existing.imageId === img.imageId,
+						)
+					) {
 						state.jobImages.push(img);
 					}
 				});
@@ -252,8 +272,7 @@ const maintenanceSlice = createSlice({
 });
 
 export const {
-	addJobImagesLocally,
-	removeJobImage,
+	updateJobImages,
 	loadSavedData,
 	updateJobLocally,
 	markJobSynced,

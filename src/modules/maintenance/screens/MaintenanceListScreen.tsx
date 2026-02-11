@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -14,13 +14,7 @@ import { Header } from "@/src/components/layouts/Header";
 import TextView from "@/src/components/ui/TextView";
 import { spacing } from "@/src/styles/theme/spacing";
 import { router } from "expo-router";
-import {
-  House,
-  MagnifyingGlass,
-  Repeat,
-  Funnel,
-  ArrowsDownUp,
-} from "phosphor-react-native";
+import { House, MagnifyingGlass, Repeat } from "phosphor-react-native";
 import { colors } from "@/src/styles/theme/colors";
 import { useTranslation } from "react-i18next";
 import { useDrawer } from "@/src/contexts/DrawerContext";
@@ -33,11 +27,11 @@ import { MaintenanceJob } from "@/src/types/models";
 import JobDetailForm from "../components/JobDetailForm";
 import TaskMapView from "../components/TaskMapView";
 import FilterMaintenanceForm from "../components/FilterMaintenanceForm";
-import SortMaintenanceForm from "../components/SortMaintenanceForm";
 import Tabs from "@/src/components/layouts/Tabs";
-import { TabsType } from "@/src/types/layouts";
+import { Sort, TabsType } from "@/src/types/layouts";
 import { startSync } from "@/src/store/slices/syncSlice";
 import MaintenanceCard from "../components/MaintenanceCard";
+import SortForm from "@/src/components/layouts/SortForm";
 
 export default function MaintenanceListScreen() {
   const { t } = useTranslation();
@@ -61,13 +55,12 @@ export default function MaintenanceListScreen() {
 
   const [filterByStatus, setFilterByStatus] = useState<string[]>([]);
   const [filterByType, setFilterByType] = useState<string[]>([]);
-  const [sortByDate, setSortByDate] = useState<number>(3);
-  const jobs = useAppSelector((state) => state.maintenances.jobs);
-  const jobStatuses = useAppSelector((state) => state.maintenances.jobStatuses);
-  const jobTypes = useAppSelector((state) => state.maintenances.jobTypes);
+  const [sort, setSort] = useState<Sort>({ key: "duration", dir: "ASC" });
+  const jobs = useAppSelector((state) => state.maintenance.jobs);
+  const jobStatuses = useAppSelector((state) => state.maintenance.jobStatuses);
+  const jobTypes = useAppSelector((state) => state.maintenance.jobTypes);
   const supports = useAppSelector((state) => state.supports.supports);
-  const isLoading = useAppSelector((state) => state.maintenances.isLoading);
-
+  const isLoading = useAppSelector((state) => state.maintenance.isLoading);
   // useEffect(() => {
   //   handleRefresh();
   // }, []);
@@ -83,20 +76,14 @@ export default function MaintenanceListScreen() {
       result = result.filter((job) => filterByType.includes(job.typeName));
     }
 
-    if (sortByDate === 1) {
-      result.sort(
-        (a, b) =>
-          new Date(a.assignDate).getTime() - new Date(b.assignDate).getTime(),
-      );
-    } else if (sortByDate === 2) {
-      result.sort(
-        (a, b) =>
-          new Date(b.assignDate).getTime() - new Date(a.assignDate).getTime(),
-      );
-    }
+    result.sort((a, b) =>
+      sort.dir == "DESC"
+        ? b[sort.key] - a[sort.key]
+        : a[sort.key] - b[sort.key],
+    );
 
     return result;
-  }, [jobs, filterByStatus, filterByType, sortByDate]);
+  }, [jobs, filterByStatus, filterByType, sort]);
 
   const handleSync = async () => {
     const totalPending =
@@ -164,11 +151,14 @@ export default function MaintenanceListScreen() {
   const handleSortPress = () => {
     openDrawer(
       "sort-jobs",
-      <SortMaintenanceForm
-        sortByDate={sortByDate}
-        setSortByDate={setSortByDate}
+      <SortForm
+        sort={sort}
+        setSort={setSort}
+        params={{ id: "ID", duration: "Duration" }}
       />,
-      { drawerHeight: "auto" },
+      {
+        drawerHeight: "auto",
+      },
     );
   };
 
@@ -238,40 +228,40 @@ export default function MaintenanceListScreen() {
         ]}
       />
       <Tabs setTab={setTab} tab={tab} tabs={TABS} />
-      <View style={styles.listHeader}>
-        <TextView style={styles.itemsLengthText}>
-          {filteredJobs.length} {t("items")}
-        </TextView>
-        <View style={styles.listActions}>
-          <TouchableOpacity onPress={handleSortPress}>
-            <TextView style={styles.listActionText}>{t("sort")}</TextView>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleFilterPress}>
-            <TextView style={styles.listActionText}>{t("filter")}</TextView>
-          </TouchableOpacity>
-        </View>
-      </View>
-      {/* List View */}
       {tab === TABS.LIST.id && (
-        <FlatList
-          data={filteredJobs}
-          renderItem={renderJobItem}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={renderEmptyList}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.lightGreen}
-            />
-          }
-          contentContainerStyle={
-            filteredJobs.length === 0 ? styles.emptyList : undefined
-          }
-        />
+        <>
+          <View style={styles.listHeader}>
+            <TextView style={styles.itemsLengthText}>
+              {filteredJobs.length} {t("items")}
+            </TextView>
+            <View style={styles.listActions}>
+              <TouchableOpacity onPress={handleSortPress}>
+                <TextView style={styles.listActionText}>{t("sort")}</TextView>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleFilterPress}>
+                <TextView style={styles.listActionText}>{t("filter")}</TextView>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <FlatList
+            data={filteredJobs}
+            renderItem={renderJobItem}
+            keyExtractor={(item) => item.id}
+            ListEmptyComponent={renderEmptyList}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.lightGreen}
+              />
+            }
+            contentContainerStyle={
+              filteredJobs.length === 0 ? styles.emptyList : undefined
+            }
+          />
+        </>
       )}
 
-      {/* Map View */}
       {tab === TABS.MAP.id && (
         <TaskMapView jobs={filteredJobs} supports={supports} />
       )}

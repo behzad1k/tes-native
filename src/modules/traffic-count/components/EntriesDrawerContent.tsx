@@ -55,7 +55,6 @@ const EntriesDrawerContent = ({
 
   const renderItem = useCallback(
     ({ item, index }: { item: TrafficCount; index: number }) => {
-      // Get the vehicle icon based on classificationName
       const vehicleName = item.classificationName || "Car";
       const VehicleIcon = getVehicleIcon(vehicleName);
 
@@ -73,9 +72,7 @@ const EntriesDrawerContent = ({
           </View>
 
           <View style={styles.entryContent}>
-            {/* Vehicle type name */}
             <TextView style={styles.vehicleName}>{vehicleName}</TextView>
-            {/* Movement direction */}
             <TextView style={styles.entryMovement}>
               {formatMovement(item.movements)}
             </TextView>

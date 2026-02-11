@@ -1,57 +1,66 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { StyleSheet, View, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import DetailsStep from "./components/DetailsStep";
 import ButtonView from "@/src/components/ui/ButtonView";
 import LocationStep from "./components/LocationStep";
+import { ROUTES } from "@/src/constants/navigation";
 import ImageStep from "./components/ImageStep";
 import { SignFormData } from "../../types";
 import { useForm } from "react-hook-form";
 import StepHeader from "./components/StepHeader";
-import { useSignOperations, useSignForm } from "../../hooks/useSignOperations";
+import { useSignOperations } from "../../hooks/useSignOperations";
 import { Toast } from "toastify-react-native";
-import TextView from "@/src/components/ui/TextView";
+import { SignImage } from "@/src/types/models";
+import { scale } from "@/src/styles/theme/spacing";
+import { useAppSelector } from "@/src/store/hooks";
 
 export default function EditSignScreen() {
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const [step, setStep] = useState<number>(0);
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { editSign } = useSignOperations();
-  const { sign, initialValues, isEditMode } = useSignForm(id as string);
+
+  // Read sign from Redux (persisted store)
+  const sign = useAppSelector((state) =>
+    state.signs.signs.find((s) => s.id === id),
+  );
+
+  // Local images state — seeded from Redux, only saved on submit
+  const [images, setImages] = useState<SignImage[]>(sign?.images || []);
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
     trigger,
     getValues,
-    setValue,
   } = useForm<SignFormData>({
     defaultValues: {
-      customerId: sign.customerId,
-      locationTypeId: sign.locationTypeId,
-      latitude: sign.latitude,
-      longitude: sign.longitude,
-      address: sign.address || "",
-      signId: sign.signId,
-      supportId: sign.supportId,
-      codeId: sign.codeId,
-      height: sign.height,
-      facingDirectionId: sign.facingDirectionId,
-      faceMaterialId: sign.faceMaterialId,
-      reflectiveCoatingId: sign.reflectiveCoatingId,
-      reflectiveRatingId: sign.reflectiveRatingId,
-      dimensionId: sign.dimensionId,
-      dateInstalled: sign.dateInstalled,
-      conditionId: sign.conditionId,
-      note: sign.note,
+      customerId: sign?.customerId || "",
+      locationTypeId: sign?.locationTypeId || "",
+      latitude: sign?.latitude,
+      longitude: sign?.longitude,
+      address: sign?.address || "",
+      signId: sign?.signId || "",
+      supportId: sign?.supportId || "",
+      codeId: sign?.codeId || "",
+      height: sign?.height || "",
+      facingDirectionId: sign?.facingDirectionId || "",
+      faceMaterialId: sign?.faceMaterialId || "",
+      reflectiveCoatingId: sign?.reflectiveCoatingId || "",
+      reflectiveRatingId: sign?.reflectiveRatingId || "",
+      dimensionId: sign?.dimensionId || "",
+      dateInstalled: sign?.dateInstalled || new Date().toISOString(),
+      conditionId: sign?.conditionId || "",
+      note: sign?.note || "",
     },
     mode: "onChange",
   });
@@ -59,9 +68,11 @@ export default function EditSignScreen() {
   if (!sign) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <Header title={t("signs.edit")} />
-        <View style={styles.errorContainer}>
-          <TextView variant="body">Sign not found</TextView>
+        <Header title={t("signs.editSign")} />
+        <View style={styles.notFound}>
+          <ButtonView onPress={() => router.back()}>
+            {t("buttons.goBack")}
+          </ButtonView>
         </View>
       </SafeAreaView>
     );
@@ -90,8 +101,7 @@ export default function EditSignScreen() {
         return true;
     }
 
-    const result = await trigger(fieldsToValidate);
-    return result;
+    return trigger(fieldsToValidate);
   };
 
   const handleChangeStep = async (newStepIndex: number) => {
@@ -115,38 +125,35 @@ export default function EditSignScreen() {
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      t("cancel"),
-      "Are you sure you want to cancel? All changes will be lost.",
-      [
-        {
-          text: t("buttons.cancel"),
-          style: "cancel",
-        },
-        {
-          text: "Yes",
-          onPress: () => router.back(),
-        },
-      ],
-    );
+    Alert.alert(t("cancel"), "Are you sure you want to discard changes?", [
+      { text: t("buttons.cancel"), style: "cancel" },
+      { text: "Yes", onPress: () => router.back() },
+    ]);
   };
 
   const onSubmit = async (formData: SignFormData) => {
     try {
-      const updates = {
-        ...formData,
+      // Both form fields AND images are saved together on submit
+      const result = await editSign(id!, {
+        customerId: formData.customerId || "",
+        locationTypeId: formData.locationTypeId || "",
         latitude: formData.latitude,
         longitude: formData.longitude,
-        address: formData.address,
-        // images: [...images, ...tempImages],
-      };
-
-      // Check if location changed
-      const locationChanged =
-        formData.latitude !== sign.latitude ||
-        formData.longitude !== sign.longitude;
-
-      const result = await editSign(sign.id, updates, locationChanged);
+        address: formData.address || "",
+        signId: formData.signId,
+        supportId: formData.supportId || "",
+        codeId: formData.codeId,
+        height: formData.height || "",
+        facingDirectionId: formData.facingDirectionId || "",
+        faceMaterialId: formData.faceMaterialId || "",
+        reflectiveCoatingId: formData.reflectiveCoatingId || "",
+        reflectiveRatingId: formData.reflectiveRatingId || "",
+        dimensionId: formData.dimensionId,
+        dateInstalled: formData.dateInstalled || new Date().toISOString(),
+        conditionId: formData.conditionId,
+        note: formData.note || "",
+        images, // ← local state, dispatched to Redux only now
+      });
 
       if (result.success) {
         Toast.success("Sign updated successfully!");
@@ -174,7 +181,9 @@ export default function EditSignScreen() {
             getValues={getValues}
           />
         )}
-        {step === 2 && <ImageStep signId={id as string} />}
+        {step === 2 && (
+          <ImageStep signId={id!} images={images} onImagesChange={setImages} />
+        )}
       </View>
       <View style={styles.buttonContainer}>
         <ButtonView
@@ -203,11 +212,13 @@ const createStyles = (theme: Theme) =>
     },
     content: {
       flex: 1,
+      paddingBottom: scale(100),
     },
-    errorContainer: {
+    notFound: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
+      padding: 20,
     },
     buttonContainer: {
       backgroundColor: theme.background,

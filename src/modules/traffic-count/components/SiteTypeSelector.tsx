@@ -20,15 +20,6 @@ import { X } from "phosphor-react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-/**
- * Site types representing different intersection configurations:
- * 1 = Full 4-way intersection (N, S, E, W)
- * 2 = T-intersection missing East  (N, S, W)
- * 3 = T-intersection missing West  (N, S, E)
- * 4 = T-intersection missing North (S, E, W)
- * 5 = T-intersection missing South (N, E, W)
- */
-
 export type SiteTypeConfig = {
   type: number;
   directions: string[];
@@ -217,7 +208,6 @@ const SiteTypeDrawerContent = ({
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedType, setSelectedType] = useState(currentSiteType);
 
-  // Parse default street names from location
   const defaultParts = (defaultLocationName || "")
     .split("@")
     .map((s) => s.trim());
@@ -227,7 +217,6 @@ const SiteTypeDrawerContent = ({
   const selectedConfig = getSiteTypeConfig(selectedType);
   const activeDirections = selectedConfig.directions;
 
-  // Street name state for each direction
   const [streetNames, setStreetNames] = useState<Record<string, string>>(() => {
     const names: Record<string, string> = {};
     ["N", "S", "E", "W"].forEach((d) => {
@@ -246,7 +235,6 @@ const SiteTypeDrawerContent = ({
   };
 
   const handleStart = () => {
-    // Only pass names for active directions
     const finalNames: Record<string, string> = {};
     activeDirections.forEach((d) => {
       finalNames[d] = streetNames[d] || DIRECTION_FULL_NAMES[d] || d;
@@ -262,7 +250,6 @@ const SiteTypeDrawerContent = ({
     setStreetNames((prev) => ({ ...prev, [dir]: value }));
   };
 
-  // ── Step 1: Site type selection ──────────────────────────────────────
   if (step === 1) {
     return (
       <View style={styles.container}>
@@ -319,7 +306,6 @@ const SiteTypeDrawerContent = ({
     );
   }
 
-  // ── Step 2: Name each direction ──────────────────────────────────────
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -377,10 +363,6 @@ const SiteTypeDrawerContent = ({
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  Hook to open the site type selector drawer
-// ═══════════════════════════════════════════════════════════════════════════════
-
 export const useSiteTypeSelector = () => {
   const { openDrawer, closeDrawer } = useDrawer();
 
@@ -411,10 +393,6 @@ export const useSiteTypeSelector = () => {
 
   return { showSiteTypeSelector };
 };
-
-// ═══════════════════════════════════════════════════════════════════════════════
-//  Styles
-// ═══════════════════════════════════════════════════════════════════════════════
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({

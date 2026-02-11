@@ -27,16 +27,15 @@ export default function CreateSignScreen() {
   const router = useRouter();
   const { createSign } = useSignOperations();
 
-  // Store images temporarily before sign is created
-  const [tempImages, setTempImages] = useState<SignImage[]>([]);
+  // Single images state — no separate "tempImages"
+  const [images, setImages] = useState<SignImage[]>([]);
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
     trigger,
     getValues,
-    setValue,
   } = useForm<SignFormData>({
     defaultValues: {
       customerId: "",
@@ -64,7 +63,7 @@ export default function CreateSignScreen() {
     let fieldsToValidate: (keyof SignFormData)[] = [];
 
     switch (stepIndex) {
-      case 0: // Details step
+      case 0:
         fieldsToValidate = [
           "signId",
           "dimensionId",
@@ -76,20 +75,18 @@ export default function CreateSignScreen() {
           "conditionId",
         ];
         break;
-      case 1: // Location step
+      case 1:
         fieldsToValidate = ["supportId", "locationTypeId"];
         break;
-      case 2: // Image step - no validation needed
+      case 2:
         return true;
     }
 
-    const result = await trigger(fieldsToValidate);
-    return result;
+    return trigger(fieldsToValidate);
   };
 
   const handleChangeStep = async (newStepIndex: number) => {
     if (newStepIndex > step) {
-      // Validate current step before proceeding
       const isValid = await validateStep(step);
       if (!isValid) {
         Toast.error(t("validation.required"));
@@ -97,7 +94,6 @@ export default function CreateSignScreen() {
       }
 
       if (newStepIndex > 2) {
-        // Submit the form
         handleSubmit(onSubmit)();
         return;
       }
@@ -114,21 +110,14 @@ export default function CreateSignScreen() {
       t("cancel"),
       "Are you sure you want to cancel? All changes will be lost.",
       [
-        {
-          text: t("buttons.cancel"),
-          style: "cancel",
-        },
-        {
-          text: "Yes",
-          onPress: () => router.navigate(ROUTES.SIGNS_LIST),
-        },
+        { text: t("buttons.cancel"), style: "cancel" },
+        { text: "Yes", onPress: () => router.navigate(ROUTES.SIGNS_LIST) },
       ],
     );
   };
 
   const onSubmit = async (formData: SignFormData) => {
     try {
-      // Prepare sign data with location
       const signData = {
         customerId: formData.customerId || "",
         locationTypeId: formData.locationTypeId || "",
@@ -147,7 +136,7 @@ export default function CreateSignScreen() {
         dateInstalled: formData.dateInstalled || new Date().toISOString(),
         conditionId: formData.conditionId,
         note: formData.note || "",
-        images: tempImages,
+        images,
       };
 
       const result = await createSign(signData);
@@ -163,6 +152,7 @@ export default function CreateSignScreen() {
       Toast.error("An error occurred while creating the sign");
     }
   };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Header title={t("signs.addNewSign")} />
@@ -179,9 +169,8 @@ export default function CreateSignScreen() {
         )}
         {step === 2 && (
           <ImageStep
-            tempImages={tempImages}
-            setTempImages={setTempImages}
-            isCreateMode={true}
+            images={images}
+            onImagesChange={setImages}
             signId={getValues().signId}
           />
         )}

@@ -1,43 +1,59 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, ScrollView } from "react-native";
 import { useAppSelector } from "@/src/store/hooks";
-import { SignImage, SupportImage } from "@/src/types/models";
+import { SupportImage } from "@/src/types/models";
 import ImagePicker from "@/src/components/ui/ImagePicker";
 
 interface ImageStepProps {
   supportId?: string;
-  tempImages?: SupportImage[];
-  setTempImages?: React.Dispatch<React.SetStateAction<SupportImage[]>>;
-  isCreateMode?: boolean;
+  images?: SupportImage[];
+  onImagesChange?: (images: SupportImage[]) => void;
 }
 
 const ImageStep = ({
   supportId,
-  tempImages = [],
-  setTempImages,
-  isCreateMode = false,
+  images: controlledImages,
+  onImagesChange,
 }: ImageStepProps) => {
-  const signs = useAppSelector((state) => state.supports.supports);
-  const currentSign = supportId ? signs.find((s) => s.id === supportId) : null;
-  const [images, setImages] = useState<SupportImage[]>(
-    isCreateMode ? tempImages : currentSign?.images || [],
+  const supports = useAppSelector((state) => state.supports.supports);
+  const currentSupport = supportId
+    ? supports.find((s) => s.id === supportId)
+    : null;
+
+  const isControlled =
+    controlledImages !== undefined && onImagesChange !== undefined;
+
+  const [localImages, setLocalImages] = useState<SupportImage[]>(
+    currentSupport?.images || [],
   );
 
   useEffect(() => {
-    if (isCreateMode) {
-      setImages(tempImages);
-    } else if (currentSign) {
-      setImages(currentSign.images);
+    if (!isControlled && currentSupport) {
+      setLocalImages(currentSupport.images);
     }
-  }, [currentSign, tempImages, isCreateMode]);
+  }, [currentSupport, isControlled]);
+
+  const images = isControlled ? controlledImages : localImages;
+
+  const handleChange = (next: SupportImage[]) => {
+    if (isControlled) {
+      onImagesChange!(next);
+    } else {
+      setLocalImages(next);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <ImagePicker
+      <ImagePicker<SupportImage>
         images={images}
-        itemId={supportId}
-        setTempImages={setTempImages}
-        isCreateMode={isCreateMode}
+        onChange={handleChange}
+        extraImageFields={{ supportId: supportId || "temp" }}
+        emptyLabel={
+          isControlled
+            ? "Add images before creating the support"
+            : "Add images to this support"
+        }
       />
     </ScrollView>
   );

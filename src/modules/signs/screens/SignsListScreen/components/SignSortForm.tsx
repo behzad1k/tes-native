@@ -1,5 +1,4 @@
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { SortSign } from "../../../types";
+import { StyleSheet, View } from "react-native";
 import TextView from "@/src/components/ui/TextView";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
@@ -9,12 +8,13 @@ import { colors } from "@/src/styles/theme/colors";
 import ButtonView from "@/src/components/ui/ButtonView";
 import { useEffect, useState } from "react";
 import { useDrawer } from "@/src/contexts/DrawerContext";
+import { Sort } from "@/src/types/layouts";
 
-interface SortSignFormProps {
-  sort: SortSign;
-  setSort: React.Dispatch<React.SetStateAction<SortSign>>;
+interface SortFormProps {
+  sort: Sort;
+  setSort: React.Dispatch<React.SetStateAction<Sort>>;
 }
-const SortSignForm = ({ sort, setSort }: SortSignFormProps) => {
+const SortForm = ({ sort, setSort }: SortFormProps) => {
   const [selectedSort, setSelectedSort] = useState(sort);
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
@@ -24,7 +24,7 @@ const SortSignForm = ({ sort, setSort }: SortSignFormProps) => {
     return selectedSort.key == key && selectedSort.dir == dir;
   };
 
-  const onChangeSort = (sort: SortSign) => {
+  const onChangeSort = (sort: Sort) => {
     setSelectedSort({ key: sort.key, dir: sort.dir });
   };
 
@@ -127,4 +127,4 @@ const createStyles = (theme: Theme) =>
       color: colors.white,
     },
   });
-export default SortSignForm;
+export default SortForm;

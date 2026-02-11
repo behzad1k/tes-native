@@ -1,10 +1,9 @@
 import { SYNC_STATUS } from "@/src/constants/global";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
-import { useSignImages } from "@/src/modules/signs/hooks/useSignOperations";
 import { colors } from "@/src/styles/theme/colors";
 import { FontWeights, FontSizes } from "@/src/styles/theme/fonts";
 import { spacing } from "@/src/styles/theme/spacing";
-import { SignImage } from "@/src/types/models";
+import { BaseImage } from "@/src/types/models";
 import {
   Images,
   Camera,
@@ -20,54 +19,70 @@ import TextView from "./TextView";
 import { Theme } from "@/src/types/theme";
 import * as ExpoImagePicker from "expo-image-picker";
 
-interface ImagePickerProps {
-  images: any[];
-  itemId?: string; // ✅ FIX 1: made optional so create mode works without an ID
-  setTempImages?: React.Dispatch<React.SetStateAction<any[]>>;
-  isCreateMode?: boolean;
+// ─── Helpers ───────────────────────────────────────────────────────
+
+function createBaseImage(
+  imageUri: string,
+  extra: Record<string, any> = {},
+): BaseImage {
+  const tempImageId = imageUri.split("/").pop() || `temp_${Date.now()}`;
+  return {
+    uri: imageUri,
+    isNew: true,
+    status: SYNC_STATUS.NOT_SYNCED,
+    imageId: tempImageId,
+    localPath: imageUri,
+    ...extra,
+  };
 }
-const ImagePicker = ({
-  isCreateMode = false, // ✅ FIX 2: explicit default so it's never undefined
-  itemId,
-  setTempImages,
+
+// ─── Props ─────────────────────────────────────────────────────────
+
+interface ImagePickerProps<T extends BaseImage = BaseImage> {
+  /**
+   * The full list of images to display.
+   * The parent owns this — it can be persisted images, temp images, or both.
+   */
+  images: T[];
+
+  /**
+   * Called whenever the image list changes (add or remove).
+   * Works like a controlled input's `onChange`.
+   */
+  onChange: (images: T[]) => void;
+
+  /**
+   * Extra fields merged into every newly-created image.
+   * e.g. `{ signId: "abc" }` or `{ jobId: "xyz" }`.
+   */
+  extraImageFields?: Record<string, any>;
+
+  /** Label shown in the empty state. Defaults to "Add images to this item". */
+  emptyLabel?: string;
+
+  /** Whether to show the "Fetch from server" button. Defaults to true. */
+  showFetchFromServer?: boolean;
+
+  /** Callback for the "Fetch from server" button. */
+  onFetchFromServer?: () => void;
+}
+
+// ─── Component ─────────────────────────────────────────────────────
+
+const ImagePicker = <T extends BaseImage = BaseImage>({
   images,
-}: ImagePickerProps) => {
+  onChange,
+  emptyLabel,
+  onFetchFromServer,
+  showFetchFromServer = true,
+  extraImageFields = {},
+}: ImagePickerProps<T>) => {
   const styles = useThemedStyles(createStyles);
-  const { addImageFromCamera, addImageFromGallery, deleteImage } =
-    useSignImages();
   const { t } = useTranslation();
 
+  // ─── Add images ──────────────────────────────────────────────
+
   const handleTakePhoto = async () => {
-    if (isCreateMode) {
-      await handleTempImageFromCamera();
-    } else {
-      if (!itemId) {
-        Alert.alert("Error", "Sign ID is required");
-        return;
-      }
-      const result = await addImageFromCamera(itemId);
-      if (result.success) {
-      }
-    }
-  };
-
-  const handleBrowseFiles = async () => {
-    if (isCreateMode) {
-      await handleTempImageFromGallery();
-    } else {
-      if (!itemId) {
-        Alert.alert("Error", "Sign ID is required");
-        return;
-      }
-      const result = await addImageFromGallery(itemId);
-      if (result.success) {
-      }
-    }
-  };
-
-  // At the top of the component, fix the temp image ID generation:
-
-  const handleTempImageFromCamera = async () => {
     try {
       const permission = await ExpoImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
@@ -79,28 +94,17 @@ const ImagePicker = ({
       }
 
       const result = await ExpoImagePicker.launchCameraAsync({
-        mediaTypes: ["images"], // ✅ FIX 3a: replaced deprecated MediaTypeOptions.Images
+        mediaTypes: ["images"],
         allowsEditing: true,
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
-        const imageUri = result.assets[0].uri;
-        // Use URI as imageId for temp images - makes it easier to track
-        const tempImageId = imageUri.split("/").pop() || `temp_${Date.now()}`;
-
-        const newImage: SignImage = {
-          uri: imageUri,
-          signId: "temp",
-          isNew: true,
-          status: SYNC_STATUS.NOT_SYNCED,
-          imageId: tempImageId,
-          localPath: imageUri,
-        };
-
-        if (setTempImages) {
-          setTempImages((prev) => [...prev, newImage]);
-        }
+        const newImage = createBaseImage(
+          result.assets[0].uri,
+          extraImageFields,
+        ) as T;
+        onChange([...images, newImage]);
       }
     } catch (error) {
       console.error("Error taking photo:", error);
@@ -108,7 +112,7 @@ const ImagePicker = ({
     }
   };
 
-  const handleTempImageFromGallery = async () => {
+  const handleBrowseFiles = async () => {
     try {
       const permission =
         await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
@@ -121,76 +125,62 @@ const ImagePicker = ({
       }
 
       const result = await ExpoImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"], // ✅ FIX 3b: replaced deprecated MediaTypeOptions.Images
-        // ✅ FIX 4: removed allowsEditing (incompatible with gallery multi-select,
-        //    and was preventing images from being returned on some platforms)
+        mediaTypes: ["images"],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets) {
-        const newImages: SignImage[] = result.assets.map((asset) => {
-          const tempImageId =
-            asset.uri.split("/").pop() || `temp_${Date.now()}`;
-
-          return {
-            uri: asset.uri,
-            signId: "temp",
-            isNew: true,
-            status: SYNC_STATUS.NOT_SYNCED,
-            imageId: tempImageId,
-            localPath: asset.uri,
-          };
-        });
-
-        if (setTempImages) {
-          setTempImages((prev) => [...prev, ...newImages]);
-        }
+        const newImages = result.assets.map(
+          (asset) => createBaseImage(asset.uri, extraImageFields) as T,
+        );
+        onChange([...images, ...newImages]);
       }
     } catch (error) {
       console.error("Error selecting image:", error);
       Alert.alert("Error", "Failed to select image");
     }
   };
-  const handleDeleteImage = async (imageId: string, index: number) => {
+
+  // ─── Remove images ───────────────────────────────────────────
+
+  const handleDeleteImage = (index: number) => {
     Alert.alert("Delete Image", "Are you sure you want to delete this image?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
+      { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
-        onPress: async () => {
-          if (isCreateMode) {
-            if (setTempImages) {
-              setTempImages((prev) => prev.filter((_, i) => i !== index));
-            }
-          } else if (itemId) {
-            const result = await deleteImage(itemId, imageId);
-            if (!result.success) {
-              Alert.alert("Error", "Failed to delete image");
-            }
-          }
+        onPress: () => {
+          onChange(images.filter((_, i) => i !== index));
         },
       },
     ]);
   };
 
+  // ─── Fetch from server ───────────────────────────────────────
+
   const handleFetchFromServer = () => {
-    Alert.alert(
-      "Coming Soon",
-      "Fetch from server feature will be available soon",
-    );
+    if (onFetchFromServer) {
+      onFetchFromServer();
+    } else {
+      Alert.alert(
+        "Coming Soon",
+        "Fetch from server feature will be available soon",
+      );
+    }
   };
+
+  // ─── Render ──────────────────────────────────────────────────
+
   return (
     <View style={styles.form}>
+      {/* Upload area */}
       <View style={styles.uploadBox}>
         <View style={styles.uploadBoxContent}>
           <Images size={80} weight="thin" color={colors.lightGreen} />
           <TextView variant="h3">Take photo or browse files</TextView>
           <TextView variant="bodySmall" style={styles.uploadDescriptionText}>
-            Upload your image from the gallery or take a photo or fetch from
-            server
+            Upload your image from the gallery or take a photo
+            {showFetchFromServer ? " or fetch from server" : ""}
           </TextView>
           <View style={styles.uploadActions}>
             <TouchableOpacity onPress={handleTakePhoto}>
@@ -209,20 +199,23 @@ const ImagePicker = ({
               </View>
             </TouchableOpacity>
           </View>
-          <ButtonView
-            variant="outline"
-            size="small"
-            style={styles.uploadBoxFetchButton}
-            onPress={handleFetchFromServer}
-          >
-            <CloudArrowDown size={18} color={colors.lightGreen} />
-            <TextView style={styles.uploadBoxFetchText}>
-              Fetch from server
-            </TextView>
-          </ButtonView>
+          {showFetchFromServer && (
+            <ButtonView
+              variant="outline"
+              size="small"
+              style={styles.uploadBoxFetchButton}
+              onPress={handleFetchFromServer}
+            >
+              <CloudArrowDown size={18} color={colors.lightGreen} />
+              <TextView style={styles.uploadBoxFetchText}>
+                Fetch from server
+              </TextView>
+            </ButtonView>
+          )}
         </View>
       </View>
 
+      {/* Image list */}
       {images.length > 0 && (
         <View style={styles.imagesContainer}>
           <TextView variant="h4" style={styles.imagesTitle}>
@@ -246,7 +239,7 @@ const ImagePicker = ({
                 )}
               </View>
               <TouchableOpacity
-                onPress={() => handleDeleteImage(image.imageId || "", index)}
+                onPress={() => handleDeleteImage(index)}
                 style={styles.deleteButton}
               >
                 <Trash size={26} weight="thin" color={colors.error} />
@@ -256,15 +249,14 @@ const ImagePicker = ({
         </View>
       )}
 
+      {/* Empty state */}
       {images.length === 0 && (
         <View style={styles.emptyState}>
           <TextView variant="body" style={styles.emptyText}>
             No images uploaded yet
           </TextView>
           <TextView variant="caption" style={styles.emptySubtext}>
-            {isCreateMode
-              ? "Add images before creating the sign"
-              : "Add images to this sign"}
+            {emptyLabel || "Add images to this item"}
           </TextView>
         </View>
       )}
@@ -272,11 +264,10 @@ const ImagePicker = ({
   );
 };
 
+// ─── Styles ────────────────────────────────────────────────────────
+
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-    },
     form: {
       padding: spacing.md,
       paddingTop: 0,
@@ -389,4 +380,5 @@ const createStyles = (theme: Theme) =>
       textAlign: "center",
     },
   });
+
 export default ImagePicker;

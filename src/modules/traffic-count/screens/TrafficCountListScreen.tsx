@@ -48,14 +48,12 @@ export default function TrafficCountListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Filters & Sort
   const [filterByStatus, setFilterByStatus] = useState<WorkOrderStatus[]>([]);
   const [filterBySyncStatus, setFilterBySyncStatus] = useState<
     SyncStatusType[]
   >([]);
   const [sortBy, setSortBy] = useState<SortOption>(null);
 
-  // Redux state
   const workOrders = useAppSelector((state) => state.trafficCount.workOrders);
   const isLoading = useAppSelector((state) => state.trafficCount.isLoading);
 
@@ -63,23 +61,19 @@ export default function TrafficCountListScreen() {
     handleRefresh();
   }, []);
 
-  // Apply filters and sorting
   const filteredWorkOrders = useMemo(() => {
     let result = [...workOrders];
 
-    // Filter by status
     if (filterByStatus.length > 0) {
       result = result.filter((wo) => filterByStatus.includes(wo.status));
     }
 
-    // Filter by sync status
     if (filterBySyncStatus.length > 0) {
       result = result.filter((wo) =>
         filterBySyncStatus.includes(wo.syncStatus),
       );
     }
 
-    // Sort
     switch (sortBy) {
       case "newest":
         result.sort(
@@ -134,12 +128,7 @@ export default function TrafficCountListScreen() {
   const handleWorkOrderPress = (workOrder: TrafficCountWorkOrder) => {
     openDrawer(
       `wo-detail-${workOrder.id}`,
-      <WorkOrderDetail
-        workOrder={workOrder}
-        onClaim={(wo) => {
-          // Leave empty for now
-        }}
-      />,
+      <WorkOrderDetail workOrder={workOrder} onClaim={(wo) => {}} />,
       {
         drawerHeight: "auto",
         position: "bottom",
@@ -197,7 +186,6 @@ export default function TrafficCountListScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header */}
       <Header
         title="Traffic Counter"
         leftIcons={[
@@ -225,7 +213,6 @@ export default function TrafficCountListScreen() {
         ]}
       />
 
-      {/* List Header: Count + Sort/Filter */}
       <View style={styles.listHeader}>
         <TextView style={styles.itemsLengthText}>
           {filteredWorkOrders.length} Items
@@ -240,7 +227,6 @@ export default function TrafficCountListScreen() {
         </View>
       </View>
 
-      {/* Work Orders List */}
       <FlatList
         data={filteredWorkOrders}
         renderItem={renderWorkOrderItem}

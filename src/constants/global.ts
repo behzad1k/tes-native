@@ -8,3 +8,14 @@ export const JOB_STATUS = {
 	IN_PROGRESS: "IN_PROGRESS",
 	NOT_DONE: "NOT_DONE",
 } as const;
+
+export const FilterOperator = {
+	EQUAL: "EQUAL",
+	MORE: "MORE",
+	LESS: "LESS",
+} as const;
+
+export const SortDirection = {
+	ASC: "ASC",
+	DESC: "DESC",
+} as const;

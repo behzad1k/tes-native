@@ -18,15 +18,6 @@ const initialState: SignState = {
 	lastFetched: null,
 };
 
-const serializeDate = (date: Date | string): string => {
-	if (typeof date === "string") return date;
-	return date.toISOString();
-};
-
-const deserializeDate = (dateString: string): Date => {
-	return new Date(dateString);
-};
-
 const saveSignsToStorage = async (state: SignState) => {
 	const serializedSigns = state.signs.map((sign) => ({
 		...sign,
@@ -38,6 +29,8 @@ const saveSignsToStorage = async (state: SignState) => {
 		lastFetched: state.lastFetched,
 	});
 };
+
+// ─── Async Thunks ──────────────────────────────────────────────────
 
 export const fetchSigns = createAsyncThunk(
 	"signs/fetch",
@@ -81,12 +74,13 @@ export const fetchSigns = createAsyncThunk(
 		}
 	},
 );
+
+// ─── Slice ─────────────────────────────────────────────────────────
+
 const signsSlice = createSlice({
 	name: "signs",
 	initialState,
 	reducers: {
-		// In the signSlice reducers section, update these:
-
 		addSign: (
 			state,
 			action: PayloadAction<Omit<Sign, "id" | "status" | "isNew">>,
@@ -96,7 +90,7 @@ const signsSlice = createSlice({
 			const processedImages = (action.payload.images || []).map((img) => ({
 				...img,
 				signId: localId,
-				isNew: true, // Ensure images are marked as new
+				isNew: true,
 				status: SYNC_STATUS.NOT_SYNCED,
 			}));
 
@@ -118,21 +112,39 @@ const signsSlice = createSlice({
 			action: PayloadAction<{
 				id: string;
 				updates: Partial<Sign>;
-				isNewImage?: boolean;
 			}>,
 		) => {
-			const { id, updates, isNewImage } = action.payload;
+			const { id, updates } = action.payload;
 			const signIndex = state.signs.findIndex((s) => s.id === id);
 
 			if (signIndex !== -1) {
 				const sign = state.signs[signIndex];
 
-				// Only update status to NOT_SYNCED if:
-				// 1. The sign was previously SYNCED, AND
-				// 2. There are actual changes (new image or data updates)
+				// Check if images changed
+				const hasImageChanges =
+					updates.images !== undefined &&
+					JSON.stringify(updates.images) !== JSON.stringify(sign.images);
+
+				// Check if non-image fields changed
+				const { images: _, ...fieldUpdates } = updates;
+				const hasFieldChanges = Object.keys(fieldUpdates).length > 0;
+
 				const shouldMarkUnsynced =
 					sign.status === SYNC_STATUS.SYNCED &&
-					(isNewImage || Object.keys(updates).length > 0);
+					(hasImageChanges || hasFieldChanges);
+
+				// Clean up local files for removed images
+				if (hasImageChanges && updates.images) {
+					const newImageIds = new Set(updates.images.map((img) => img.imageId));
+					sign.images.forEach((existingImg) => {
+						if (
+							!newImageIds.has(existingImg.imageId) &&
+							existingImg.localPath
+						) {
+							ImageStorage.deleteImage(existingImg.localPath);
+						}
+					});
+				}
 
 				state.signs[signIndex] = {
 					...sign,
@@ -149,7 +161,10 @@ const signsSlice = createSlice({
 			action: PayloadAction<{
 				localId: string;
 				serverId: string;
-				imageUpdates: Array<{ localImageId: string; serverImageId: string }>;
+				imageUpdates: Array<{
+					localImageId: string;
+					serverImageId: string;
+				}>;
 			}>,
 		) => {
 			const { localId, serverId, imageUpdates } = action.payload;
@@ -160,14 +175,12 @@ const signsSlice = createSlice({
 			if (signIndex !== -1) {
 				const sign = state.signs[signIndex];
 
-				// Update sign with server ID
 				sign.id = serverId;
 				sign.serverId = serverId;
 				delete sign.localId;
 				sign.status = SYNC_STATUS.SYNCED;
 				sign.isNew = false;
 
-				// Update images with server IDs
 				sign.images.forEach((img) => {
 					const update = imageUpdates.find(
 						(u) =>
@@ -186,70 +199,6 @@ const signsSlice = createSlice({
 				saveSignsToStorage(state);
 			}
 		},
-		addImageToSign: (
-			state,
-			action: PayloadAction<{
-				signId: string;
-				imageUri: string;
-				isNew: boolean;
-			}>,
-		) => {
-			const { signId, imageUri, isNew } = action.payload;
-			const signIndex = state.signs.findIndex((s) => s.id === signId);
-
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
-				const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-				const newImage: SignImage = {
-					uri: imageUri,
-					signId,
-					isNew,
-					status: SYNC_STATUS.NOT_SYNCED,
-					imageId: isNew ? undefined : imageId,
-				};
-
-				if (isNew) {
-					ImageStorage.saveImage(imageUri, signId, imageId).then(
-						(localPath) => {
-							newImage.localPath = localPath;
-						},
-					);
-				}
-
-				sign.images.push(newImage);
-
-				sign.status = SYNC_STATUS.NOT_SYNCED;
-
-				saveSignsToStorage(state);
-			}
-		},
-
-		removeImage: (
-			state,
-			action: PayloadAction<{ signId: string; imageId: string }>,
-		) => {
-			const { signId, imageId } = action.payload;
-			const signIndex = state.signs.findIndex((s) => s.id === signId);
-
-			if (signIndex !== -1) {
-				const sign = state.signs[signIndex];
-				const imageIndex = sign.images.findIndex(
-					(img) => img.imageId === imageId || img.uri.includes(imageId),
-				);
-
-				if (imageIndex !== -1) {
-					const image = sign.images[imageIndex];
-					if (image.localPath) {
-						ImageStorage.deleteImage(image.localPath);
-					}
-
-					sign.images.splice(imageIndex, 1);
-					sign.status = SYNC_STATUS.NOT_SYNCED;
-					saveSignsToStorage(state);
-				}
-			}
-		},
 
 		markSignForDeletion: (state, action: PayloadAction<string>) => {
 			const signIndex = state.signs.findIndex((s) => s.id === action.payload);
@@ -261,6 +210,11 @@ const signsSlice = createSlice({
 					sign.status = SYNC_STATUS.NOT_SYNCED;
 					sign.isNew = false;
 				} else {
+					sign.images.forEach((img) => {
+						if (img.localPath) {
+							ImageStorage.deleteImage(img.localPath);
+						}
+					});
 					state.signs.splice(signIndex, 1);
 				}
 
@@ -302,11 +256,9 @@ const signsSlice = createSlice({
 export const {
 	addSign,
 	updateSign,
-	addImageToSign,
-	removeImage,
+	updateAfterSync,
 	markSignForDeletion,
 	loadSavedSigns,
-	updateAfterSync,
 } = signsSlice.actions;
 
 export default signsSlice.reducer;

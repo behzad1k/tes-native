@@ -11,13 +11,26 @@ export interface BackendImage {
 	signId: string;
 	thumbnailUrl?: string;
 }
-export interface MaintenanceImage {
-	id?: string;
+
+export interface BaseImage {
+	imageId: string;
 	uri: string;
-	isSynced: boolean;
-	jobId: string;
-	isNew?: boolean;
 	localPath?: string;
+	isNew: boolean;
+	status: SyncStatus;
+}
+
+export interface SignImage extends BaseImage {
+	signId: string;
+}
+
+export interface SupportImage extends BaseImage {
+	supportId: string;
+}
+
+export interface MaintenanceImage extends BaseImage {
+	jobId: string;
+	isSynced: boolean;
 }
 
 export interface JobAsset {
@@ -81,6 +94,7 @@ export type FilterMaintenance = {
 
 export type SortMaintenance = { key: string; dir: "ASC" | "DESC" };
 
+// ─── Map ───────────────────────────────────────────────────────────
 export interface MapCoordinate {
 	latitude: number;
 	longitude: number;
@@ -111,25 +125,21 @@ export interface MaintenanceJobFormData {
 	notes: string;
 }
 
-// Add these fields to existing Sign interface
 export interface Sign {
 	id: string;
 	localId?: string;
 	serverId?: string;
 
-	// Customer & Location
 	customerId: string;
 	locationTypeId: string;
 	latitude?: number;
 	longitude?: number;
 	address?: string;
 
-	// Sign Identification
 	signId: string;
 	supportId: string;
 	codeId: string;
 
-	// Physical Properties
 	height: string;
 	facingDirectionId: string;
 	faceMaterialId: string;
@@ -137,24 +147,20 @@ export interface Sign {
 	reflectiveRatingId: string;
 	dimensionId: string;
 
-	// Installation & Condition
 	dateInstalled: string;
 	conditionId: string;
 	note: string;
 
-	// Images and Sync
 	images: SignImage[];
 	isNew: boolean;
 	status: SyncStatus;
 }
 
-// Add these fields to existing Support interface
 export interface Support {
 	id: string;
 	localId?: string;
 	serverId?: string;
 
-	// Customer & Location
 	customerId: string;
 	supportLocationTypeId: string;
 	locationId: string;
@@ -162,17 +168,14 @@ export interface Support {
 	longitude?: number;
 	address?: string;
 
-	// Support Identification
 	supportId: string;
 	codeId: string;
 	positionId: string;
 
-	// Installation & Condition
 	dateInstalled: string;
 	conditionId: string;
 	note: string;
 
-	// Relations
 	signs: Array<{
 		id: string;
 		supportId?: string;
@@ -180,28 +183,9 @@ export interface Support {
 		[key: string]: any;
 	}>;
 
-	// Images and Sync
 	images: Array<SupportImage>;
 	isNew: boolean;
 	isSynced: boolean;
-	status: SyncStatus;
-}
-
-export interface SignImage {
-	imageId: string;
-	signId: string;
-	uri: string;
-	localPath?: string;
-	isNew: boolean;
-	status: SyncStatus;
-}
-
-export interface SupportImage {
-	imageId: string;
-	supportId: string;
-	uri: string;
-	localPath?: string;
-	isNew: boolean;
 	status: SyncStatus;
 }
 

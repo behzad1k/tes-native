@@ -6,7 +6,6 @@ import {
 	TrafficCount,
 	TrafficCountClassification,
 	WorkOrderStatus,
-	SyncStatusType,
 } from "@/src/modules/traffic-count/types";
 import mockData from "@/src/data/mockTrafficCountData.json";
 
@@ -30,17 +29,6 @@ const saveToStorage = async (state: TrafficCountState) => {
 		classifications: state.classifications,
 		lastFetched: state.lastFetched,
 	});
-};
-
-const computeSyncStatus = (wo: TrafficCountWorkOrder): SyncStatusType => {
-	if (!wo.counts || wo.counts.length === 0) {
-		return wo.isSynced ? "Synced" : "Not Synced";
-	}
-	const allSynced = wo.counts.every((c) => c.isSynced);
-	const noneSynced = wo.counts.every((c) => !c.isSynced);
-	if (allSynced) return "Synced";
-	if (noneSynced) return "Not Synced";
-	return "Partial";
 };
 
 const computeDaysLeft = (endDT: string): number => {
@@ -158,7 +146,6 @@ const trafficCountSlice = createSlice({
 			}
 		},
 
-		// Undo: remove a specific count by ID from a work order
 		removeLastCountFromWorkOrder: (
 			state,
 			action: PayloadAction<{ workOrderId: string; countId: string }>,
@@ -173,7 +160,6 @@ const trafficCountSlice = createSlice({
 					wo.isEdited = true;
 					wo.isSynced = false;
 					wo.syncStatus = "Not Synced";
-					// If no counts remain, revert status back to "To Do"
 					if (wo.counts.length === 0 && wo.status === "In Progress") {
 						wo.status = "To Do";
 					}
