@@ -2,6 +2,7 @@ import { apiClient } from "@/src/services/api/apiClient";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { ReduxStorage, TokenStorage } from "../persistence";
 import mockAppData from "@/src/data/mockAppData.json";
+import ENDPOINTS from "@/src/services/api/endpoints";
 
 export interface VehicleType {
 	id: string;
@@ -31,21 +32,15 @@ export const fetchAppData = createAsyncThunk(
 	"appData/fetch",
 	async (_, { rejectWithValue }) => {
 		try {
-			const token = await TokenStorage.getToken();
-			// if (!token) return rejectWithValue("No token");
-
-			// TODO: Replace with real API call when backend is ready
-			// const response = await apiClient.get("api/AppData/GetAppData", {
-			// 	headers: { Authorization: `Bearer ${token}` },
-			// });
-			// const appData: any = response.data || response;
+			const response = await apiClient.get(ENDPOINTS.SIGNS.APP_DATA);
+			const appData: any = response.data || response;
 
 			// Using mock data for now
 			console.log("Using mock app data");
 			await new Promise((resolve) => setTimeout(resolve, 300));
 
 			return {
-				customers: mockAppData.customers || [],
+				customers: appData.customers || [],
 				locationTypes: mockAppData.locationTypes || [],
 				vehicleTypes: mockAppData.vehicleTypes || [],
 			};

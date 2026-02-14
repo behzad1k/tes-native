@@ -1,36 +1,33 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { useLanguage } from "@/src/hooks/useLanguage";
 import { Theme } from "@/src/types/theme";
 import TextView from "@/src/components/ui/TextView";
-import LoginForm from "./components/LoginForm";
 import ForgotPasswordModal from "./components/ForgotPasswordForm";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { spacing } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
-import { LoginFormData } from "../../types";
 import ModuleCard from "@/src/components/layouts/ModuleCard";
 import { LOCAL_IMAGES } from "@/src/constants/images";
 import { LinearGradient } from "expo-linear-gradient";
 import ButtonView from "@/src/components/ui/ButtonView";
-import { useAppDispatch } from "@/src/store/hooks";
-import { useAuth } from "../../hooks/useLogin";
+import { useAuth } from "../../hooks/useAuth";
+import { Toast } from "toastify-react-native";
 
-export function LoginScreen() {
+export default function LoginScreen() {
   const styles = useThemedStyles(createStyles);
   const { t } = useLanguage();
   const { openDrawer, closeDrawer } = useDrawer();
 
-  const { login, loginLoading } = useAuth();
+  const { login, forgotPassword, isReady, isLoading } = useAuth();
+
   const onForgotPassword = () => {
     openDrawer(
       "forgot-password",
       <ForgotPasswordModal
-        onSubmit={(email) => {
-          handleForgotPassword(email);
-        }}
+        onSubmit={handleForgotPassword}
         onClose={() => closeDrawer("forgot-password")}
       />,
       {
@@ -39,24 +36,14 @@ export function LoginScreen() {
     );
   };
 
-  const onLogin = () => {
-    openDrawer(
-      "login-drawer",
-      <LoginForm
-        onSubmit={handleLogin}
-        onForgotPassword={onForgotPassword}
-        loading={loginLoading}
-      />,
-      { drawerHeight: "auto" },
-    );
-  };
-
-  const handleLogin = async (credentials: LoginFormData) => {
-    await login(credentials);
-  };
-
-  const handleForgotPassword = async (email) => {
-    // TODO: Implement Forgot Password
+  const handleForgotPassword = async (email: string) => {
+    const success = await forgotPassword({ email });
+    if (success) {
+      Toast.success(t("auth.forgotPasswordSuccess"));
+      closeDrawer("forgot-password");
+    } else {
+      Toast.error(t("error.forgotPasswordFailed"));
+    }
   };
 
   return (
@@ -87,7 +74,7 @@ export function LoginScreen() {
                 containerStyle={{ width: "49%" }}
               />
               <ModuleCard
-                title="Sing Inventory"
+                title="Sign Inventory"
                 description="You can count the number of vehicles and determine the direction of each one."
                 backgroundImage={LOCAL_IMAGES.SING_INVENTORY_CARD}
                 containerStyle={{ width: "49%" }}
@@ -112,17 +99,6 @@ export function LoginScreen() {
               />
             </View>
           </View>
-          {/*<View style={styles.formContainer}>
-								{isLoggingIn || isLoginPending ? (
-									<LoadingAnimation />
-								) : (
-									<LoginForm
-										onSubmit={handleLogin}
-										onForgotPassword={handleForgotPassword}
-										loading={isLoginPending}
-									/>
-								)}
-							</View>*/}
         </View>
 
         <View style={styles.textBox}>
@@ -132,8 +108,14 @@ export function LoginScreen() {
           <TextView variant="h1" style={styles.descriptionText}>
             {t("auth.appDescription")}
           </TextView>
-          <ButtonView style={styles.submitButton} onPress={onLogin}>
-            {t("auth.signIn")}
+
+          <ButtonView
+            style={styles.submitButton}
+            onPress={login}
+            disabled={!isReady || isLoading}
+            loading={isLoading}
+          >
+            {isLoading ? "Signing in..." : t("auth.signIn")}
           </ButtonView>
         </View>
       </KeyboardAvoidingView>
@@ -174,10 +156,6 @@ const createStyles = (theme: Theme) =>
       overflow: "hidden",
       flex: 1,
     },
-    header: {
-      alignItems: "center",
-      marginBottom: spacing.xxl,
-    },
     title: {
       color: colors.darkGreen,
       fontSize: 32,
@@ -187,7 +165,7 @@ const createStyles = (theme: Theme) =>
     descriptionText: {
       color: colors.darkGreen,
       fontSize: 12,
-      fontWeight: 500,
+      fontWeight: "500",
       textAlign: "center",
       maxWidth: "80%",
       lineHeight: 15,

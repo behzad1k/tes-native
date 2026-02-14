@@ -9,6 +9,10 @@ import {
 	JobType,
 } from "@/src/types/models";
 import mockData from "@/src/data/mockJobsData.json";
+import axios from "axios";
+import ENDPOINTS from "@/src/services/api/endpoints";
+import { BUserJobs } from "@/src/types/api";
+import { fetchJobs } from "../thunks";
 
 interface MaintenanceState {
 	jobs: MaintenanceJob[];
@@ -37,40 +41,6 @@ const saveToStorage = async (state: MaintenanceState) => {
 		lastFetched: state.lastFetched,
 	});
 };
-
-export const fetchJobs = createAsyncThunk(
-	"maintenance/fetchJobs",
-	async (_, { rejectWithValue }) => {
-		try {
-			console.log("Using mock data (backend is down)");
-
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
-			return {
-				jobs: mockData.jobs,
-				jobStatuses: mockData.jobStatuses,
-				jobTypes: mockData.jobTypes,
-			};
-
-			const token = await TokenStorage.getToken();
-			if (!token) return rejectWithValue("No token");
-
-			const response = await apiClient.get("/sync/appData", {
-				headers: { Authorization: `Bearer ${token}` },
-			});
-
-			const data = response.data;
-
-			return {
-				jobs: data.jobs || [],
-				jobStatuses: data.jobStatuses || [],
-				jobTypes: data.jobTypes || [],
-			};
-		} catch (error: any) {
-			return rejectWithValue(error.message);
-		}
-	},
-);
 
 export const updateJob = createAsyncThunk(
 	"maintenance/updateJob",
@@ -218,7 +188,7 @@ const maintenanceSlice = createSlice({
 				state.jobTypes = action.payload.jobTypes;
 				state.lastFetched = Date.now();
 				state.isLoading = false;
-				saveToStorage(state);
+				// saveToStorage(state);
 			})
 			.addCase(fetchJobs.rejected, (state) => {
 				state.isLoading = false;

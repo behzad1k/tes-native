@@ -1,14 +1,35 @@
 import { apiClient } from "@/src/services/api/apiClient";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { ReduxStorage, ImageStorage, TokenStorage } from "../persistence";
-import { Sign, SignImage } from "@/src/types/models";
+import {
+	Sign,
+	SignSupportCode,
+	SignImage,
+	SystemOption,
+} from "@/src/types/models";
 import { SYNC_STATUS } from "@/src/constants/global";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import {
+	fetchJobs,
+	fetchSignSupportData,
+	fetchSignSupportSetups,
+} from "../thunks";
 
 interface SignState {
 	signs: Sign[];
 	backendImages: Record<string, string>;
 	isLoading: boolean;
 	lastFetched: number | null;
+	codes: SignSupportCode[];
+	descriptions: SystemOption[];
+	dimensions: SystemOption[];
+	types: SystemOption[];
+	conditions: SystemOption[];
+	faceMaterials: SystemOption[];
+	facingDirections: SystemOption[];
+	locationTypes: SystemOption[];
+	reflectiveCoatings: SystemOption[];
+	reflectiveRating: SystemOption[];
 }
 
 const initialState: SignState = {
@@ -16,6 +37,16 @@ const initialState: SignState = {
 	backendImages: {},
 	isLoading: false,
 	lastFetched: null,
+	codes: [],
+	descriptions: [],
+	dimensions: [],
+	types: [],
+	conditions: [],
+	faceMaterials: [],
+	facingDirections: [],
+	locationTypes: [],
+	reflectiveCoatings: [],
+	reflectiveRating: [],
 };
 
 const saveSignsToStorage = async (state: SignState) => {
@@ -237,15 +268,30 @@ const signsSlice = createSlice({
 	},
 	extraReducers: (builder) => {
 		builder
+			.addCase(fetchSignSupportSetups.fulfilled, (state, action) => {
+				state.codes = action.payload.setups.signCode;
+				state.descriptions = action.payload.setups.signDescription;
+				state.types = action.payload.setups.signType;
+				state.conditions = action.payload.setups.signCondition;
+				state.dimensions = action.payload.setups.signDimension;
+				state.faceMaterials = action.payload.setups.signFaceMaterial;
+				state.facingDirections = action.payload.setups.signFacingDirection;
+				state.locationTypes = action.payload.setups.signLocationType;
+				state.reflectiveCoatings = action.payload.setups.signReflectiveCoating;
+				state.reflectiveRating = action.payload.setups.signReflectiveRating;
+				state.isLoading = false;
+				state.lastFetched = Date.now();
+			})
 			.addCase(fetchSigns.pending, (state) => {
 				state.isLoading = true;
 			})
-			.addCase(fetchSigns.fulfilled, (state, action) => {
-				state.signs = action.payload.signs;
-				state.backendImages = action.payload.backendImages;
-				state.lastFetched = Date.now();
-				state.isLoading = false;
-				saveSignsToStorage(state);
+			.addCase(fetchJobs.fulfilled, (state, action) => {
+				state.signs = [
+					...state.signs.filter(
+						(x) => x.isNew == true && x.status == SYNC_STATUS.NOT_SYNCED,
+					),
+					...action.payload.signWithouSupport,
+				];
 			})
 			.addCase(fetchSigns.rejected, (state) => {
 				state.isLoading = false;

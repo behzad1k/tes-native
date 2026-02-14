@@ -32,6 +32,11 @@ import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
 import { fetchSupports } from "@/src/store/slices/supportSlice";
 import { fetchJobs } from "@/src/store/slices/maintenanceSlice";
 import { fetchAppData } from "@/src/store/slices/appData";
+import { fetchSignSupportSetups } from "@/src/store/thunks";
+import { BUser } from "@/src/types/api";
+import ENDPOINTS from "@/src/services/api/endpoints";
+import { apiClient } from "@/src/services/api/apiClient";
+import { ReduxStorage } from "@/src/store/persistence";
 
 function AppContent() {
   const { showSplash, textValue, hideSplash } = useSplash();
@@ -47,6 +52,13 @@ function AppContent() {
     topOffset: 60,
   };
 
+  const fetchUser = async () => {
+    const userResponse: BUser = await apiClient.get(ENDPOINTS.USER.PROFIlE);
+    await ReduxStorage.saveState("auth_user", userResponse);
+
+    return userResponse;
+  };
+
   const initializeApp = async () => {
     try {
       const themeToken = await AsyncStorage.getItem(STORAGE_KEYS.THEME);
@@ -60,12 +72,10 @@ function AppContent() {
       const authState = store.getState().auth;
 
       if (!authState.isAuthenticated) {
-        if (router && router.canGoBack()) {
-          router.navigate(ROUTES.HOME);
-        } else {
-          setTimeout(() => router.navigate(ROUTES.HOME), 200);
+        if (router) {
+          router.navigate(ROUTES.LOGIN);
         }
-        // return;
+        return;
       }
 
       // 2. Check network status
@@ -75,13 +85,17 @@ function AppContent() {
       if (isOnline) {
         try {
           // 3. Update token if online
-          await store.dispatch(updateToken());
+          const user = await fetchUser();
 
+          // await getVehicleClassification(token);
+          // await getClientGeneralSetting(token);
+          // await getModuleOfModule(token);
           // 4. Fetch latest data from backend (including appData with vehicleTypes)
           await Promise.all([
-            store.dispatch(fetchAppData()),
-            store.dispatch(fetchSigns()),
-            store.dispatch(fetchSupports()),
+            store.dispatch(fetchSignSupportSetups(user.defaultCustomerId)),
+
+            // store.dispatch(fetchSigns()),
+            // store.dispatch(fetchSupports()),
             store.dispatch(fetchJobs()),
           ]);
         } catch (error) {
@@ -100,6 +114,7 @@ function AppContent() {
       // router.navigate(ROUTES.LOGIN);
     }
   };
+
   useEffect(() => {
     if (router && isLanguageLoaded) {
       initializeApp();

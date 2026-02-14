@@ -61,3 +61,15 @@ export interface LoginResponse {
 	code: number;
 	token: string;
 }
+
+/**
+ * Shape of the decoded JWT token payload
+ */
+export interface TokenPayload {
+	exp: number;
+	sub: string;
+	iss: string;
+	aud: string | string[];
+	scope?: string;
+	[key: string]: any;
+}

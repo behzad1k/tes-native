@@ -1,14 +1,31 @@
 import { apiClient } from "@/src/services/api/apiClient";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { ReduxStorage, ImageStorage, TokenStorage } from "../persistence";
-import { Support, SupportImage } from "@/src/types/models";
+import {
+	SignSupportCode,
+	Support,
+	SupportImage,
+	SystemOption,
+} from "@/src/types/models";
 import { SYNC_STATUS } from "@/src/constants/global";
+import {
+	fetchJobs,
+	fetchSignSupportData,
+	fetchSignSupportSetups,
+} from "../thunks";
 
 interface SupportState {
 	supports: Support[];
 	backendImages: Record<string, string>;
 	isLoading: boolean;
 	lastFetched: number | null;
+	codes: SignSupportCode[];
+	descriptions: SystemOption[];
+	types: SystemOption[];
+	conditions: SystemOption[];
+	materials: SystemOption[];
+	positions: SystemOption[];
+	locationTypes: SystemOption[];
 }
 
 const initialState: SupportState = {
@@ -16,15 +33,18 @@ const initialState: SupportState = {
 	backendImages: {},
 	isLoading: false,
 	lastFetched: null,
+	codes: [],
+	descriptions: [],
+	types: [],
+	conditions: [],
+	materials: [],
+	locationTypes: [],
+	positions: [],
 };
 
 const serializeDate = (date: Date | string): string => {
 	if (typeof date === "string") return date;
 	return date.toISOString();
-};
-
-const deserializeDate = (dateString: string): Date => {
-	return new Date(dateString);
 };
 
 const saveSupportsToStorage = async (state: SupportState) => {
@@ -285,12 +305,27 @@ const supportsSlice = createSlice({
 	},
 	extraReducers: (builder) => {
 		builder
+			.addCase(fetchSignSupportSetups.fulfilled, (state, action) => {
+				state.codes = action.payload.setups.supportCode;
+				state.descriptions = action.payload.setups.supportDescription;
+				state.types = action.payload.setups.supportType;
+				state.conditions = action.payload.setups.supportCondition;
+				state.materials = action.payload.setups.supportMaterial;
+				state.locationTypes = action.payload.setups.supportLocationType;
+				state.positions = action.payload.setups.supportLocationType;
+				state.isLoading = false;
+				state.lastFetched = Date.now();
+			})
 			.addCase(fetchSupports.pending, (state) => {
 				state.isLoading = true;
 			})
-			.addCase(fetchSupports.fulfilled, (state, action) => {
-				state.supports = action.payload.supports;
-				state.backendImages = action.payload.backendImages;
+			.addCase(fetchJobs.fulfilled, (state, action) => {
+				state.supports = [
+					...state.supports.filter(
+						(x) => x.isNew == true && x.status == SYNC_STATUS.NOT_SYNCED,
+					),
+					...action.payload.supports,
+				];
 				state.lastFetched = Date.now();
 				state.isLoading = false;
 				saveSupportsToStorage(state);

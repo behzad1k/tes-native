@@ -1,8 +1,12 @@
 export interface User {
-	id: string;
-	name: string;
-	phoneNumber: string;
-	role: string;
+	userId: string;
+	firstName: string;
+	lastName: string;
+	userName: string;
+	email: string;
+	permissions: string[];
+	defaultCustomerId: string;
+	defaultCustomerName: string;
 }
 
 export interface BackendImage {
@@ -190,3 +194,18 @@ export interface Support {
 }
 
 export type SyncStatus = "SYNCED" | "NOT_SYNCED";
+
+export interface SignSupportCode {
+	id: string;
+	name: string;
+	code: string;
+	dimensionId: string | null;
+	materialCost: number;
+	labourCost: number;
+	installationCost: number;
+}
+
+export interface SystemOption {
+	id: string;
+	name: string;
+}

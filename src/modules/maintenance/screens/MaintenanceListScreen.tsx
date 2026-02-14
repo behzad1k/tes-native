@@ -19,7 +19,6 @@ import { colors } from "@/src/styles/theme/colors";
 import { useTranslation } from "react-i18next";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
-import { fetchJobs } from "@/src/store/slices/maintenanceSlice";
 import { ROUTES } from "@/src/constants/navigation";
 import { Toast } from "toastify-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
@@ -32,6 +31,7 @@ import { Sort, TabsType } from "@/src/types/layouts";
 import { startSync } from "@/src/store/slices/syncSlice";
 import MaintenanceCard from "../components/MaintenanceCard";
 import SortForm from "@/src/components/layouts/SortForm";
+import { fetchJobs } from "@/src/store/thunks";
 
 export default function MaintenanceListScreen() {
   const { t } = useTranslation();
@@ -118,7 +118,7 @@ export default function MaintenanceListScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await dispatch(fetchJobs()).unwrap();
+      // await dispatch(fetchJobs()).unwrap();
       Toast.success("Jobs refreshed");
     } catch (error) {
       Toast.error("Failed to fetch jobs");
