@@ -1,54 +1,67 @@
 import { API_CONFIG } from "@/src/configs/api";
 
 const baseUrl = API_CONFIG.BASE_URL + API_CONFIG.POST_FIX;
-const formatUrl = (endpoint: string) => `${baseUrl}/${endpoint}`;
+const authUrl = API_CONFIG.AUTH_BASE_URL;
+
+// Helper to format URLs with proper base
+const formatUrl = (base: string, endpoint: string) =>
+	`${base.replace(/\/+$/, "")}/${endpoint.replace(/^\/+/, "")}`;
 
 const ENDPOINTS = {
 	AUTH: {
-		LOGIN: formatUrl("connect/token"),
-		VERIFY: formatUrl("connect/verify"),
-		LOGOUT: formatUrl("connect/logout"),
+		LOGIN: formatUrl(authUrl, "connect/token"),
+		VERIFY: formatUrl(authUrl, "connect/verify"),
+		LOGOUT: formatUrl(authUrl, "connect/logout"),
 	},
 	USER: {
-		PROFIlE: API_CONFIG.AUTH_BASE_URL + "api/user/UserProfileMobileApp",
-
-		UPDATE: formatUrl("api/user"),
+		PROFIlE: formatUrl(authUrl, "api/user/UserProfileMobileApp"),
+		UPDATE: formatUrl(authUrl, "api/user"),
 	},
 	SIGNS: {
-		APP_DATA: formatUrl("sign/api/sync/appData"),
-		SETUPS: formatUrl("sign/api/sync/GetSetups"),
-
-		CREATE: formatUrl("api/Sign/Add"),
-		DETAIL: (id: string) => formatUrl(`api/Sign/${id}`),
-		UPDATE: (id: string) => formatUrl(`api/Sign/Update/${id}`),
-		DELETE: (id: string) => formatUrl(`api/Sign/Delete/${id}`),
-		ADD_IMAGES: (id: string) => formatUrl(`api/Sign/AddSignImages/${id}`),
+		APP_DATA: formatUrl(baseUrl, "sign/api/sync/appData"),
+		SETUPS: (customerId: string) =>
+			formatUrl(baseUrl, `sign/api/sync/GetSetups/${customerId}`),
+		CREATE: formatUrl(baseUrl, "sign/api/Sign/Add"),
+		DETAIL: (id: string) => formatUrl(baseUrl, `sign/api/Sign/${id}`),
+		UPDATE: (id: string) => formatUrl(baseUrl, `sign/api/Sign/Update/${id}`),
+		DELETE: (id: string) => formatUrl(baseUrl, `sign/api/Sign/Delete/${id}`),
+		ADD_IMAGES: (signId: string, isNew: boolean) =>
+			formatUrl(baseUrl, `sign/api/Attachments/Sign/${isNew}`),
 	},
 	SUPPORTS: {
-		INDEX: formatUrl("api/Support/GetSupports"),
-		CREATE: formatUrl("api/Support/Add"),
-		DETAIL: (id: string) => formatUrl(`api/Support/${id}`),
-		UPDATE: (id: string) => formatUrl(`api/Support/Update/${id}`),
-		DELETE: (id: string) => formatUrl(`api/Support/Delete/${id}`),
-		ADD_IMAGES: (id: string) => formatUrl(`api/Support/AddSupportImages/${id}`),
+		INDEX: formatUrl(baseUrl, "sign/api/Support/GetSupports"),
+		CREATE: formatUrl(baseUrl, "sign/api/Support/Add"),
+		DETAIL: (id: string) => formatUrl(baseUrl, `sign/api/Support/${id}`),
+		UPDATE: (id: string) => formatUrl(baseUrl, `sign/api/Support/Update/${id}`),
+		DELETE: (id: string) => formatUrl(baseUrl, `sign/api/Support/Delete/${id}`),
+		ADD_IMAGES: (supportId: string, isNew: boolean) =>
+			formatUrl(baseUrl, `sign/api/Attachments/Support/${isNew}`),
 	},
 	MAINTENANCE: {
-		INDEX: formatUrl("maintenance/api/jobs/UserJobs"),
-
-		DETAIL: (id: string) => formatUrl(`api/Maintenance/jobs/${id}`),
-		UPDATE: (id: string) => formatUrl(`api/Maintenance/jobs/${id}`),
-		UPDATE_ASSET: (jobId: string, assetId: string) =>
-			formatUrl(`api/Maintenance/jobs/${jobId}/assets/${assetId}`),
+		// POST - Fetch user's jobs with { CustomerId, ShowDataByLocation }
+		USER_JOBS: formatUrl(baseUrl, "maintenance/api/jobs/UserJobs"),
+		// POST - Update jobs with { jobs, assets }
+		UPDATE_USER_JOBS: formatUrl(baseUrl, "maintenance/api/Jobs/UpdateUserJobs"),
+		// PUT - Upload job image (FormData with file and jobId)
+		UPLOAD_JOB_IMAGE: formatUrl(baseUrl, "maintenance/api/Attachments/job"),
+		// GET - Download job attachments
 		DOWNLOAD_ATTACHMENTS: (jobId: string) =>
-			formatUrl(`api/Attachments/DownloadAttachments/${jobId}`),
+			formatUrl(
+				baseUrl,
+				`maintenance/api/Attachments/DownloadAttachments/${jobId}`,
+			),
 	},
 	SYNC: {
-		APP_DATA: formatUrl("api/sync/appData"),
+		// POST - Sync data from app to server
+		GET_DATA_FROM_APP: formatUrl(baseUrl, "sign/api/sync/getDataFromApp"),
+		APP_DATA: formatUrl(baseUrl, "sign/api/sync/appData"),
 	},
 	TRAFFIC_COUNTER: {
-		VEHICLE_CLASSIFICATIONS: formatUrl(
-			"traffic/api/Setups/GetCustomerVehicleClassification/",
-		),
+		VEHICLE_CLASSIFICATIONS: (customerId: string) =>
+			formatUrl(
+				baseUrl,
+				`traffic/api/Setups/GetCustomerVehicleClassification/${customerId}`,
+			),
 	},
 } as const;
 

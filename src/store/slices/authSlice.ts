@@ -41,7 +41,7 @@ export const initializeAuth = createAsyncThunk(
 	"auth/initialize",
 	async (_, { rejectWithValue }) => {
 		try {
-			const token = await TokenStorage.getToken();
+			const token = await TokenStorage.getAccessToken();
 
 			if (!token) {
 				return { user: null, isAuthenticated: false, tokenExpiry: null };
@@ -51,8 +51,8 @@ export const initializeAuth = createAsyncThunk(
 			const now = Date.now();
 
 			if (expiry && expiry < now) {
-				await TokenStorage.clearToken();
-				await ReduxStorage.clearState("auth_user");
+				await TokenStorage.clearTokens();
+				await ReduxStorage.removeState("auth_user");
 				return { user: null, isAuthenticated: false, tokenExpiry: null };
 			}
 
@@ -78,16 +78,13 @@ export const loginWithOAuth = createAsyncThunk(
 	async (accessToken: string, { rejectWithValue }) => {
 		try {
 			// 1. Save token
-			await TokenStorage.saveToken(accessToken);
+			await TokenStorage.saveTokens(accessToken);
 			const expiry = getTokenExpiry(accessToken);
 
 			// 2. Fetch user profile
-			const userResponse = await apiClient.get(
-				"api/user/UserProfileMobileApp",
-				{
-					headers: { Authorization: `Bearer ${accessToken}` },
-				},
-			);
+			const userResponse = await apiClient.get(ENDPOINTS.USER.PROFIlE, {
+				headers: { Authorization: `Bearer ${accessToken}` },
+			});
 
 			// 3. Save user to storage
 			await ReduxStorage.saveState("auth_user", userResponse);
@@ -145,7 +142,7 @@ export const loginThunk = createAsyncThunk(
 			);
 
 			if (response.access_token) {
-				await TokenStorage.saveToken(response.access_token);
+				await TokenStorage.saveTokens(response.access_token);
 				const expiry = getTokenExpiry(response.access_token);
 
 				const userResponse = await apiClient.get(
@@ -176,7 +173,7 @@ export const updateToken = createAsyncThunk(
 	"auth/updateToken",
 	async (_, { rejectWithValue }) => {
 		try {
-			const token = await TokenStorage.getToken();
+			const token = await TokenStorage.getAccessToken();
 			if (!token) return rejectWithValue("No token");
 
 			// const expiry = getTokenExpiry(token);
@@ -263,8 +260,8 @@ const authSlice = createSlice({
 			state.isAuthenticated = false;
 			state.isLoading = false;
 			state.tokenExpiry = null;
-			TokenStorage.clearToken();
-			ReduxStorage.clearState("auth_user");
+			TokenStorage.clearTokens();
+			ReduxStorage.removeState("auth_user");
 		},
 	},
 	extraReducers: (builder) => {

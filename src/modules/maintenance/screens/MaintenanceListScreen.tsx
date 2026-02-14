@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -14,7 +14,7 @@ import { Header } from "@/src/components/layouts/Header";
 import TextView from "@/src/components/ui/TextView";
 import { spacing } from "@/src/styles/theme/spacing";
 import { router } from "expo-router";
-import { House, MagnifyingGlass, Repeat } from "phosphor-react-native";
+import { House, MagnifyingGlass, ArrowsClockwise } from "phosphor-react-native";
 import { colors } from "@/src/styles/theme/colors";
 import { useTranslation } from "react-i18next";
 import { useDrawer } from "@/src/contexts/DrawerContext";
@@ -28,10 +28,9 @@ import TaskMapView from "../components/TaskMapView";
 import FilterMaintenanceForm from "../components/FilterMaintenanceForm";
 import Tabs from "@/src/components/layouts/Tabs";
 import { Sort, TabsType } from "@/src/types/layouts";
-import { startSync } from "@/src/store/slices/syncSlice";
 import MaintenanceCard from "../components/MaintenanceCard";
 import SortForm from "@/src/components/layouts/SortForm";
-import { fetchJobs } from "@/src/store/thunks";
+import { useMaintenanceOperations } from "../hooks/useMaintenanceOperations";
 
 export default function MaintenanceListScreen() {
   const { t } = useTranslation();
@@ -48,91 +47,102 @@ export default function MaintenanceListScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState(Object.values(TABS)[0].id);
-  const isSyncing = useAppSelector((state) => state.sync.isSyncing);
-  const pendingOperations = useAppSelector(
-    (state) => state.sync.pendingOperations,
-  );
 
+  // Use maintenance operations hook
+  const {
+    jobs,
+    jobStatuses,
+    jobTypes,
+    isLoading,
+    isSyncing,
+    syncData,
+    hasPendingChanges,
+    getUnsyncedJobsCount,
+    getUnsyncedImagesCount,
+  } = useMaintenanceOperations();
+  // Get supports from store
+  const supports = useAppSelector((state) => state.supports.supports);
+
+  // Filter and sort state
   const [filterByStatus, setFilterByStatus] = useState<string[]>([]);
   const [filterByType, setFilterByType] = useState<string[]>([]);
-  const [sort, setSort] = useState<Sort>({ key: "duration", dir: "ASC" });
-  const jobs = useAppSelector((state) => state.maintenance.jobs);
-  const jobStatuses = useAppSelector((state) => state.maintenance.jobStatuses);
-  const jobTypes = useAppSelector((state) => state.maintenance.jobTypes);
-  const supports = useAppSelector((state) => state.supports.supports);
-  const isLoading = useAppSelector((state) => state.maintenance.isLoading);
-  // useEffect(() => {
-  //   handleRefresh();
-  // }, []);
+  const [sort, setSort] = useState<Sort>({ key: "assignDate", dir: "DESC" });
 
+  // Calculate pending count
+  const pendingCount = getUnsyncedJobsCount() + getUnsyncedImagesCount();
+
+  // Filter and sort jobs
   const filteredJobs = useMemo(() => {
     let result = [...jobs];
 
+    // Apply status filter
     if (filterByStatus.length > 0) {
       result = result.filter((job) => filterByStatus.includes(job.statusName));
     }
 
+    // Apply type filter
     if (filterByType.length > 0) {
       result = result.filter((job) => filterByType.includes(job.typeName));
     }
 
-    result.sort((a, b) =>
-      sort.dir == "DESC"
-        ? b[sort.key] - a[sort.key]
-        : a[sort.key] - b[sort.key],
-    );
+    // Apply sorting
+    result.sort((a, b) => {
+      const aValue = a[sort.key as keyof MaintenanceJob];
+      const bValue = b[sort.key as keyof MaintenanceJob];
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sort.dir === "DESC"
+          ? bValue.localeCompare(aValue)
+          : aValue.localeCompare(bValue);
+      }
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sort.dir === "DESC" ? bValue - aValue : aValue - bValue;
+      }
+
+      return 0;
+    });
 
     return result;
   }, [jobs, filterByStatus, filterByType, sort]);
 
+  // Handle sync
   const handleSync = async () => {
-    const totalPending =
-      pendingOperations.creates +
-      pendingOperations.updates +
-      pendingOperations.deletes +
-      pendingOperations.images;
-
-    if (totalPending === 0) {
+    if (!hasPendingChanges()) {
       Toast.info("No changes to sync");
       return;
     }
 
     try {
-      const result = await dispatch(startSync()).unwrap();
-      if (result.synced) {
+      const result = await syncData();
+      if (result.success) {
         Toast.success(`Successfully synced ${result.syncedCount} items`);
       } else {
-        Toast.info(result.message || "Nothing to sync");
+        Toast.error(result.error || "Sync failed");
       }
     } catch (error) {
       Toast.error("Sync failed. Please try again.");
     }
   };
 
-  const totalPending =
-    pendingOperations.creates +
-    pendingOperations.updates +
-    pendingOperations.deletes +
-    pendingOperations.images;
-
+  // Handle refresh (just shows toast - data is fetched on app start)
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      // await dispatch(fetchJobs()).unwrap();
-      Toast.success("Jobs refreshed");
-    } catch (error) {
-      Toast.error("Failed to fetch jobs");
-    } finally {
+    // Data is fetched on app start, so just show a message
+    setTimeout(() => {
       setRefreshing(false);
-    }
+      Toast.info("Data is refreshed on app start");
+    }, 500);
   };
 
+  // Handle job press
   const handleJobPress = (job: MaintenanceJob) => {
     openDrawer(`job-detail-${job.id}`, <JobDetailForm job={job} />, {
       drawerHeight: "auto",
     });
   };
 
+  // Handle filter press
   const handleFilterPress = () => {
     openDrawer(
       "filter-jobs",
@@ -148,22 +158,24 @@ export default function MaintenanceListScreen() {
     );
   };
 
+  // Handle sort press
   const handleSortPress = () => {
     openDrawer(
       "sort-jobs",
       <SortForm
         sort={sort}
         setSort={setSort}
-        params={{ id: "ID", duration: "Duration" }}
+        params={{
+          assignDate: "Assign Date",
+          duration: "Duration",
+          name: "Name",
+        }}
       />,
-      {
-        drawerHeight: "auto",
-      },
+      { drawerHeight: "auto" },
     );
   };
 
-  const unsyncedCount = jobs.filter((j) => !j.isSynced).length;
-
+  // Render job item
   const renderJobItem = ({
     item,
     index,
@@ -179,11 +191,13 @@ export default function MaintenanceListScreen() {
     />
   );
 
+  // Render empty list
   const renderEmptyList = () => {
     if (isLoading) {
       return (
         <View style={styles.emptyContainer}>
           <ActivityIndicator size="large" color={colors.lightGreen} />
+          <TextView style={styles.emptyText}>Loading jobs...</TextView>
         </View>
       );
     }
@@ -194,6 +208,11 @@ export default function MaintenanceListScreen() {
           {filteredJobs.length === 0 && jobs.length > 0
             ? "No matches found!"
             : "There are no jobs yet!"}
+        </TextView>
+        <TextView style={styles.emptySubtext}>
+          {jobs.length === 0
+            ? "Jobs will appear here when assigned to you"
+            : "Try adjusting your filters"}
         </TextView>
       </View>
     );
@@ -215,24 +234,41 @@ export default function MaintenanceListScreen() {
           <TouchableOpacity
             key="sync"
             onPress={handleSync}
-            disabled={isSyncing || totalPending === 0}
+            disabled={isSyncing || pendingCount === 0}
+            style={styles.syncButton}
           >
-            <View style={styles.syncButton}>
-              <Repeat
-                size={24}
-                color={theme.secondary}
-                weight={isSyncing ? "bold" : "regular"}
-              />
-            </View>
+            <ArrowsClockwise
+              size={24}
+              color={pendingCount > 0 ? colors.lightGreen : theme.secondary}
+              weight={isSyncing ? "bold" : "regular"}
+            />
+            {pendingCount > 0 && (
+              <View style={styles.badge}>
+                <TextView style={styles.badgeText}>
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </TextView>
+              </View>
+            )}
           </TouchableOpacity>,
         ]}
       />
+
+      {/* Tabs */}
       <Tabs setTab={setTab} tab={tab} tabs={TABS} />
+
+      {/* List View */}
       {tab === TABS.LIST.id && (
         <>
+          {/* List Header */}
           <View style={styles.listHeader}>
             <TextView style={styles.itemsLengthText}>
               {filteredJobs.length} {t("items")}
+              {pendingCount > 0 && (
+                <TextView style={styles.pendingText}>
+                  {" "}
+                  ({pendingCount} pending)
+                </TextView>
+              )}
             </TextView>
             <View style={styles.listActions}>
               <TouchableOpacity onPress={handleSortPress}>
@@ -243,6 +279,8 @@ export default function MaintenanceListScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Jobs List */}
           <FlatList
             data={filteredJobs}
             renderItem={renderJobItem}
@@ -262,6 +300,7 @@ export default function MaintenanceListScreen() {
         </>
       )}
 
+      {/* Map View */}
       {tab === TABS.MAP.id && (
         <TaskMapView jobs={filteredJobs} supports={supports} />
       )}
@@ -292,28 +331,8 @@ const createStyles = (theme: Theme) =>
     },
     badgeText: {
       color: colors.white,
-      fontSize: 12,
+      fontSize: 10,
       fontWeight: "bold",
-    },
-    topBar: {
-      flexDirection: "row",
-      backgroundColor: colors.white,
-      paddingVertical: spacing.sm,
-      borderBottomWidth: 2,
-      borderBottomColor: theme.border,
-    },
-    topBarButton: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      borderRightWidth: 1,
-      borderRightColor: theme.border,
-    },
-    topBarText: {
-      fontSize: 15,
-      color: theme.text,
-      marginLeft: spacing.sm,
     },
     listHeader: {
       flexDirection: "row",
@@ -326,29 +345,18 @@ const createStyles = (theme: Theme) =>
       fontSize: 16,
       color: theme.secondary,
     },
+    pendingText: {
+      fontSize: 14,
+      color: colors.warning,
+    },
     listActions: {
       flexDirection: "row",
       gap: 20,
     },
     listActionText: {
       fontSize: 15,
-      fontWeight: 400,
+      fontWeight: "400",
       color: colors.lightBlue,
-    },
-    jobItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderBottomWidth: 2,
-      borderBottomColor: theme.border,
-      paddingVertical: spacing.sm,
-    },
-    jobIndex: {
-      width: "10%",
-      alignItems: "center",
-    },
-    jobContent: {
-      width: "90%",
-      paddingHorizontal: spacing.sm,
     },
     emptyList: {
       flex: 1,
@@ -358,9 +366,15 @@ const createStyles = (theme: Theme) =>
       justifyContent: "center",
       alignItems: "center",
       padding: spacing.xl,
+      gap: spacing.sm,
     },
     emptyText: {
       color: theme.secondary,
       textAlign: "center",
+    },
+    emptySubtext: {
+      color: theme.secondary,
+      textAlign: "center",
+      fontSize: 14,
     },
   });

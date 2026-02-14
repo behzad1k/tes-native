@@ -1,207 +1,291 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as FileSystem from "expo-file-system";
+import { File, Directory, Paths } from "expo-file-system/next";
 
-const STORAGE_KEYS = {
-	AUTH_USER: "auth_user",
-	AUTH_TOKEN: "auth_token",
-	SIGNS_DATA: "signs_data",
-	SUPPORT_DATA: "supports_data",
-	IMAGES_DIR: "images",
-} as const;
+const STORAGE_PREFIX = "@app_store:";
 
-export class TokenStorage {
-	static async getToken(): Promise<string | null> {
+/**
+ * Redux storage utilities for persisting state to AsyncStorage
+ */
+export const ReduxStorage = {
+	/**
+	 * Save state to AsyncStorage
+	 */
+	saveState: async (key: string, state: any): Promise<void> => {
 		try {
-			return await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-		} catch (error) {
-			console.error("Error getting token:", error);
-			return null;
-		}
-	}
-
-	static async saveToken(token: string): Promise<void> {
-		try {
-			await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-		} catch (error) {
-			console.error("Error saving token:", error);
-			throw error;
-		}
-	}
-
-	static async clearToken(): Promise<void> {
-		try {
-			await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-		} catch (error) {
-			console.error("Error clearing token:", error);
-		}
-	}
-}
-
-export class ReduxStorage {
-	static async loadState<T>(key: string): Promise<T | null> {
-		try {
-			const serialized = await AsyncStorage.getItem(key);
-			if (!serialized) return null;
-			return JSON.parse(serialized);
-		} catch (error) {
-			console.error(`Error loading state for ${key}:`, error);
-			return null;
-		}
-	}
-
-	static async saveState<T>(key: string, state: T): Promise<void> {
-		try {
-			const serialized = JSON.stringify(state);
-			await AsyncStorage.setItem(key, serialized);
+			const serializedState = JSON.stringify(state);
+			await AsyncStorage.setItem(`${STORAGE_PREFIX}${key}`, serializedState);
 		} catch (error) {
 			console.error(`Error saving state for ${key}:`, error);
 			throw error;
 		}
-	}
+	},
 
-	static async clearState(key: string): Promise<void> {
+	/**
+	 * Load state from AsyncStorage
+	 */
+	loadState: async <T>(key: string): Promise<T | null> => {
 		try {
-			await AsyncStorage.removeItem(key);
-		} catch (error) {
-			console.error(`Error clearing state for ${key}:`, error);
-		}
-	}
-
-	static async clearAllStates(): Promise<void> {
-		try {
-			const keys = Object.values(STORAGE_KEYS).filter(
-				(key) => key !== STORAGE_KEYS.AUTH_TOKEN,
+			const serializedState = await AsyncStorage.getItem(
+				`${STORAGE_PREFIX}${key}`,
 			);
-			await AsyncStorage.multiRemove(keys);
-		} catch (error) {
-			console.error("Error clearing all states:", error);
-		}
-	}
-}
-
-export class ImageStorage {
-	private static imagesDir = `${FileSystem.Directory}${STORAGE_KEYS.IMAGES_DIR}/`;
-
-	static async initialize(): Promise<void> {
-		try {
-			const dirInfo = await FileSystem.getInfoAsync(this.imagesDir);
-			if (!dirInfo.exists) {
-				await FileSystem.makeDirectoryAsync(this.imagesDir, {
-					intermediates: true,
-				});
+			if (serializedState === null) {
+				return null;
 			}
+			return JSON.parse(serializedState) as T;
 		} catch (error) {
-			console.error("Error initializing images directory:", error);
-			throw error;
+			console.error(`Error loading state for ${key}:`, error);
+			return null;
 		}
-	}
+	},
 
-	static async saveImage(
-		imageUri: string,
-		signId: string,
-		imageId: string,
-	): Promise<string> {
+	/**
+	 * Remove state from AsyncStorage
+	 */
+	removeState: async (key: string): Promise<void> => {
 		try {
-			await this.initialize();
+			await AsyncStorage.removeItem(`${STORAGE_PREFIX}${key}`);
+		} catch (error) {
+			console.error(`Error removing state for ${key}:`, error);
+		}
+	},
 
-			const extension = imageUri.split(".").pop() || "jpg";
-			const filename = `${signId}_${imageId}.${extension}`;
-			const localPath = `${this.imagesDir}${filename}`;
+	/**
+	 * Clear all app state from AsyncStorage
+	 */
+	clearAll: async (): Promise<void> => {
+		try {
+			const keys = await AsyncStorage.getAllKeys();
+			const appKeys = keys.filter((key) => key.startsWith(STORAGE_PREFIX));
+			await AsyncStorage.multiRemove(appKeys);
+		} catch (error) {
+			console.error("Error clearing all state:", error);
+		}
+	},
+};
 
-			await FileSystem.copyAsync({
-				from: imageUri,
-				to: localPath,
-			});
+/**
+ * Image storage utilities for managing local image files
+ * Using new Expo FileSystem API (expo-file-system/next)
+ */
+export const ImageStorage = {
+	/**
+	 * Get the base directory for storing images
+	 */
+	getBaseDirectory: (customerName: string = "default"): Directory => {
+		return new Directory(Paths.document, customerName);
+	},
 
-			return localPath;
+	/**
+	 * Ensure the image directory exists
+	 */
+	ensureDirectory: async (
+		customerName: string = "default",
+	): Promise<Directory> => {
+		const dir = ImageStorage.getBaseDirectory(customerName);
+		if (!dir.exists) {
+			dir.create();
+		}
+		return dir;
+	},
+
+	/**
+	 * Save an image from a URI to local storage
+	 */
+	saveImage: async (
+		sourceUri: string,
+		customerName: string = "default",
+		filename?: string,
+	): Promise<string> => {
+		try {
+			const dir = await ImageStorage.ensureDirectory(customerName);
+			const actualFilename =
+				filename ||
+				`${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+
+			const sourceFile = new File(sourceUri);
+			const destFile = new File(dir, actualFilename);
+
+			sourceFile.copy(destFile);
+
+			return destFile.uri;
 		} catch (error) {
 			console.error("Error saving image:", error);
 			throw error;
 		}
-	}
+	},
 
-	static async getImage(localPath: string): Promise<string | null> {
+	/**
+	 * Download an image from a URL
+	 */
+	downloadImage: async (
+		downloadUrl: string,
+		customerName: string = "default",
+		filename?: string,
+	): Promise<string> => {
 		try {
-			const fileInfo = await FileSystem.getInfoAsync(localPath);
-			if (fileInfo.exists) {
-				return localPath;
-			}
-			return null;
+			const dir = await ImageStorage.ensureDirectory(customerName);
+			const actualFilename =
+				filename ||
+				`${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+			const destFile = new File(dir, actualFilename);
+
+			// Fetch and save the image
+			const response = await fetch(downloadUrl);
+			const blob = await response.blob();
+			const base64 = await new Promise<string>((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onloadend = () => {
+					const result = reader.result as string;
+					// Remove data URL prefix
+					resolve(result.split(",")[1]);
+				};
+				reader.onerror = reject;
+				reader.readAsDataURL(blob);
+			});
+
+			destFile.write(base64, { encoding: "base64" });
+
+			return destFile.uri;
 		} catch (error) {
-			console.error("Error getting image:", error);
-			return null;
+			console.error("Error downloading image:", error);
+			throw error;
 		}
-	}
+	},
 
-	static async deleteImage(localPath: string): Promise<void> {
+	/**
+	 * Delete an image from local storage
+	 */
+	deleteImage: async (imageUri: string): Promise<void> => {
 		try {
-			const fileInfo = await FileSystem.getInfoAsync(localPath);
-			if (fileInfo.exists) {
-				await FileSystem.deleteAsync(localPath);
+			const file = new File(imageUri);
+			if (file.exists) {
+				file.delete();
 			}
 		} catch (error) {
 			console.error("Error deleting image:", error);
 		}
-	}
+	},
 
-	static async deleteSignImages(signId: string): Promise<void> {
+	/**
+	 * Delete all images for a customer
+	 */
+	deleteAllImages: async (customerName: string = "default"): Promise<void> => {
 		try {
-			await this.initialize();
-
-			const files = await FileSystem.readDirectoryAsync(this.imagesDir);
-			const signFiles = files.filter((file) => file.startsWith(`${signId}_`));
-
-			for (const file of signFiles) {
-				await FileSystem.deleteAsync(`${this.imagesDir}${file}`);
+			const dir = ImageStorage.getBaseDirectory(customerName);
+			if (dir.exists) {
+				dir.delete();
 			}
 		} catch (error) {
-			console.error("Error deleting sign images:", error);
+			console.error("Error deleting all images:", error);
 		}
-	}
+	},
 
-	static async cleanupImages(validSignIds: string[]): Promise<void> {
+	/**
+	 * Check if an image exists
+	 */
+	imageExists: (imageUri: string): boolean => {
 		try {
-			await this.initialize();
+			const file = new File(imageUri);
+			return file.exists;
+		} catch (error) {
+			return false;
+		}
+	},
 
-			const files = await FileSystem.readDirectoryAsync(this.imagesDir);
+	/**
+	 * Get the file size of an image
+	 */
+	getImageSize: (imageUri: string): number | null => {
+		try {
+			const file = new File(imageUri);
+			if (file.exists) {
+				return file.size ?? null;
+			}
+			return null;
+		} catch (error) {
+			return null;
+		}
+	},
+};
 
-			for (const file of files) {
-				const signId = file.split("_")[0];
-				if (!validSignIds.includes(signId)) {
-					await FileSystem.deleteAsync(`${this.imagesDir}${file}`);
-				}
+/**
+ * Token storage utilities
+ */
+export const TokenStorage = {
+	TOKEN_KEY: "@auth_token",
+	REFRESH_TOKEN_KEY: "@refresh_token",
+	EXPIRY_KEY: "@token_expiry",
+
+	saveTokens: async (
+		accessToken: string,
+		refreshToken?: string,
+		expiresIn?: number,
+	): Promise<void> => {
+		try {
+			await AsyncStorage.setItem(TokenStorage.TOKEN_KEY, accessToken);
+
+			if (refreshToken) {
+				await AsyncStorage.setItem(
+					TokenStorage.REFRESH_TOKEN_KEY,
+					refreshToken,
+				);
+			}
+
+			if (expiresIn) {
+				const expiryTime = Date.now() + expiresIn * 1000;
+				await AsyncStorage.setItem(
+					TokenStorage.EXPIRY_KEY,
+					expiryTime.toString(),
+				);
 			}
 		} catch (error) {
-			console.error("Error cleaning up images:", error);
+			console.error("Error saving tokens:", error);
+			throw error;
 		}
-	}
+	},
 
-	static async getSignImages(signId: string): Promise<string[]> {
+	getAccessToken: async (): Promise<string | null> => {
 		try {
-			await this.initialize();
-
-			const files = await FileSystem.readDirectoryAsync(this.imagesDir);
-			const signFiles = files
-				.filter((file) => file.startsWith(`${signId}_`))
-				.map((file) => `${this.imagesDir}${file}`);
-
-			return signFiles;
+			return await AsyncStorage.getItem(TokenStorage.TOKEN_KEY);
 		} catch (error) {
-			console.error("Error getting sign images:", error);
-			return [];
+			console.error("Error getting access token:", error);
+			return null;
 		}
-	}
+	},
 
-	static async clearAllImages(): Promise<void> {
+	getRefreshToken: async (): Promise<string | null> => {
 		try {
-			const dirInfo = await FileSystem.getInfoAsync(this.imagesDir);
-			if (dirInfo.exists) {
-				await FileSystem.deleteAsync(this.imagesDir, { idempotent: true });
+			return await AsyncStorage.getItem(TokenStorage.REFRESH_TOKEN_KEY);
+		} catch (error) {
+			console.error("Error getting refresh token:", error);
+			return null;
+		}
+	},
+
+	isTokenExpired: async (): Promise<boolean> => {
+		try {
+			const expiryStr = await AsyncStorage.getItem(TokenStorage.EXPIRY_KEY);
+			if (!expiryStr) {
+				return true;
 			}
+			const expiry = parseInt(expiryStr, 10);
+			// Add 60 second buffer
+			return Date.now() >= expiry - 60000;
 		} catch (error) {
-			console.error("Error clearing all images:", error);
+			console.error("Error checking token expiry:", error);
+			return true;
 		}
-	}
-}
+	},
 
-export { STORAGE_KEYS };
+	clearTokens: async (): Promise<void> => {
+		try {
+			await AsyncStorage.multiRemove([
+				TokenStorage.TOKEN_KEY,
+				TokenStorage.REFRESH_TOKEN_KEY,
+				TokenStorage.EXPIRY_KEY,
+			]);
+		} catch (error) {
+			console.error("Error clearing tokens:", error);
+		}
+	},
+};

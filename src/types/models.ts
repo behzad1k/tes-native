@@ -1,3 +1,7 @@
+import { SYNC_STATUS } from "@/src/constants/global";
+
+// ─── User ──────────────────────────────────────────────────────────
+
 export interface User {
 	userId: string;
 	firstName: string;
@@ -9,41 +13,127 @@ export interface User {
 	defaultCustomerName: string;
 }
 
-export interface BackendImage {
-	id: string;
-	url: string;
-	signId: string;
-	thumbnailUrl?: string;
-}
+// ─── Sync Status ───────────────────────────────────────────────────
+
+export type SyncStatus = (typeof SYNC_STATUS)[keyof typeof SYNC_STATUS];
+
+// ─── Base Image ────────────────────────────────────────────────────
 
 export interface BaseImage {
-	imageId: string;
+	imageId?: string;
 	uri: string;
 	localPath?: string;
 	isNew: boolean;
+	isSynced: boolean;
 	status: SyncStatus;
 }
+
+// ─── Sign Types ────────────────────────────────────────────────────
 
 export interface SignImage extends BaseImage {
 	signId: string;
 }
 
+export interface Sign {
+	id: string;
+	localId?: string;
+	serverId?: string;
+
+	customerId: string;
+	signId: string;
+	supportId?: string;
+	signCodeId: string;
+	locationTypeId?: string;
+	latitude?: number;
+	longitude?: number;
+	address?: string;
+
+	height?: string;
+	facingDirectionId?: string;
+	faceMaterialId?: string;
+	reflectiveCoatingId?: string;
+	reflectiveRatingId?: string;
+	dimensionId?: string;
+
+	dateInstalled?: string;
+	conditionId?: string;
+	note?: string;
+
+	images: SignImage[];
+	isNew: boolean;
+	isSynced: boolean;
+	status: SyncStatus;
+}
+
+export interface SignSupportCode {
+	id: string;
+	name: string;
+	code: string;
+	dimensionId: string | null;
+	materialCost: number;
+	labourCost: number;
+	installationCost: number;
+}
+
+export interface SystemOption {
+	id: string;
+	name: string;
+}
+
+// ─── Support Types ─────────────────────────────────────────────────
+
 export interface SupportImage extends BaseImage {
 	supportId: string;
 }
 
-export interface MaintenanceImage extends BaseImage {
-	jobId: string;
+export interface Support {
+	id: string;
+	localId?: string;
+	serverId?: string;
+
+	customerId: string;
+	supportId: string;
+	supportCodeId: string;
+	supportLocationTypeId?: string;
+	locationId?: string;
+	positionId?: string;
+	latitude?: number;
+	longitude?: number;
+	address?: string;
+
+	dateInstalled?: string;
+	conditionId?: string;
+	note?: string;
+
+	signs: Sign[];
+	images: SupportImage[];
+	isNew: boolean;
 	isSynced: boolean;
+	status: SyncStatus;
 }
+
+// ─── Maintenance/Job Types ─────────────────────────────────────────
 
 export interface JobAsset {
 	id: string;
+	jobId: string;
 	assetId: string;
-	type: number;
+	type: number; // 1 = Support, 2 = Sign
 	statusId: string;
 	note?: string;
 	isEdited?: boolean;
+}
+
+export interface JobStatus {
+	id: string;
+	name: string;
+	jobStatusType?: number;
+}
+
+export interface JobType {
+	id: string;
+	name: string;
+	index?: number;
 }
 
 export interface MaintenanceJob {
@@ -57,8 +147,12 @@ export interface MaintenanceJob {
 	duration: number;
 	note?: string;
 	assets: JobAsset[];
-	isEdited?: boolean;
+	isEdited: boolean;
 	isSynced: boolean;
+}
+
+export interface MaintenanceImage extends BaseImage {
+	jobId: string;
 }
 
 export interface MaintenanceJobUpdate {
@@ -74,31 +168,8 @@ export interface JobAssetUpdate {
 	note?: string;
 }
 
-export interface JobType {
-	id: string;
-	name: string;
-}
+// ─── Map Types ─────────────────────────────────────────────────────
 
-export interface JobStatus {
-	id: string;
-	name: string;
-}
-
-export enum FilterMaintenanceOperator {
-	EQUAL = "equal",
-	MORE = "more",
-	LESS = "less",
-}
-
-export type FilterMaintenance = {
-	key: string;
-	value: string;
-	operator?: FilterMaintenanceOperator;
-};
-
-export type SortMaintenance = { key: string; dir: "ASC" | "DESC" };
-
-// ─── Map ───────────────────────────────────────────────────────────
 export interface MapCoordinate {
 	latitude: number;
 	longitude: number;
@@ -120,92 +191,29 @@ export interface MapMarkerData {
 	jobId: string;
 }
 
-export interface MaintenanceJobFormData {
-	jobId: string;
-	description: string;
-	status: string;
-	assignedTo: string;
-	dueDate: string;
-	notes: string;
-}
+// ─── Backend Image Types ───────────────────────────────────────────
 
-export interface Sign {
+export interface BackendImage {
 	id: string;
-	localId?: string;
-	serverId?: string;
-
-	customerId: string;
-	locationTypeId: string;
-	latitude?: number;
-	longitude?: number;
-	address?: string;
-
-	signId: string;
-	supportId: string;
-	codeId: string;
-
-	height: string;
-	facingDirectionId: string;
-	faceMaterialId: string;
-	reflectiveCoatingId: string;
-	reflectiveRatingId: string;
-	dimensionId: string;
-
-	dateInstalled: string;
-	conditionId: string;
-	note: string;
-
-	images: SignImage[];
-	isNew: boolean;
-	status: SyncStatus;
+	url: string;
+	signId?: string;
+	supportId?: string;
+	jobId?: string;
+	thumbnailUrl?: string;
 }
 
-export interface Support {
-	id: string;
-	localId?: string;
-	serverId?: string;
+// ─── Filter/Sort Types ─────────────────────────────────────────────
 
-	customerId: string;
-	supportLocationTypeId: string;
-	locationId: string;
-	latitude?: number;
-	longitude?: number;
-	address?: string;
-
-	supportId: string;
-	codeId: string;
-	positionId: string;
-
-	dateInstalled: string;
-	conditionId: string;
-	note: string;
-
-	signs: Array<{
-		id: string;
-		supportId?: string;
-		signId: string;
-		[key: string]: any;
-	}>;
-
-	images: Array<SupportImage>;
-	isNew: boolean;
-	isSynced: boolean;
-	status: SyncStatus;
+export enum FilterMaintenanceOperator {
+	EQUAL = "equal",
+	MORE = "more",
+	LESS = "less",
 }
 
-export type SyncStatus = "SYNCED" | "NOT_SYNCED";
+export type FilterMaintenance = {
+	key: string;
+	value: string;
+	operator?: FilterMaintenanceOperator;
+};
 
-export interface SignSupportCode {
-	id: string;
-	name: string;
-	code: string;
-	dimensionId: string | null;
-	materialCost: number;
-	labourCost: number;
-	installationCost: number;
-}
-
-export interface SystemOption {
-	id: string;
-	name: string;
-}
+export type SortMaintenance = { key: string; dir: "ASC" | "DESC" };

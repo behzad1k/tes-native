@@ -25,7 +25,7 @@ interface ApiClientConfig {
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
-const TOKEN_STORAGE_KEY = "token";
+const TOKEN_STORAGE_KEY = "@auth_token";
 
 async function getStoredToken(): Promise<string | null> {
 	try {

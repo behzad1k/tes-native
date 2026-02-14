@@ -8,7 +8,6 @@ import {
 	SystemOption,
 } from "@/src/types/models";
 import { SYNC_STATUS } from "@/src/constants/global";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import {
 	fetchJobs,
 	fetchSignSupportData,
@@ -50,15 +49,47 @@ const initialState: SignState = {
 };
 
 const saveSignsToStorage = async (state: SignState) => {
-	const serializedSigns = state.signs.map((sign) => ({
-		...sign,
-	}));
+	try {
+		await ReduxStorage.saveState("signs_data", {
+			signs: state.signs,
+			backendImages: state.backendImages,
+			lastFetched: state.lastFetched,
+		});
+	} catch (error) {
+		console.error("Error saving signs state:", error);
+	}
+};
 
-	await ReduxStorage.saveState("signs_data", {
-		signs: serializedSigns,
-		backendImages: state.backendImages,
-		lastFetched: state.lastFetched,
+// Helper to merge backend signs with local unsynced signs
+const mergeSigns = (backendSigns: Sign[], localSigns: Sign[]): Sign[] => {
+	// Get all locally edited/unsynced signs
+	const unsyncedLocalSigns = localSigns.filter(
+		(sign) => !sign.isSynced || sign.status === SYNC_STATUS.NOT_SYNCED,
+	);
+
+	// Create a map of unsynced signs by ID
+	const unsyncedSignsMap = new Map(
+		unsyncedLocalSigns.map((sign) => [sign.id, sign]),
+	);
+
+	// Merge: use local version if unsynced, otherwise use backend version
+	const mergedSigns = backendSigns.map((backendSign) => {
+		const localSign = unsyncedSignsMap.get(backendSign.id);
+		if (localSign && localSign.status === SYNC_STATUS.NOT_SYNCED) {
+			return localSign;
+		}
+		return backendSign;
 	});
+
+	// Add any locally created signs that aren't on backend yet
+	const backendSignIds = new Set(backendSigns.map((s) => s.id));
+	const newLocalSigns = unsyncedLocalSigns.filter(
+		(sign) =>
+			!backendSignIds.has(sign.id) &&
+			(sign.id.startsWith("local_") || sign.isNew),
+	);
+
+	return [...mergedSigns, ...newLocalSigns];
 };
 
 // ─── Async Thunks ──────────────────────────────────────────────────
@@ -67,12 +98,7 @@ export const fetchSigns = createAsyncThunk(
 	"signs/fetch",
 	async (_, { rejectWithValue }) => {
 		try {
-			const token = await TokenStorage.getToken();
-			if (!token) return rejectWithValue("No token");
-
-			const response = await apiClient.get("api/Sign/GetSigns", {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			const response = await apiClient.get("api/Sign/GetSigns", {});
 
 			const signs: Sign[] = (response.data || response).map((sign: any) => ({
 				...sign,
@@ -80,12 +106,14 @@ export const fetchSigns = createAsyncThunk(
 				serverId: sign.id,
 				dateInstalled: sign.dateInstalled,
 				isNew: false,
+				isSynced: true,
 				status: SYNC_STATUS.SYNCED,
 				images: (sign.images || []).map((img: any) => ({
 					uri: img.url || img.uri,
 					imageId: img.id,
 					signId: sign.id,
 					isNew: false,
+					isSynced: true,
 					status: SYNC_STATUS.SYNCED,
 				})),
 			}));
@@ -114,7 +142,7 @@ const signsSlice = createSlice({
 	reducers: {
 		addSign: (
 			state,
-			action: PayloadAction<Omit<Sign, "id" | "status" | "isNew">>,
+			action: PayloadAction<Omit<Sign, "id" | "status" | "isNew" | "isSynced">>,
 		) => {
 			const localId = `local_sign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -122,6 +150,7 @@ const signsSlice = createSlice({
 				...img,
 				signId: localId,
 				isNew: true,
+				isSynced: false,
 				status: SYNC_STATUS.NOT_SYNCED,
 			}));
 
@@ -130,6 +159,7 @@ const signsSlice = createSlice({
 				id: localId,
 				localId,
 				isNew: true,
+				isSynced: false,
 				status: SYNC_STATUS.NOT_SYNCED,
 				images: processedImages,
 			};
@@ -151,12 +181,10 @@ const signsSlice = createSlice({
 			if (signIndex !== -1) {
 				const sign = state.signs[signIndex];
 
-				// Check if images changed
 				const hasImageChanges =
 					updates.images !== undefined &&
 					JSON.stringify(updates.images) !== JSON.stringify(sign.images);
 
-				// Check if non-image fields changed
 				const { images: _, ...fieldUpdates } = updates;
 				const hasFieldChanges = Object.keys(fieldUpdates).length > 0;
 
@@ -164,7 +192,6 @@ const signsSlice = createSlice({
 					sign.status === SYNC_STATUS.SYNCED &&
 					(hasImageChanges || hasFieldChanges);
 
-				// Clean up local files for removed images
 				if (hasImageChanges && updates.images) {
 					const newImageIds = new Set(updates.images.map((img) => img.imageId));
 					sign.images.forEach((existingImg) => {
@@ -180,6 +207,7 @@ const signsSlice = createSlice({
 				state.signs[signIndex] = {
 					...sign,
 					...updates,
+					isSynced: shouldMarkUnsynced ? false : sign.isSynced,
 					status: shouldMarkUnsynced ? SYNC_STATUS.NOT_SYNCED : sign.status,
 				};
 
@@ -211,6 +239,7 @@ const signsSlice = createSlice({
 				delete sign.localId;
 				sign.status = SYNC_STATUS.SYNCED;
 				sign.isNew = false;
+				sign.isSynced = true;
 
 				sign.images.forEach((img) => {
 					const update = imageUpdates.find(
@@ -224,6 +253,7 @@ const signsSlice = createSlice({
 						img.imageId = update.serverImageId;
 						img.status = SYNC_STATUS.SYNCED;
 						img.isNew = false;
+						img.isSynced = true;
 					}
 				});
 
@@ -239,6 +269,7 @@ const signsSlice = createSlice({
 
 				if (sign.status === SYNC_STATUS.SYNCED) {
 					sign.status = SYNC_STATUS.NOT_SYNCED;
+					sign.isSynced = false;
 					sign.isNew = false;
 				} else {
 					sign.images.forEach((img) => {
@@ -269,16 +300,16 @@ const signsSlice = createSlice({
 	extraReducers: (builder) => {
 		builder
 			.addCase(fetchSignSupportSetups.fulfilled, (state, action) => {
-				state.codes = action.payload.setups.signCode;
-				state.descriptions = action.payload.setups.signDescription;
-				state.types = action.payload.setups.signType;
-				state.conditions = action.payload.setups.signCondition;
-				state.dimensions = action.payload.setups.signDimension;
-				state.faceMaterials = action.payload.setups.signFaceMaterial;
-				state.facingDirections = action.payload.setups.signFacingDirection;
-				state.locationTypes = action.payload.setups.signLocationType;
-				state.reflectiveCoatings = action.payload.setups.signReflectiveCoating;
-				state.reflectiveRating = action.payload.setups.signReflectiveRating;
+				state.codes = action.payload.signCode;
+				state.descriptions = action.payload.signDescription;
+				state.types = action.payload.signType;
+				state.conditions = action.payload.signCondition;
+				state.dimensions = action.payload.signDimension;
+				state.faceMaterials = action.payload.signFaceMaterial;
+				state.facingDirections = action.payload.signFacingDirection;
+				state.locationTypes = action.payload.signLocationType;
+				state.reflectiveCoatings = action.payload.signReflectiveCoating;
+				state.reflectiveRating = action.payload.signReflectiveRating;
 				state.isLoading = false;
 				state.lastFetched = Date.now();
 			})
@@ -286,12 +317,11 @@ const signsSlice = createSlice({
 				state.isLoading = true;
 			})
 			.addCase(fetchJobs.fulfilled, (state, action) => {
-				state.signs = [
-					...state.signs.filter(
-						(x) => x.isNew == true && x.status == SYNC_STATUS.NOT_SYNCED,
-					),
-					...action.payload.signWithouSupport,
-				];
+				// Merge backend signs with local unsynced signs
+				state.signs = mergeSigns(action.payload.signWithouSupport, state.signs);
+				state.isLoading = false;
+				state.lastFetched = Date.now();
+				saveSignsToStorage(state);
 			})
 			.addCase(fetchSigns.rejected, (state) => {
 				state.isLoading = false;

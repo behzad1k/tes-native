@@ -14,12 +14,11 @@ import { ThemeProvider, useTheme } from "@/src/contexts/ThemeContext";
 import { useLanguage } from "@/src/hooks/useLanguage";
 import { store, persistor } from "@/src/store";
 import { initializeAuth, updateToken } from "@/src/store/slices/authSlice";
-import { fetchSigns, loadSavedSigns } from "@/src/store/slices/signSlice";
 import { STORAGE_KEYS } from "@/src/utils/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { Slot, useRouter, Stack } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
@@ -29,20 +28,18 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import ToastManager from "toastify-react-native";
 import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
-import { fetchSupports } from "@/src/store/slices/supportSlice";
-import { fetchJobs } from "@/src/store/slices/maintenanceSlice";
-import { fetchAppData } from "@/src/store/slices/appData";
-import { fetchSignSupportSetups } from "@/src/store/thunks";
+import { fetchJobs, fetchSignSupportSetups } from "@/src/store/thunks";
 import { BUser } from "@/src/types/api";
 import ENDPOINTS from "@/src/services/api/endpoints";
 import { apiClient } from "@/src/services/api/apiClient";
 import { ReduxStorage } from "@/src/store/persistence";
 
 function AppContent() {
-  const { showSplash, textValue, hideSplash } = useSplash();
+  const { showSplash, textValue, hideSplash, setTextValue } = useSplash();
   const { theme, isDark } = useTheme();
   const { isRTL } = useI18nContext();
   const { isLanguageLoaded } = useLanguage();
+  const [loading, setIsLoading] = useState(true);
   const router = useRouter();
 
   const toastConfig: ToastManagerProps = {
@@ -54,12 +51,14 @@ function AppContent() {
 
   const fetchUser = async () => {
     const userResponse: BUser = await apiClient.get(ENDPOINTS.USER.PROFIlE);
+
     await ReduxStorage.saveState("auth_user", userResponse);
 
     return userResponse;
   };
 
   const initializeApp = async () => {
+    setIsLoading(true);
     try {
       const themeToken = await AsyncStorage.getItem(STORAGE_KEYS.THEME);
       if (!themeToken) {
@@ -85,25 +84,20 @@ function AppContent() {
       if (isOnline) {
         try {
           // 3. Update token if online
+          setTextValue("Fetching User...");
           const user = await fetchUser();
-
           // await getVehicleClassification(token);
           // await getClientGeneralSetting(token);
           // await getModuleOfModule(token);
-          // 4. Fetch latest data from backend (including appData with vehicleTypes)
+          setTextValue("Fetching Jobs and signs...");
           await Promise.all([
             store.dispatch(fetchSignSupportSetups(user.defaultCustomerId)),
-
-            // store.dispatch(fetchSigns()),
-            // store.dispatch(fetchSupports()),
-            store.dispatch(fetchJobs()),
+            store.dispatch(fetchJobs(user.defaultCustomerId)),
           ]);
         } catch (error) {
           console.error("Failed to fetch data:", error);
-          // Continue with offline data
         }
       } else {
-        // Load saved data from Redux Persist (automatic)
         console.log("Working offline with cached data");
       }
 
@@ -111,7 +105,9 @@ function AppContent() {
       router.replace(ROUTES.HOME);
     } catch (error) {
       console.error("App initialization failed:", error);
-      // router.navigate(ROUTES.LOGIN);
+      router.navigate(ROUTES.LOGIN);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,14 +118,10 @@ function AppContent() {
   }, [router, isLanguageLoaded]);
 
   useEffect(() => {
-    if (isLanguageLoaded) {
-      const timer = setTimeout(() => {
-        hideSplash();
-      }, 600);
-
-      return () => clearTimeout(timer);
+    if (isLanguageLoaded && !loading) {
+      hideSplash();
     }
-  }, [hideSplash, isLanguageLoaded]);
+  }, [hideSplash, isLanguageLoaded, loading]);
 
   return (
     <SafeAreaProvider>

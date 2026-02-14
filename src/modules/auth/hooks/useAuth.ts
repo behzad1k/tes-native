@@ -14,6 +14,7 @@ import { Toast } from "toastify-react-native";
 import { apiClient } from "@/src/services/api/apiClient";
 import { StorageService } from "@/src/utils/storage";
 import { ForgotPasswordRequest, UserProfile } from "../types";
+import ENDPOINTS from "@/src/services/api/endpoints";
 
 // Complete any in-flight browser auth sessions on app start
 WebBrowser.maybeCompleteAuthSession();
@@ -113,15 +114,6 @@ export const useAuth = () => {
 			const action = await dispatch(loginWithOAuth(accessToken));
 
 			if (loginWithOAuth.fulfilled.match(action)) {
-				// 4. Kick off background setup data fetch (non-blocking)
-				const customerId =
-					action.payload.user?.defaultCustomerId ??
-					action.payload.user?.data?.defaultCustomerId;
-
-				if (customerId) {
-					fetchSetupData(accessToken, customerId);
-				}
-
 				router.replace(ROUTES.HOME);
 			} else {
 				Toast.error("Login failed. Please try again.");
@@ -198,12 +190,8 @@ export const useAuth = () => {
 	const refreshUserProfile =
 		useCallback(async (): Promise<UserProfile | null> => {
 			try {
-				const token = await StorageService.getItem<string>("token");
-				if (!token) return null;
-
 				const profile = await apiClient.get<UserProfile>(
-					"api/user/UserProfileMobileApp",
-					{ headers: { Authorization: `Bearer ${token}` } },
+					ENDPOINTS.USER.PROFIlE,
 				);
 
 				await StorageService.setItem("userProfile", JSON.stringify(profile));
@@ -268,92 +256,5 @@ function decodeTokenExpiry(token: string): Date | null {
 		return payload.exp ? new Date(payload.exp * 1000) : null;
 	} catch {
 		return null;
-	}
-}
-
-/**
- * Fetch all setup/config data after login.
- * Runs in the background — failures are logged but don't block login.
- * Mirrors the old Login2's sequential calls:
- *   getSignSetups, getCollisionField, getDivision,
- *   getVehicleClassification, getClientGeneralSetting, getModuleOfModule
- */
-async function fetchSetupData(
-	token: string,
-	customerId: string,
-): Promise<void> {
-	const headers = { Authorization: `Bearer ${token}` };
-
-	const safeGet = async (url: string, label: string) => {
-		try {
-			return await apiClient.get(url, { headers });
-		} catch (error) {
-			console.warn(`[${label}] fetch failed:`, error);
-			return null;
-		}
-	};
-
-	try {
-		const results = await Promise.allSettled([
-			safeGet(`${ApiUrls.sign}sync/GetSetups/${customerId}`, "SignSetups"),
-			safeGet(
-				`${ApiUrls.field}TesFields/AppCollisionFields/${customerId}`,
-				"CollisionFields",
-			),
-			safeGet(
-				`${ApiUrls.auth}api/divisions/GetUserDivisionUI/${customerId}`,
-				"Divisions",
-			),
-			safeGet(
-				`${ApiUrls.trafficStudy}Setups/GetCustomerVehicleClassification/${customerId}`,
-				"VehicleClassification",
-			),
-			safeGet(
-				`${ApiUrls.setting}ClientGeneralSettings/${customerId}`,
-				"GeneralSettings",
-			),
-			// ModuleOfModule is a POST, not GET
-			apiClient
-				.post(
-					`${ApiUrls.moduleOfModule}Sync/MobileApplication`,
-					{ ClientModule: [] },
-					{ headers },
-				)
-				.then((data: any) => {
-					if (data?.responseCode === 200) {
-						return data.results?.clientModules ?? [];
-					}
-					console.warn("ModuleOfModule non-200:", data?.errorMessages);
-					return null;
-				})
-				.catch((e) => {
-					console.warn("[ModuleOfModule]", e);
-					return null;
-				}),
-		]);
-
-		// Cache each result in AsyncStorage for offline use
-		const keys = [
-			"signSetups",
-			"collisionFields",
-			"divisions",
-			"vehicleClassifications",
-			"generalSettings",
-			"moduleOfModule",
-		];
-
-		await Promise.all(
-			results.map((result, i) => {
-				if (result.status === "fulfilled" && result.value != null) {
-					return AsyncStorage.setItem(
-						`setup_${keys[i]}`,
-						JSON.stringify(result.value),
-					);
-				}
-				return Promise.resolve();
-			}),
-		);
-	} catch (error) {
-		console.warn("Background setup fetch error:", error);
 	}
 }

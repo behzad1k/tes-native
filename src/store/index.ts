@@ -14,20 +14,50 @@ import authReducer from "./slices/authSlice";
 import signsReducer from "./slices/signSlice";
 import supportReducer from "./slices/supportSlice";
 import syncReducer from "./slices/syncSlice";
-import appDataReducer from "./slices/appData";
 import maintenanceReducer from "./slices/maintenanceSlice";
 import trafficCountReducer from "./slices/trafficCountSlice";
 
 const signsPersistConfig = {
 	key: "signs",
 	storage: AsyncStorage,
-	whitelist: ["signs", "backendImages", "lastFetched"],
+	whitelist: [
+		"signs",
+		"backendImages",
+		"lastFetched",
+		"codes",
+		"descriptions",
+		"dimensions",
+		"types",
+		"conditions",
+		"faceMaterials",
+		"facingDirections",
+		"locationTypes",
+		"reflectiveCoatings",
+		"reflectiveRating",
+	],
 };
 
 const supportsPersistConfig = {
 	key: "supports",
 	storage: AsyncStorage,
-	whitelist: ["supports", "backendImages", "lastFetched"],
+	whitelist: [
+		"supports",
+		"backendImages",
+		"lastFetched",
+		"codes",
+		"descriptions",
+		"types",
+		"conditions",
+		"materials",
+		"positions",
+		"locationTypes",
+	],
+};
+
+const maintenancePersistConfig = {
+	key: "maintenance",
+	storage: AsyncStorage,
+	whitelist: ["jobs", "jobStatuses", "jobTypes", "jobImages", "lastFetched"],
 };
 
 const authPersistConfig = {
@@ -36,31 +66,18 @@ const authPersistConfig = {
 	whitelist: ["user", "isAuthenticated"],
 };
 
-const maintenancesPersistConfig = {
-	key: "maintenance",
-	storage: AsyncStorage,
-	whitelist: ["maintenances", "backendImages", "lastFetched"],
-};
-
 const trafficCountPersistConfig = {
 	key: "trafficCount",
 	storage: AsyncStorage,
 	whitelist: ["workOrders", "classifications", "lastFetched"],
 };
 
-const appDataPersistConfig = {
-	key: "appData",
-	storage: AsyncStorage,
-	whitelist: ["customers", "locationTypes", "vehicleTypes", "lastFetched"],
-};
-
 const rootReducer = combineReducers({
 	auth: persistReducer(authPersistConfig, authReducer),
 	signs: persistReducer(signsPersistConfig, signsReducer),
 	supports: persistReducer(supportsPersistConfig, supportReducer),
-	maintenance: persistReducer(maintenancesPersistConfig, maintenanceReducer),
+	maintenance: persistReducer(maintenancePersistConfig, maintenanceReducer),
 	trafficCount: persistReducer(trafficCountPersistConfig, trafficCountReducer),
-	appData: persistReducer(appDataPersistConfig, appDataReducer),
 	sync: syncReducer,
 });
 
@@ -71,7 +88,7 @@ export const store = configureStore({
 			serializableCheck: {
 				ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
 				ignoredActionPaths: ["payload.dateInstalled"],
-				ignoredPaths: ["signs.signs"],
+				ignoredPaths: ["signs.signs", "supports.supports", "maintenance.jobs"],
 			},
 		}),
 });

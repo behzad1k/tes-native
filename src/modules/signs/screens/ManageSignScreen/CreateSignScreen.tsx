@@ -126,7 +126,7 @@ export default function CreateSignScreen() {
         address: formData.address || "",
         signId: formData.signId,
         supportId: formData.supportId || "",
-        codeId: formData.codeId,
+        signCodeId: formData.codeId,
         height: formData.height || "",
         facingDirectionId: formData.facingDirectionId || "",
         faceMaterialId: formData.faceMaterialId || "",
@@ -137,6 +137,7 @@ export default function CreateSignScreen() {
         conditionId: formData.conditionId,
         note: formData.note || "",
         images,
+        isSynced: false,
       };
 
       const result = await createSign(signData);

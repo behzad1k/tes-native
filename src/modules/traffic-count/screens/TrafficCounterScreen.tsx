@@ -140,7 +140,7 @@ export default function TrafficCounterScreen() {
   );
 
   const vehicleTypesFromStore = useAppSelector(
-    (state) => state.appData.vehicleTypes,
+    (state) => state.trafficCount.vehicleTypes,
   );
   const vehicleTypes = useMemo(() => {
     if (vehicleTypesFromStore && vehicleTypesFromStore.length > 0) {

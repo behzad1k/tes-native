@@ -32,6 +32,7 @@ function createBaseImage(
     status: SYNC_STATUS.NOT_SYNCED,
     imageId: tempImageId,
     localPath: imageUri,
+    isSynced: false,
     ...extra,
   };
 }

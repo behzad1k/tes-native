@@ -22,17 +22,6 @@ export default function HomeScreen() {
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const { t } = useTranslation();
   const router = useRouter();
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        // router.replace("/(global)/login");
-        // router.replace("/(protected)/signs/create");
-        // router.replace("/(global)");
-      } else {
-        // router.replace(ROUTES.SIGNS_LIST);
-      }
-    }
-  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return (

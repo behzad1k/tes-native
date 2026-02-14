@@ -42,33 +42,58 @@ const initialState: SupportState = {
 	positions: [],
 };
 
-const serializeDate = (date: Date | string): string => {
-	if (typeof date === "string") return date;
-	return date.toISOString();
+const saveSupportsToStorage = async (state: SupportState) => {
+	try {
+		await ReduxStorage.saveState("supports_data", {
+			supports: state.supports,
+			backendImages: state.backendImages,
+			lastFetched: state.lastFetched,
+		});
+	} catch (error) {
+		console.error("Error saving supports state:", error);
+	}
 };
 
-const saveSupportsToStorage = async (state: SupportState) => {
-	const serializedSupports = state.supports.map((support) => ({
-		...support,
-	}));
+// Helper to merge backend supports with local unsynced supports
+const mergeSupports = (
+	backendSupports: Support[],
+	localSupports: Support[],
+): Support[] => {
+	// Get all locally edited/unsynced supports
+	const unsyncedLocalSupports = localSupports.filter(
+		(support) => !support.isSynced || support.status === SYNC_STATUS.NOT_SYNCED,
+	);
 
-	await ReduxStorage.saveState("supports_data", {
-		supports: serializedSupports,
-		backendImages: state.backendImages,
-		lastFetched: state.lastFetched,
+	// Create a map of unsynced supports by ID
+	const unsyncedSupportsMap = new Map(
+		unsyncedLocalSupports.map((support) => [support.id, support]),
+	);
+
+	// Merge: use local version if unsynced, otherwise use backend version
+	const mergedSupports = backendSupports.map((backendSupport) => {
+		const localSupport = unsyncedSupportsMap.get(backendSupport.id);
+		if (localSupport && localSupport.status === SYNC_STATUS.NOT_SYNCED) {
+			return localSupport;
+		}
+		return backendSupport;
 	});
+
+	// Add any locally created supports that aren't on backend yet
+	const backendSupportIds = new Set(backendSupports.map((s) => s.id));
+	const newLocalSupports = unsyncedLocalSupports.filter(
+		(support) =>
+			!backendSupportIds.has(support.id) &&
+			(support.id.startsWith("local_") || support.isNew),
+	);
+
+	return [...mergedSupports, ...newLocalSupports];
 };
 
 export const fetchSupports = createAsyncThunk(
 	"supports/fetch",
 	async (_, { rejectWithValue }) => {
 		try {
-			const token = await TokenStorage.getToken();
-			if (!token) return rejectWithValue("No token");
-
-			const response = await apiClient.get("api/Sign/GetSigns", {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			const response = await apiClient.get("api/Support/GetSupports", {});
 
 			const supports: Support[] = (response.data || response).map(
 				(support: any) => ({
@@ -77,12 +102,15 @@ export const fetchSupports = createAsyncThunk(
 					serverId: support.id,
 					dateInstalled: support.dateInstalled,
 					isNew: false,
+					isSynced: true,
 					status: SYNC_STATUS.SYNCED,
+					signs: support.signs || [],
 					images: (support.images || []).map((img: any) => ({
 						uri: img.url || img.uri,
 						imageId: img.id,
 						supportId: support.id,
 						isNew: false,
+						isSynced: true,
 						status: SYNC_STATUS.SYNCED,
 					})),
 				}),
@@ -103,20 +131,24 @@ export const fetchSupports = createAsyncThunk(
 		}
 	},
 );
+
 const supportsSlice = createSlice({
 	name: "supports",
 	initialState,
 	reducers: {
 		addSupport: (
 			state,
-			action: PayloadAction<Omit<Support, "id" | "status" | "isNew">>,
+			action: PayloadAction<
+				Omit<Support, "id" | "status" | "isNew" | "isSynced">
+			>,
 		) => {
 			const localId = `local_support_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 			const processedImages = (action.payload.images || []).map((img) => ({
 				...img,
 				supportId: localId,
-				isNew: true, // Ensure images are marked as new
+				isNew: true,
+				isSynced: false,
 				status: SYNC_STATUS.NOT_SYNCED,
 			}));
 
@@ -125,6 +157,7 @@ const supportsSlice = createSlice({
 				id: localId,
 				localId,
 				isNew: true,
+				isSynced: false,
 				status: SYNC_STATUS.NOT_SYNCED,
 				images: processedImages,
 			};
@@ -147,9 +180,6 @@ const supportsSlice = createSlice({
 			if (supportIndex !== -1) {
 				const support = state.supports[supportIndex];
 
-				// Only update status to NOT_SYNCED if:
-				// 1. The support was previously SYNCED, AND
-				// 2. There are actual changes (new image or data updates)
 				const shouldMarkUnsynced =
 					support.status === SYNC_STATUS.SYNCED &&
 					(isNewImage || Object.keys(updates).length > 0);
@@ -157,6 +187,7 @@ const supportsSlice = createSlice({
 				state.supports[supportIndex] = {
 					...support,
 					...updates,
+					isSynced: shouldMarkUnsynced ? false : support.isSynced,
 					status: shouldMarkUnsynced ? SYNC_STATUS.NOT_SYNCED : support.status,
 				};
 
@@ -180,14 +211,12 @@ const supportsSlice = createSlice({
 			if (supportIndex !== -1) {
 				const support = state.supports[supportIndex];
 
-				// Update support with server ID
 				support.id = serverId;
-				// support.serverId = serverId;
 				delete support.localId;
 				support.status = SYNC_STATUS.SYNCED;
 				support.isNew = false;
+				support.isSynced = true;
 
-				// Update images with server IDs
 				support.images.forEach((img) => {
 					const update = imageUpdates.find(
 						(u) =>
@@ -200,12 +229,14 @@ const supportsSlice = createSlice({
 						img.imageId = update.serverImageId;
 						img.status = SYNC_STATUS.SYNCED;
 						img.isNew = false;
+						img.isSynced = true;
 					}
 				});
 
 				saveSupportsToStorage(state);
 			}
 		},
+
 		addImageToSupport: (
 			state,
 			action: PayloadAction<{
@@ -225,6 +256,7 @@ const supportsSlice = createSlice({
 					uri: imageUri,
 					supportId,
 					isNew,
+					isSynced: false,
 					status: SYNC_STATUS.NOT_SYNCED,
 					imageId: isNew ? undefined : imageId,
 				};
@@ -238,8 +270,8 @@ const supportsSlice = createSlice({
 				}
 
 				support.images.push(newImage);
-
 				support.status = SYNC_STATUS.NOT_SYNCED;
+				support.isSynced = false;
 
 				saveSupportsToStorage(state);
 			}
@@ -266,6 +298,7 @@ const supportsSlice = createSlice({
 
 					support.images.splice(imageIndex, 1);
 					support.status = SYNC_STATUS.NOT_SYNCED;
+					support.isSynced = false;
 					saveSupportsToStorage(state);
 				}
 			}
@@ -281,6 +314,7 @@ const supportsSlice = createSlice({
 
 				if (support.status === SYNC_STATUS.SYNCED) {
 					support.status = SYNC_STATUS.NOT_SYNCED;
+					support.isSynced = false;
 					support.isNew = false;
 				} else {
 					state.supports.splice(supportIndex, 1);
@@ -306,13 +340,13 @@ const supportsSlice = createSlice({
 	extraReducers: (builder) => {
 		builder
 			.addCase(fetchSignSupportSetups.fulfilled, (state, action) => {
-				state.codes = action.payload.setups.supportCode;
-				state.descriptions = action.payload.setups.supportDescription;
-				state.types = action.payload.setups.supportType;
-				state.conditions = action.payload.setups.supportCondition;
-				state.materials = action.payload.setups.supportMaterial;
-				state.locationTypes = action.payload.setups.supportLocationType;
-				state.positions = action.payload.setups.supportLocationType;
+				state.codes = action.payload.supportCode;
+				state.descriptions = action.payload.supportDescription;
+				state.types = action.payload.supportType;
+				state.conditions = action.payload.supportCondition;
+				state.materials = action.payload.supportMaterial;
+				state.locationTypes = action.payload.supportLocationType;
+				state.positions = action.payload.supportPosition;
 				state.isLoading = false;
 				state.lastFetched = Date.now();
 			})
@@ -320,12 +354,8 @@ const supportsSlice = createSlice({
 				state.isLoading = true;
 			})
 			.addCase(fetchJobs.fulfilled, (state, action) => {
-				state.supports = [
-					...state.supports.filter(
-						(x) => x.isNew == true && x.status == SYNC_STATUS.NOT_SYNCED,
-					),
-					...action.payload.supports,
-				];
+				// Merge backend supports with local unsynced supports
+				state.supports = mergeSupports(action.payload.supports, state.supports);
 				state.lastFetched = Date.now();
 				state.isLoading = false;
 				saveSupportsToStorage(state);

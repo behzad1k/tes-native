@@ -12,6 +12,7 @@ import mockData from "@/src/data/mockTrafficCountData.json";
 interface TrafficCountState {
 	workOrders: TrafficCountWorkOrder[];
 	classifications: TrafficCountClassification[];
+	vehicleTypes: any[];
 	isLoading: boolean;
 	lastFetched: number | null;
 }
@@ -21,6 +22,7 @@ const initialState: TrafficCountState = {
 	classifications: [],
 	isLoading: false,
 	lastFetched: null,
+	vehicleTypes: [],
 };
 
 const saveToStorage = async (state: TrafficCountState) => {
@@ -59,8 +61,6 @@ export const syncTrafficCountData = createAsyncThunk(
 	"trafficCount/sync",
 	async (_, { getState, rejectWithValue }) => {
 		try {
-			const token = await TokenStorage.getToken();
-			if (!token) return rejectWithValue("No token");
 			const state = (getState() as any).trafficCount as TrafficCountState;
 			const postData = {
 				WorkOrderData: state.workOrders.map((wo) => ({
@@ -72,7 +72,6 @@ export const syncTrafficCountData = createAsyncThunk(
 			const response = await apiClient.post(
 				"api/TrafficStudy/sync/MobileApplication",
 				postData,
-				{ headers: { Authorization: `Bearer ${token}` } },
 			);
 			const data = response.data || response;
 			if (data.responseCode !== 200) {

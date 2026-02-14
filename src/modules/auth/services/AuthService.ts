@@ -5,6 +5,8 @@ import {
 	ForgotPasswordRequest,
 	AuthResponse,
 } from "@/src/modules/auth/types";
+import { apiClient } from "@/src/services/api/apiClient";
+import ENDPOINTS from "@/src/services/api/endpoints";
 import { ServiceDependencies } from "@/src/types/services";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -105,8 +107,8 @@ export class AuthService {
 	}
 	async getUserProfile(token: string): Promise<UserProfile> {
 		try {
-			const response = await this.deps.apiClient.get<UserProfile>(
-				"api/user/UserProfileMobileApp",
+			const response = await apiClient.get<UserProfile>(
+				ENDPOINTS.USER.PROFIlE,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,
