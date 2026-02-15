@@ -41,7 +41,10 @@ const ENDPOINTS = {
 		ADD_IMAGES: (isNew: boolean) =>
 			formatUrl(baseUrl, `sign/api/Attachments/Support/${isNew}`),
 		DOWNLOAD_ATTACHMENTS: (supportId: string) =>
-			formatUrl(baseUrl, `sign/api/Attachments/DownloadAttachments/${supportId}`),
+			formatUrl(
+				baseUrl,
+				`sign/api/Attachments/DownloadAttachments/${supportId}`,
+			),
 	},
 	SYNC: {
 		// POST - Sync data from app to server (changeLogs, signs, supports)
@@ -54,11 +57,44 @@ const ENDPOINTS = {
 		UPDATE_USER_JOBS: formatUrl(baseUrl, "maintenance/api/Jobs/UpdateUserJobs"),
 		UPLOAD_JOB_IMAGE: formatUrl(baseUrl, "maintenance/api/Attachments/job"),
 		DOWNLOAD_ATTACHMENTS: (jobId: string) =>
-			formatUrl(baseUrl, `maintenance/api/Attachments/DownloadAttachments/${jobId}`),
+			formatUrl(
+				baseUrl,
+				`maintenance/api/Attachments/DownloadAttachments/${jobId}`,
+			),
 	},
 	TRAFFIC_COUNTER: {
+		/**
+		 * Sync mobile application data
+		 * POST - sends local counts, receives updated work orders and classifications
+		 * Used by old app's postAppData() function
+		 */
+		SYNC_MOBILE_APP: formatUrl(baseUrl, "traffic/api/sync/MobileApplication"),
+
+		/**
+		 * Get vehicle classifications for a customer
+		 * GET - returns array of vehicle classifications
+		 */
 		VEHICLE_CLASSIFICATIONS: (customerId: string) =>
-			formatUrl(baseUrl, `traffic/api/Setups/GetCustomerVehicleClassification/${customerId}`),
+			formatUrl(
+				baseUrl,
+				`traffic/api/Setups/GetCustomerVehicleClassification/${customerId}`,
+			),
+
+		/**
+		 * Get work orders for user
+		 * POST - returns work orders assigned to user
+		 */
+		USER_WORK_ORDERS: formatUrl(
+			baseUrl,
+			"traffic/api/WorkOrders/UserWorkOrders",
+		),
+
+		/**
+		 * Update work order status
+		 * PUT - updates work order completion status
+		 */
+		UPDATE_WORK_ORDER: (studyId: string) =>
+			formatUrl(baseUrl, `traffic/api/WorkOrders/Update/${studyId}`),
 	},
 } as const;
 

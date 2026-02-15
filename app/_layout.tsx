@@ -19,7 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { Slot, useRouter, Stack } from "expo-router";
 import { useEffect, useState } from "react";
-import { StatusBar } from "react-native";
+import { StatusBar, View, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -33,6 +33,12 @@ import { BUser } from "@/src/types/api";
 import ENDPOINTS from "@/src/services/api/endpoints";
 import { apiClient } from "@/src/services/api/apiClient";
 import { ReduxStorage } from "@/src/store/persistence";
+import {
+  fetchVehicleClassifications,
+  fetchWorkOrders,
+} from "@/src/store/slices/trafficCountSlice";
+import TextView from "@/src/components/ui/TextView";
+import { colors } from "@/src/styles/theme/colors";
 
 function AppContent() {
   const { showSplash, textValue, hideSplash, setTextValue } = useSplash();
@@ -41,13 +47,6 @@ function AppContent() {
   const { isLanguageLoaded } = useLanguage();
   const [loading, setIsLoading] = useState(true);
   const router = useRouter();
-
-  const toastConfig: ToastManagerProps = {
-    useModal: false,
-    isRTL: isRTL,
-    theme: isDark ? "dark" : "light",
-    topOffset: 60,
-  };
 
   const fetchUser = async () => {
     const userResponse: BUser = await apiClient.get(ENDPOINTS.USER.PROFIlE);
@@ -85,14 +84,16 @@ function AppContent() {
         try {
           // 3. Update token if online
           setTextValue("Fetching User...");
-          const user = await fetchUser();
+          // const user = await fetchUser();
           // await getVehicleClassification(token);
           // await getClientGeneralSetting(token);
           // await getModuleOfModule(token);
           setTextValue("Fetching Jobs and signs...");
           await Promise.all([
-            store.dispatch(fetchSignSupportSetups(user.defaultCustomerId)),
-            store.dispatch(fetchJobs(user.defaultCustomerId)),
+            // store.dispatch(fetchSignSupportSetups(user.defaultCustomerId)),
+            // store.dispatch(fetchJobs(user.defaultCustomerId)),
+            // store.dispatch(fetchVehicleClassifications(user.defaultCustomerId)),
+            // store.dispatch(fetchWorkOrders()),
           ]);
         } catch (error) {
           console.error("Failed to fetch data:", error);
@@ -100,9 +101,6 @@ function AppContent() {
       } else {
         console.log("Working offline with cached data");
       }
-
-      // Navigate to main screen
-      router.replace(ROUTES.HOME);
     } catch (error) {
       console.error("App initialization failed:", error);
       router.navigate(ROUTES.LOGIN);
@@ -122,31 +120,62 @@ function AppContent() {
       hideSplash();
     }
   }, [hideSplash, isLanguageLoaded, loading]);
-
+  if (!showSplash) {
+    return <></>;
+  }
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <DrawerProvider>
-          <Drawer>
-            {/*<Stack>
-              <Stack.Screen name="(global)" />
-              <Stack.Screen name="(protected)" />
-            </Stack>*/}
-            <Slot />
-            <StatusBar
-              barStyle={isDark ? "light-content" : "dark-content"}
-              backgroundColor={theme.background}
-            />
-            {showSplash && <Splash textValue={textValue} />}
-          </Drawer>
-        </DrawerProvider>
-        <ToastManager {...toastConfig} />
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <TextView style={[styles.appName]}>TES</TextView>
+
+      <TextView
+        style={[styles.loadingText, { color: isDark ? "#ccc" : "#666" }]}
+      >
+        {textValue}
+      </TextView>
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 30,
+    resizeMode: "contain",
+  },
+  appName: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 40,
+    color: colors.green,
+  },
+  loader: {
+    marginBottom: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 10,
+  },
+});
+
 export default function RootLayout() {
+  const toastConfig: ToastManagerProps = {
+    useModal: false,
+    // isRTL: isRTL,
+    // theme: isDark ? "dark" : "light",
+    topOffset: 60,
+  };
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
@@ -155,7 +184,22 @@ export default function RootLayout() {
             <ThemeProvider>
               <SplashProvider>
                 <KeyboardProvider>
-                  <AppContent />
+                  <SafeAreaProvider>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                      <DrawerProvider>
+                        <Drawer>
+                          <Slot />
+                          <AppContent />
+                          {/*<StatusBar
+                            barStyle={isDark ? "light-content" : "dark-content"}
+                            backgroundColor={theme.background}
+                          />*/}
+                          {/*{showSplash && <Splash textValue={textValue} />}*/}
+                        </Drawer>
+                      </DrawerProvider>
+                      <ToastManager {...toastConfig} />
+                    </GestureHandlerRootView>
+                  </SafeAreaProvider>
                   <LoadingGlobal />
                 </KeyboardProvider>
               </SplashProvider>

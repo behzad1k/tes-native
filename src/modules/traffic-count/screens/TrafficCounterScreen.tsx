@@ -50,6 +50,10 @@ import {
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { VehicleType } from "@/src/store/slices/appData";
+import {
+  useTrafficCountOperations,
+  useVehicleTypes,
+} from "../hooks/useTrafficCountOperations";
 
 type Direction = "N" | "S" | "E" | "W";
 
@@ -123,6 +127,20 @@ export default function TrafficCounterScreen() {
   }>();
   const workOrderId = params.workOrderId;
   const siteType = parseInt(params.siteType || "1", 10);
+  const defaultCustomerId = useAppSelector(
+    (state) => state.auth.user.defaultCustomerId,
+  );
+  const {
+    getWorkOrderById,
+    recordMovement,
+    removeCount,
+    getCountsForWorkOrder,
+  } = useTrafficCountOperations();
+
+  const { vehicleTypes, pedestrianTypes } = useVehicleTypes();
+
+  const workOrder = getWorkOrderById(workOrderId);
+  const counts = getCountsForWorkOrder(workOrderId);
 
   const customStreetNames = useMemo(() => {
     if (params.streetNames) {
@@ -134,22 +152,6 @@ export default function TrafficCounterScreen() {
     }
     return null;
   }, [params.streetNames]);
-
-  const workOrder = useAppSelector((state) =>
-    state.trafficCount.workOrders.find((wo) => wo.id === workOrderId),
-  );
-
-  const vehicleTypesFromStore = useAppSelector(
-    (state) => state.trafficCount.vehicleTypes,
-  );
-  const vehicleTypes = useMemo(() => {
-    if (vehicleTypesFromStore && vehicleTypesFromStore.length > 0) {
-      return [...vehicleTypesFromStore].sort(
-        (a, b) => a.sortOrder - b.sortOrder,
-      );
-    }
-    return FALLBACK_VEHICLE_TYPES;
-  }, [vehicleTypesFromStore]);
 
   const siteConfig = getSiteTypeConfig(siteType);
   const activeDirections = siteConfig.directions as Direction[];
@@ -314,44 +316,61 @@ export default function TrafficCounterScreen() {
     }
     return null;
   }, []);
+  const handleVehicleCount = (
+    fromDirection: string, // e.g., "N", "S", "E", "W"
+    toDirection: string, // e.g., "T" (through), "L" (left), "R" (right)
+    classificationId: string, // e.g., vehicle type ID
+    classificationName: string, // e.g., "Car", "Truck"
+  ) => {
+    recordMovement(
+      workOrderId,
+      fromDirection,
+      toDirection,
+      classificationId,
+      classificationName,
+      { lat: workOrder.latitude, long: workOrder.longitude },
+      defaultCustomerId, // Get from auth context
+      workOrder.aggregationInterval,
+    );
+  };
 
-  const recordMovement = useCallback(
-    (from: Direction, to: Direction, classId: string, className: string) => {
-      if (from === to) return;
-      triggerFeedback("drop");
+  // const recordMovement = useCallback(
+  //   (from: Direction, to: Direction, classId: string, className: string) => {
+  //     if (from === to) return;
+  //     triggerFeedback("drop");
 
-      const countId = uuidv4();
-      const newCount: TrafficCount = {
-        id: countId,
-        siteId: workOrder?.studyId || "",
-        isSynced: false,
-        videoId: "",
-        lat: workOrder?.latitude || 0,
-        long: workOrder?.longitude || 0,
-        userId: "current-user",
-        dateTime: new Date().toISOString(),
-        slot: workOrder?.aggregationInterval || 15,
-        movements: { [`${from}_${to}`]: { [classId]: 1 } },
-        classificationId: classId,
-        classificationName: className,
-      };
+  //     const countId = uuidv4();
+  //     const newCount: TrafficCount = {
+  //       id: countId,
+  //       siteId: workOrder?.studyId || "",
+  //       isSynced: false,
+  //       videoId: "",
+  //       lat: workOrder?.latitude || 0,
+  //       long: workOrder?.longitude || 0,
+  //       userId: "current-user",
+  //       dateTime: new Date().toISOString(),
+  //       slot: workOrder?.aggregationInterval || 15,
+  //       movements: { [`${from}_${to}`]: { [classId]: 1 } },
+  //       classificationId: classId,
+  //       classificationName: className,
+  //     };
 
-      dispatch(addCountToWorkOrder({ workOrderId, count: newCount }));
-      setTotalCount((p) => p + 1);
+  //     dispatch(addCountToWorkOrder({ workOrderId, count: newCount }));
+  //     setTotalCount((p) => p + 1);
 
-      const record: RecordEntry = {
-        id: countId,
-        from,
-        to,
-        vehicle: className,
-        vehicleId: classId,
-        timestamp: Date.now(),
-      };
-      recordHistoryRef.current.push(record);
-      showToast(record);
-    },
-    [dispatch, workOrderId, workOrder, showToast, triggerFeedback],
-  );
+  //     const record: RecordEntry = {
+  //       id: countId,
+  //       from,
+  //       to,
+  //       vehicle: className,
+  //       vehicleId: classId,
+  //       timestamp: Date.now(),
+  //     };
+  //     recordHistoryRef.current.push(record);
+  //     showToast(record);
+  //   },
+  //   [dispatch, workOrderId, workOrder, showToast, triggerFeedback],
+  // );
 
   const handleUndo = useCallback(() => {
     const history = recordHistoryRef.current;
@@ -359,15 +378,7 @@ export default function TrafficCounterScreen() {
 
     const lastEntry = history.pop()!;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    dispatch(
-      removeLastCountFromWorkOrder({
-        workOrderId,
-        countId: lastEntry.id,
-      }),
-    );
-
-    setTotalCount((p) => Math.max(0, p - 1));
+    removeCount(workOrderId, lastEntry.id);
 
     if (toastTimerRef.current) {
       clearTimeout(toastTimerRef.current);
@@ -409,7 +420,7 @@ export default function TrafficCounterScreen() {
         d.classificationId &&
         d.classificationName
       ) {
-        recordMovement(
+        handleVehicleCount(
           fromDir,
           toDir,
           d.classificationId,

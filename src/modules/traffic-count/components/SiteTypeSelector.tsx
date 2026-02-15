@@ -11,7 +11,6 @@ import Svg, { Line, Path } from "react-native-svg";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import TextView from "@/src/components/ui/TextView";
-import ButtonView from "@/src/components/ui/ButtonView";
 import { spacing, scale } from "@/src/styles/theme/spacing";
 import { colors } from "@/src/styles/theme/colors";
 import { FontSizes, FontWeights } from "@/src/styles/theme/fonts";
@@ -20,23 +19,104 @@ import { X } from "phosphor-react-native";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Site Type Configuration
+//  Based on old app's intersection type handling
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export type SiteTypeConfig = {
   type: number;
+  backendType: number; // siteTypeBackend from old app
   directions: string[];
   label: string;
+  description?: string;
 };
 
+/**
+ * Site type mapping from old app:
+ * Backend siteType values and their corresponding UI representations
+ *
+ * Backend siteTypeBackend:
+ * 1 = 4-way intersection (all directions)
+ * 2 = T-junction (3 directions, multiple orientations)
+ * 3 = One-way (2 directions on same axis)
+ * 4 = Two-way (2 directions on perpendicular axis)
+ *
+ * UI siteType (selected by user):
+ * 1 = 4-way (N, S, E, W)
+ * 2 = T-junction North variant (N, S, W - no East)
+ * 3 = T-junction East variant (N, S, E - no West)
+ * 4 = T-junction South variant (S, E, W - no North)
+ * 5 = T-junction West variant (N, E, W - no South)
+ * 6 = Two-way North-South
+ * 7 = Two-way East-West
+ * 8 = One-way East
+ * 9 = One-way North
+ */
 export const SITE_TYPES: SiteTypeConfig[] = [
-  { type: 1, directions: ["N", "S", "E", "W"], label: "4-Way" },
-  { type: 2, directions: ["N", "S", "W"], label: "T (No East)" },
-  { type: 3, directions: ["N", "S", "E"], label: "T (No West)" },
-  { type: 4, directions: ["S", "E", "W"], label: "T (No North)" },
-  { type: 5, directions: ["N", "E", "W"], label: "T (No South)" },
+  // 4-way intersection
+  { type: 1, backendType: 1, directions: ["N", "S", "E", "W"], label: "4-Way" },
+  // T-junction variants (backendType: 2)
+  {
+    type: 2,
+    backendType: 2,
+    directions: ["N", "S", "W"],
+    label: "T (No East)",
+  },
+  {
+    type: 3,
+    backendType: 2,
+    directions: ["N", "S", "E"],
+    label: "T (No West)",
+  },
+  {
+    type: 4,
+    backendType: 2,
+    directions: ["S", "E", "W"],
+    label: "T (No North)",
+  },
+  {
+    type: 5,
+    backendType: 2,
+    directions: ["N", "E", "W"],
+    label: "T (No South)",
+  },
+  // Two-way variants (backendType: 4)
+  { type: 6, backendType: 4, directions: ["N", "S"], label: "2-Way N-S" },
+  { type: 7, backendType: 4, directions: ["E", "W"], label: "2-Way E-W" },
+  // One-way variants (backendType: 3)
+  { type: 8, backendType: 3, directions: ["E", "W"], label: "1-Way E" },
+  { type: 9, backendType: 3, directions: ["N", "S"], label: "1-Way N" },
 ];
 
+/**
+ * Get site type configuration by type number
+ */
 export const getSiteTypeConfig = (siteType: number): SiteTypeConfig => {
   return SITE_TYPES.find((st) => st.type === siteType) || SITE_TYPES[0];
 };
+
+/**
+ * Get available site types for a given backend site type
+ * This is used to filter which site type options to show in the selector
+ */
+export const getSiteTypesForBackendType = (
+  backendType: number,
+): SiteTypeConfig[] => {
+  return SITE_TYPES.filter((st) => st.backendType === backendType);
+};
+
+/**
+ * Get directions for a site type
+ */
+export const getDirectionsForSiteType = (siteType: number): string[] => {
+  const config = getSiteTypeConfig(siteType);
+  return config.directions;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Intersection Preview Component
+// ═══════════════════════════════════════════════════════════════════════════════
 
 interface IntersectionPreviewProps {
   siteType: number;
@@ -61,6 +141,7 @@ const IntersectionPreview = ({
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {/* Road lines */}
       {hasN && (
         <Line
           x1={mid}
@@ -101,6 +182,8 @@ const IntersectionPreview = ({
           strokeWidth={2}
         />
       )}
+
+      {/* Center dashes */}
       {hasN && (
         <Line
           x1={mid}
@@ -145,6 +228,8 @@ const IntersectionPreview = ({
           strokeDasharray="3,3"
         />
       )}
+
+      {/* Corner curves for T-junctions */}
       {!hasN && !hasW && (
         <Path
           d={`M ${mid - 10} ${mid} Q ${mid - 10} ${mid - 10} ${mid} ${mid - 10}`}
@@ -194,12 +279,14 @@ const DIRECTION_FULL_NAMES: Record<string, string> = {
 
 interface SiteTypeDrawerContentProps {
   currentSiteType: number;
+  backendSiteType: number; // siteTypeBackend from work order
   defaultLocationName?: string;
   onComplete: (siteType: number, streetNames: Record<string, string>) => void;
 }
 
 const SiteTypeDrawerContent = ({
   currentSiteType,
+  backendSiteType,
   defaultLocationName,
   onComplete,
 }: SiteTypeDrawerContentProps) => {
@@ -208,11 +295,16 @@ const SiteTypeDrawerContent = ({
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedType, setSelectedType] = useState(currentSiteType);
 
+  // Parse location name to get default street names
+  // Format: "Street1 @ Street2" or "Street1"
   const defaultParts = (defaultLocationName || "")
     .split("@")
     .map((s) => s.trim());
   const defaultNS = defaultParts[0] || "";
-  const defaultEW = defaultParts[1] || "";
+  const defaultEW = defaultParts[1] || defaultParts[0] || "";
+
+  // Get available site types based on backend type
+  const availableSiteTypes = getSiteTypesForBackendType(backendSiteType);
 
   const selectedConfig = getSiteTypeConfig(selectedType);
   const activeDirections = selectedConfig.directions;
@@ -250,6 +342,7 @@ const SiteTypeDrawerContent = ({
     setStreetNames((prev) => ({ ...prev, [dir]: value }));
   };
 
+  // Step 1: Select site type
   if (step === 1) {
     return (
       <View style={styles.container}>
@@ -267,7 +360,7 @@ const SiteTypeDrawerContent = ({
         </TextView>
 
         <View style={styles.grid}>
-          {SITE_TYPES.map((siteType) => (
+          {availableSiteTypes.map((siteType) => (
             <TouchableOpacity
               key={siteType.type}
               style={[
@@ -306,6 +399,7 @@ const SiteTypeDrawerContent = ({
     );
   }
 
+  // Step 2: Name each direction
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -363,11 +457,23 @@ const SiteTypeDrawerContent = ({
   );
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Hook for using the site type selector
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export const useSiteTypeSelector = () => {
   const { openDrawer, closeDrawer } = useDrawer();
 
+  /**
+   * Show site type selector drawer
+   * @param currentSiteType - Current site type (from user selection or default)
+   * @param backendSiteType - Backend site type (siteTypeBackend from work order)
+   * @param defaultLocationName - Default location name for street name suggestions
+   * @param onComplete - Callback when user completes selection
+   */
   const showSiteTypeSelector = (
     currentSiteType: number,
+    backendSiteType: number,
     defaultLocationName: string,
     onComplete: (siteType: number, streetNames: Record<string, string>) => void,
   ) => {
@@ -375,6 +481,7 @@ export const useSiteTypeSelector = () => {
       "site-type-selector",
       <SiteTypeDrawerContent
         currentSiteType={currentSiteType}
+        backendSiteType={backendSiteType}
         defaultLocationName={defaultLocationName}
         onComplete={(siteType, streetNames) => {
           closeDrawer("site-type-selector");
@@ -393,6 +500,10 @@ export const useSiteTypeSelector = () => {
 
   return { showSiteTypeSelector };
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Styles
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({

@@ -292,3 +292,153 @@ export interface ApiError {
 export interface RequestConfig extends AxiosRequestConfig {
 	skipAuth?: boolean;
 }
+
+export interface BVehicleClassification {
+	id: string;
+	in: string; // Internal classification ID used in counts
+	name: string;
+	isPedestrian: boolean;
+	applicationClassification: number; // 1=Car, 2=Truck, 3=Car, 4=Cyclist
+	sortOrder?: number;
+	icon?: string;
+}
+
+// ─── Work Order / Study Types ──────────────────────────────────────
+
+export interface BTrafficCountWorkOrder {
+	studyId: string;
+	no: string; // Work order number
+	description: string; // Site/location name
+	geoId?: string; // Geographic ID for site
+	latitude: number;
+	longitude: number;
+	startDT: string;
+	endDT: string;
+	aggregationInterval: number; // Slot duration in minutes (5 or 15)
+	siteType: number; // 1=4-way, 2=T-junction variants, etc.
+	note?: string;
+	isCompleted?: boolean;
+	counts?: BTrafficCount[];
+}
+
+// ─── Traffic Count Entry Types ─────────────────────────────────────
+
+export interface BTrafficCount {
+	id: string;
+	siteId: string; // studyId reference
+	isSynced: boolean;
+	videoId?: string;
+	lat: number;
+	long: number;
+	userId: string;
+	dateTime: string; // ISO datetime string
+	slot: number; // Aggregation interval in minutes
+	movements: BMovements;
+}
+
+// Movements structure: { movementId: { classificationId: count } }
+export type BMovements = Record<string, Record<string, number>>;
+
+// ─── Sync Request/Response Types ───────────────────────────────────
+
+export interface BTrafficCountSyncRequest {
+	WorkOrderData: BWorkOrderSyncData[];
+}
+
+export interface BWorkOrderSyncData {
+	studyId: string;
+	counts: BTrafficCount[];
+	isCompleted?: boolean;
+}
+
+export interface BTrafficCountSyncResponse {
+	responseCode: number;
+	errorMessages?: string[];
+	results?: {
+		workOrders: BTrafficCountWorkOrder[];
+		vehicleClassifications: BVehicleClassification[];
+	};
+}
+
+// ─── Mobile Application Sync Response ──────────────────────────────
+// Response from sync/MobileApplication endpoint
+
+export interface BMobileAppSyncResponse {
+	responseCode: number;
+	errorMessages?: string[];
+	results?: {
+		workOrders: BTrafficCountWorkOrder[];
+		vehicleClassifications: BVehicleClassification[];
+	};
+}
+
+// ─── Site Type Configuration ───────────────────────────────────────
+
+export type BSiteType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+// Site type mapping from old app:
+// 1 = 4-way intersection (N, S, E, W)
+// 2 = T-junction (no East) - tJunctionNorth
+// 3 = T-junction (no West) - tJunctionEast
+// 4 = T-junction (no North) - tJunctionSouth
+// 5 = T-junction (no South) - tJunctionWest
+// 6 = 2-way (N, S) - twoWayNorth
+// 7 = 2-way (E, W) - twoWayEast
+// 8 = 1-way (East) - oneWayEast
+// 9 = 1-way (North) - oneWayNorth
+
+// ─── Movement ID Mapping ───────────────────────────────────────────
+// From old app's getMovmentName function
+
+export const MOVEMENT_NAMES: Record<number, string> = {
+	1: "NT", // North Through
+	2: "NL", // North Left
+	3: "ER", // East Right
+	4: "ET", // East Through
+	5: "EL", // East Left
+	6: "SR", // South Right
+	7: "ST", // South Through
+	8: "SL", // South Left
+	9: "WR", // West Right
+	10: "WT", // West Through
+	11: "WL", // West Left
+	12: "NR", // North Right
+	13: "NP", // North Pedestrian
+	14: "NP", // North Pedestrian (duplicate)
+	15: "EP", // East Pedestrian
+	16: "EP", // East Pedestrian (duplicate)
+	17: "SP", // South Pedestrian
+	18: "SP", // South Pedestrian (duplicate)
+	19: "WP", // West Pedestrian
+	20: "WP", // West Pedestrian (duplicate)
+	21: "NU", // North U-turn
+	24: "EU", // East U-turn
+	27: "SU", // South U-turn
+	30: "WU", // West U-turn
+};
+
+// ─── Export Format Types ───────────────────────────────────────────
+
+export interface BExportData {
+	site: string;
+	dateTime: string;
+	endDateTime: string;
+	movements: string;
+	classification: string;
+	counts: number;
+}
+
+// ─── Helper Types ──────────────────────────────────────────────────
+
+export interface BActiveCount {
+	id: string;
+	siteId: string;
+	isSynced: boolean;
+	videoId: string;
+	lat: number;
+	long: number;
+	userId: string;
+	dateTime: string;
+	slot: number;
+	movements: BMovements;
+}

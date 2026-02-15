@@ -91,14 +91,20 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
 
     setTimeout(() => {
       showSiteTypeSelector(
-        workOrder.siteType || 1,
-        workOrder.locationName || "",
-        (siteType, streetNames) => {
+        workOrder.siteType, // Current site type (from user's previous selection or default)
+        workOrder.siteType, // Backend site type (determines available options)
+        workOrder.locationName, // Used to suggest street names
+        (selectedSiteType, streetNames) => {
+          // User completed selection
+          console.log("Selected site type:", selectedSiteType);
+          console.log("Street names:", streetNames);
+
+          // Navigate to counter with selected config
           router.push({
             pathname: ROUTES.TRAFFIC_COUNT_COUNTER,
             params: {
               workOrderId: workOrder.id,
-              siteType: String(siteType),
+              siteType: String(selectedSiteType),
               streetNames: JSON.stringify(streetNames),
             },
           });

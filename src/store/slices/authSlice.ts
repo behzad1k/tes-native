@@ -261,7 +261,9 @@ const authSlice = createSlice({
 			state.isLoading = false;
 			state.tokenExpiry = null;
 			TokenStorage.clearTokens();
+
 			ReduxStorage.removeState("auth_user");
+			ReduxStorage.removeState("@auth_token");
 		},
 	},
 	extraReducers: (builder) => {

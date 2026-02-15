@@ -16,27 +16,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/src/constants/navigation";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
+import ProfileHeader from "../components/ProfileHeader";
 
 export default function HomeScreen() {
   const styles = useThemedStyles(createStyles);
-  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const { t } = useTranslation();
   const router = useRouter();
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-        <View style={styles.loadingContainer}>
-          <TextView variant="body"> {t("loading")}</TextView>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <ProfileHeader />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.content}

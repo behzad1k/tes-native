@@ -37,6 +37,8 @@ import FilterTrafficCountForm from "../components/FilterTrafficCountForm";
 import SortTrafficCountForm, {
   SortOption,
 } from "../components/SortTrafficCountForm";
+import { useTrafficCountOperations } from "../hooks/useTrafficCountOperations";
+import { useTrafficCountRefresh } from "../hooks/useTrafficCountInit";
 
 export default function TrafficCountListScreen() {
   const { t } = useTranslation();
@@ -44,7 +46,13 @@ export default function TrafficCountListScreen() {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const { openDrawer } = useDrawer();
-
+  const {
+    workOrders,
+    isLoading,
+    filterAndSortWorkOrders,
+    changeWorkOrderStatus,
+  } = useTrafficCountOperations();
+  const { refresh, isRefreshing } = useTrafficCountRefresh();
   const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -53,9 +61,6 @@ export default function TrafficCountListScreen() {
     SyncStatusType[]
   >([]);
   const [sortBy, setSortBy] = useState<SortOption>(null);
-
-  const workOrders = useAppSelector((state) => state.trafficCount.workOrders);
-  const isLoading = useAppSelector((state) => state.trafficCount.isLoading);
 
   useEffect(() => {
     handleRefresh();
