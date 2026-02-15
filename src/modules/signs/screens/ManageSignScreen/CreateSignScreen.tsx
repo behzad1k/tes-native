@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import StepHeader from "./components/StepHeader";
 import { useSignOperations } from "../../hooks/useSignOperations";
 import { Toast } from "toastify-react-native";
-import { SignImage } from "@/src/types/models";
+import { Sign, SignImage } from "@/src/types/models";
 import { scale } from "@/src/styles/theme/spacing";
 import { v4 as uuidv4 } from "uuid";
 
@@ -45,7 +45,6 @@ export default function CreateSignScreen() {
       address: "",
       signId: uuidv4(),
       supportId: "",
-      codeId: "",
       height: "",
       facingDirectionId: "",
       faceMaterialId: "",
@@ -126,7 +125,6 @@ export default function CreateSignScreen() {
         address: formData.address || "",
         signId: formData.signId,
         supportId: formData.supportId || "",
-        signCodeId: formData.codeId,
         height: formData.height || "",
         facingDirectionId: formData.facingDirectionId || "",
         faceMaterialId: formData.faceMaterialId || "",
@@ -138,6 +136,7 @@ export default function CreateSignScreen() {
         note: formData.note || "",
         images,
         isSynced: false,
+        signCodeId: "",
       };
 
       const result = await createSign(signData);
@@ -159,7 +158,14 @@ export default function CreateSignScreen() {
       <Header title={t("signs.addNewSign")} />
       <StepHeader step={step} />
       <View style={styles.content}>
-        {step === 0 && <DetailsStep signFormControl={control} />}
+        {step === 0 && (
+          <DetailsStep
+            control={control}
+            errors={errors}
+            trigger={trigger}
+            getValues={getValues}
+          />
+        )}
         {step === 1 && (
           <LocationStep
             control={control}

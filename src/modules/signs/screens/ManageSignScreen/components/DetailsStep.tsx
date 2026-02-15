@@ -8,100 +8,167 @@ import FormInput from "@/src/components/ui/FormInput";
 import FormSelectBox from "@/src/components/ui/FormSelectBox";
 import { Control } from "react-hook-form";
 import { SignFormData } from "../../../types";
+import { useAppSelector } from "@/src/store/hooks";
 
 interface DetailsStepProps {
-  signFormControl: Control<SignFormData, any, SignFormData>;
+  control: Control<SignFormData, any, SignFormData>;
+  errors: any;
+  trigger: any;
+  getValues: () => SignFormData;
 }
 
-const DetailsStep = ({ signFormControl }: DetailsStepProps) => {
+const DetailsStep = ({ control }: DetailsStepProps) => {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
-  const signTypeOptions = [
-    { label: "test1", value: 1 },
-    { label: "test2", value: 2 },
-    { label: "test3", value: 3 },
-    { label: "test4", value: 4 },
-  ];
-  const dimensions = [
-    { label: "20 x 20", value: "20x20" },
-    { label: "30 x 30", value: "30x30" },
-  ];
+
+  // Get setup options from Redux store
+  const signCodes = useAppSelector((state) => state.signs.codes);
+  const dimensions = useAppSelector((state) => state.signs.dimensions);
+  const facingDirections = useAppSelector(
+    (state) => state.signs.facingDirections,
+  );
+  const faceMaterials = useAppSelector((state) => state.signs.faceMaterials);
+  const reflectiveCoatings = useAppSelector(
+    (state) => state.signs.reflectiveCoatings,
+  );
+  const reflectiveRatings = useAppSelector(
+    (state) => state.signs.reflectiveRatings,
+  );
+  const conditions = useAppSelector((state) => state.signs.conditions);
+
+  // Transform to select options
+  const signCodeOptions = signCodes.map((code) => ({
+    label: `${code.code} - ${code.name}`,
+    value: code.id,
+  }));
+
+  const dimensionOptions = dimensions.map((dim) => ({
+    label: dim.name,
+    value: dim.id,
+  }));
+
+  const facingDirectionOptions = facingDirections.map((dir) => ({
+    label: dir.name,
+    value: dir.id,
+  }));
+
+  const faceMaterialOptions = faceMaterials.map((mat) => ({
+    label: mat.name,
+    value: mat.id,
+  }));
+
+  const reflectiveCoatingOptions = reflectiveCoatings.map((coating) => ({
+    label: coating.name,
+    value: coating.id,
+  }));
+
+  const reflectiveRatingOptions = reflectiveRatings.map((rating) => ({
+    label: rating.name,
+    value: rating.id,
+  }));
+
+  const conditionOptions = conditions.map((cond) => ({
+    label: cond.name,
+    value: cond.id,
+  }));
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
         <FormSelectBox
-          id={"signCode"}
+          id="signCode"
           label={`${t("signs.signCode")} :`}
-          control={signFormControl}
-          name="signId"
-          options={signTypeOptions}
+          control={control}
+          name="signCodeId"
+          options={signCodeOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.signCode")}
+          searchable={true}
+          rules={{ required: t("validation.required") }}
         />
+
         <FormSelectBox
-          id={"dimension"}
+          id="dimension"
           label={`${t("dimension")} :`}
-          control={signFormControl}
+          control={control}
           name="dimensionId"
-          options={dimensions}
+          options={dimensionOptions}
           placeholder={t("pressToSelect")}
           title={t("dimension")}
+          searchable={true}
+          rules={{ required: t("validation.required") }}
         />
+
         <FormInput
-          control={signFormControl}
+          control={control}
           name="height"
           label={`${t("height")} :`}
+          keyboardType="numeric"
+          rules={{ required: t("validation.required") }}
         />
+
         <FormSelectBox
-          id={"facing-direction"}
+          id="facing-direction"
           label={`${t("signs.facingDirection")} :`}
-          control={signFormControl}
+          control={control}
           name="facingDirectionId"
-          options={signTypeOptions}
+          options={facingDirectionOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.facingDirection")}
+          searchable={true}
         />
+
         <FormSelectBox
-          id={"face-material"}
+          id="face-material"
           label={`${t("signs.faceMaterial")} :`}
-          control={signFormControl}
+          control={control}
           name="faceMaterialId"
-          options={signTypeOptions}
+          options={faceMaterialOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.faceMaterial")}
+          searchable={true}
         />
+
         <FormSelectBox
-          id={"reflective-coating"}
+          id="reflective-coating"
           label={`${t("signs.reflectiveCoating")} :`}
-          control={signFormControl}
+          control={control}
           name="reflectiveCoatingId"
-          options={signTypeOptions}
+          options={reflectiveCoatingOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.reflectiveCoating")}
+          searchable={true}
         />
+
         <FormSelectBox
-          id={"reflective-rating"}
+          id="reflective-rating"
           label={`${t("signs.reflectiveRating")} :`}
-          control={signFormControl}
+          control={control}
           name="reflectiveRatingId"
-          options={signTypeOptions}
+          options={reflectiveRatingOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.reflectiveRating")}
+          searchable={true}
         />
+
         <FormSelectBox
-          id={"sign-condition"}
+          id="sign-condition"
           label={`${t("signs.signCondition")} :`}
-          control={signFormControl}
+          control={control}
           name="conditionId"
-          options={signTypeOptions}
+          options={conditionOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.signCondition")}
           searchable={true}
+          rules={{ required: t("validation.required") }}
         />
+
         <FormInput
-          control={signFormControl}
+          control={control}
           name="note"
           label={`${t("note")} :`}
+          multiline={true}
+          numberOfLines={3}
         />
       </View>
     </ScrollView>

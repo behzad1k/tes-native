@@ -51,7 +51,6 @@ export default function EditSignScreen() {
       address: sign?.address || "",
       signId: sign?.signId || "",
       supportId: sign?.supportId || "",
-      codeId: sign?.signCodeId || "",
       height: sign?.height || "",
       facingDirectionId: sign?.facingDirectionId || "",
       faceMaterialId: sign?.faceMaterialId || "",
@@ -142,7 +141,6 @@ export default function EditSignScreen() {
         address: formData.address || "",
         signId: formData.signId,
         supportId: formData.supportId || "",
-        signCodeId: formData.codeId,
         height: formData.height || "",
         facingDirectionId: formData.facingDirectionId || "",
         faceMaterialId: formData.faceMaterialId || "",
@@ -172,7 +170,14 @@ export default function EditSignScreen() {
       <Header title={t("signs.editSign")} />
       <StepHeader step={step} />
       <View style={styles.content}>
-        {step === 0 && <DetailsStep signFormControl={control} />}
+        {step === 0 && (
+          <DetailsStep
+            control={control}
+            errors={errors}
+            trigger={trigger}
+            getValues={getValues}
+          />
+        )}
         {step === 1 && (
           <LocationStep
             control={control}

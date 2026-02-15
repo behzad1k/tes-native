@@ -29,7 +29,6 @@ function createBaseImage(
   return {
     uri: imageUri,
     isNew: true,
-    status: SYNC_STATUS.NOT_SYNCED,
     imageId: tempImageId,
     localPath: imageUri,
     isSynced: false,

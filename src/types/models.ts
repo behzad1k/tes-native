@@ -25,7 +25,6 @@ export interface BaseImage {
 	localPath?: string;
 	isNew: boolean;
 	isSynced: boolean;
-	status: SyncStatus;
 }
 
 // ─── Sign Types ────────────────────────────────────────────────────
@@ -96,20 +95,49 @@ export interface Support {
 	supportCodeId: string;
 	supportLocationTypeId?: string;
 	locationId?: string;
-	positionId?: string;
+	supportPositionId?: string;
 	latitude?: number;
 	longitude?: number;
 	address?: string;
+	distanceFromShoulder?: number;
 
 	dateInstalled?: string;
-	conditionId?: string;
+	supportConditionId?: string;
 	note?: string;
+	supportMaterialId: string;
+	supportTypeId: string;
 
 	signs: Sign[];
 	images: SupportImage[];
 	isNew: boolean;
 	isSynced: boolean;
 	status: SyncStatus;
+}
+
+// ─── Change Log Types (for sync) ───────────────────────────────────
+
+export interface ChangeLog {
+	id: string;
+	changeDate: string;
+	customerId: string;
+	userId: string;
+	username: string;
+	type: ChangeLogType;
+	field: string;
+	fromValue: string;
+	toValue: string;
+	supportId: string;
+	signId: string;
+}
+
+export enum ChangeLogType {
+	CHANGE_FIELD = 1,
+	ADD_PIC = 2,
+	REMOVE_PIC = 3,
+	ADD_SIGN_TO_SUPPORT = 4,
+	REMOVE_SIGN_FROM_SUPPORT = 5,
+	REMOVE_SIGN = 6,
+	REMOVE_SUPPORT = 7,
 }
 
 // ─── Maintenance/Job Types ─────────────────────────────────────────
@@ -183,12 +211,11 @@ export interface MapRegion extends MapCoordinate {
 
 export interface MapMarkerData {
 	id: string;
-	type: 1 | 2;
+	type: "sign" | "support";
 	coordinate: MapCoordinate;
 	title: string;
-	statusId: string;
-	statusName: string;
-	jobId: string;
+	description?: string;
+	item: Sign | Support;
 }
 
 // ─── Backend Image Types ───────────────────────────────────────────

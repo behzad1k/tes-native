@@ -299,8 +299,6 @@ const maintenanceSlice = createSlice({
 					isSynced: true,
 				}));
 
-				console.log(action.payload.jobs.length);
-
 				state.jobs = mergeJobs(backendJobs, state.jobs);
 				state.jobStatuses = action.payload.jobStatuses;
 				state.jobTypes = action.payload.jobTypes;

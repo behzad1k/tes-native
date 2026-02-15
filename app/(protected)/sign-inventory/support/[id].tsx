@@ -1,3 +1,3 @@
-import EditSupportScreen from "@/src/modules/signs/screens/ManageSupportScreen/EditSupportScreen";
+import EditSupportScreen from "@/src/modules/signs/screens/ManageSupportScreen";
 
 export default EditSupportScreen;

@@ -58,7 +58,7 @@ export type BUser = {
 	defaultCustomerName: string;
 };
 
-// ─── Sign/Support Types ────────────────────────────────────────────
+// ─── Sign/Support Code Types ───────────────────────────────────────
 
 export type BSignSupportCode = {
 	id: string;
@@ -70,7 +70,10 @@ export type BSignSupportCode = {
 	installationCost: number;
 };
 
+// ─── Setup Types (from GetSetups API) ──────────────────────────────
+
 export type BSetups = {
+	// Sign related
 	signCode: BSignSupportCode[];
 	signDescription: SystemOption[];
 	signDimension: SystemOption[];
@@ -81,6 +84,7 @@ export type BSetups = {
 	signLocationType: SystemOption[];
 	signReflectiveCoating: SystemOption[];
 	signReflectiveRating: SystemOption[];
+	// Support related
 	supportCode: BSignSupportCode[];
 	support: SystemOption[];
 	supportDescription: SystemOption[];
@@ -89,6 +93,7 @@ export type BSetups = {
 	supportCondition: SystemOption[];
 	supportLocationType: SystemOption[];
 	supportPosition: SystemOption[];
+	// General
 	generalSetting: null;
 };
 
@@ -96,14 +101,7 @@ export type BSetting = {
 	signImagesURL: string;
 };
 
-export type BSignSupportData = {
-	supports: BSupport[];
-	signsWithoutSupport: BSign[];
-	setups: BSetups;
-	setting: BSetting;
-};
-
-// ─── Sign Types ────────────────────────────────────────────────────
+// ─── Sign Image Types ──────────────────────────────────────────────
 
 export interface BSignImage {
 	id: string;
@@ -112,6 +110,8 @@ export interface BSignImage {
 	uri?: string;
 	thumbnailUrl?: string;
 }
+
+// ─── Sign Types ────────────────────────────────────────────────────
 
 export interface BSign {
 	id: string;
@@ -137,7 +137,7 @@ export interface BSign {
 	isSynced?: boolean;
 }
 
-// ─── Support Types ─────────────────────────────────────────────────
+// ─── Support Image Types ───────────────────────────────────────────
 
 export interface BSupportImage {
 	id: string;
@@ -146,6 +146,8 @@ export interface BSupportImage {
 	uri?: string;
 	thumbnailUrl?: string;
 }
+
+// ─── Support Types ─────────────────────────────────────────────────
 
 export interface BSupport {
 	id: string;
@@ -157,14 +159,54 @@ export interface BSupport {
 	latitude?: number;
 	longitude?: number;
 	address?: string;
-	positionId?: string;
+	supportPositionId?: string;
 	dateInstalled?: string;
-	conditionId?: string;
+	supportConditionId?: string;
+	distanceFromShoulder?: number;
 	note?: string;
 	signs: BSign[];
 	images: BSupportImage[];
 	isNew?: boolean;
 	isSynced?: boolean;
+}
+
+// ─── App Data Response (from sync/appData) ─────────────────────────
+
+export type BSignSupportData = {
+	supports: BSupport[];
+	signsWithoutSupport: BSign[];
+	setups: BSetups;
+	setting: BSetting;
+};
+
+// ─── Sync Request Types ────────────────────────────────────────────
+
+export interface BChangeLog {
+	id: string;
+	changeDate: string;
+	customerId: string;
+	userId: string;
+	username: string;
+	type: number; // 1:Change Field, 2:Add Pic, 3:Remove Pic, 4:Add Sign to Support, 5:Remove Sign from Support, 6:Remove Sign, 7:Remove Support
+	field: string;
+	fromValue: string;
+	toValue: string;
+	supportId: string;
+	signId: string;
+}
+
+export interface BSyncDataRequest {
+	changeLogs: BChangeLog[];
+	signs: BSign[];
+	supports: BSupport[];
+}
+
+// ─── Attachment Types ──────────────────────────────────────────────
+
+export interface BAttachment {
+	id: string;
+	downloadURL: string;
+	fileName?: string;
 }
 
 // ─── Maintenance/Job Types ─────────────────────────────────────────
@@ -232,23 +274,6 @@ export interface BJobAttachment {
 	id: string;
 	downloadURL: string;
 	fileName?: string;
-}
-
-// Request for POST /sync/getDataFromApp
-export interface BSyncDataRequest {
-	changeLogs: BChangeLog[];
-	signs: BSign[];
-	supports: BSupport[];
-}
-
-export interface BChangeLog {
-	id?: string;
-	type: number; // 1 = field change, 2 = image
-	supportId?: string;
-	signId?: string;
-	fieldName?: string;
-	fromValue?: string;
-	toValue?: string;
 }
 
 // ─── Generic API Types ─────────────────────────────────────────────

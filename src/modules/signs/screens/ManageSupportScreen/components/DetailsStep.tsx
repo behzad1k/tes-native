@@ -8,55 +8,97 @@ import FormInput from "@/src/components/ui/FormInput";
 import FormSelectBox from "@/src/components/ui/FormSelectBox";
 import { Control } from "react-hook-form";
 import { SupportFormData } from "../../../types";
+import { useAppSelector } from "@/src/store/hooks";
 
 interface DetailsStepProps {
-  supportFormControl: Control<SupportFormData, any, SupportFormData>;
+  control: Control<SupportFormData, any, SupportFormData>;
+  errors: any;
+  trigger: any;
+  getValues: () => SupportFormData;
 }
 
-const DetailsStep = ({ supportFormControl }: DetailsStepProps) => {
+const DetailsStep = ({ control }: DetailsStepProps) => {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
-  const supportTypeOptions = [
-    { label: "test1", value: 1 },
-    { label: "test2", value: 2 },
-    { label: "test3", value: 3 },
-    { label: "test4", value: 4 },
-  ];
+
+  // Get setup options from Redux store
+  const supportCodes = useAppSelector((state) => state.supports.codes);
+  const positions = useAppSelector((state) => state.supports.positions);
+  const conditions = useAppSelector((state) => state.supports.conditions);
+  const materials = useAppSelector((state) => state.supports.materials);
+
+  // Transform to select options
+  const supportCodeOptions = supportCodes.map((code) => ({
+    label: `${code.code} - ${code.name}`,
+    value: code.id,
+  }));
+
+  const positionOptions = positions.map((pos) => ({
+    label: pos.name,
+    value: pos.id,
+  }));
+
+  const conditionOptions = conditions.map((cond) => ({
+    label: cond.name,
+    value: cond.id,
+  }));
+
+  const materialOptions = materials.map((mat) => ({
+    label: mat.name,
+    value: mat.id,
+  }));
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
         <FormSelectBox
-          id={"supportCode"}
+          id="supportCode"
           label={`${t("signs.supportCode")} :`}
-          control={supportFormControl}
+          control={control}
           name="codeId"
-          options={supportTypeOptions}
+          options={supportCodeOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.supportCode")}
+          searchable={true}
+          rules={{ required: t("validation.required") }}
         />
+
         <FormSelectBox
-          id={"position"}
+          id="position"
           label={`${t("position")} :`}
-          control={supportFormControl}
+          control={control}
           name="positionId"
-          options={supportTypeOptions}
+          options={positionOptions}
           placeholder={t("pressToSelect")}
           title={t("position")}
+          searchable={true}
         />
+
         <FormSelectBox
-          id={"support-condition"}
+          id="support-condition"
           label={`${t("signs.supportCondition")} :`}
-          control={supportFormControl}
+          control={control}
           name="conditionId"
-          options={supportTypeOptions}
+          options={conditionOptions}
           placeholder={t("pressToSelect")}
           title={t("signs.supportCondition")}
           searchable={true}
+          rules={{ required: t("validation.required") }}
         />
+
         <FormInput
-          control={supportFormControl}
+          control={control}
+          name="distanceFromShoulder"
+          label={`${t("signs.distanceFromShoulder")} :`}
+          keyboardType="numeric"
+        />
+
+        <FormInput
+          control={control}
           name="note"
           label={`${t("note")} :`}
+          multiline={true}
+          numberOfLines={3}
         />
       </View>
     </ScrollView>

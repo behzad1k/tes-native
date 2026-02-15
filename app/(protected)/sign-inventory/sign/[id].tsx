@@ -1,3 +1,3 @@
-import EditSignScreen from "@/src/modules/signs/screens/ManageSignScreen/EditSignScreen";
+import EditSignScreen from "@/src/modules/signs/screens/ManageSignScreen";
 
 export default EditSignScreen;

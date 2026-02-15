@@ -25,8 +25,11 @@ const ENDPOINTS = {
 		DETAIL: (id: string) => formatUrl(baseUrl, `sign/api/Sign/${id}`),
 		UPDATE: (id: string) => formatUrl(baseUrl, `sign/api/Sign/Update/${id}`),
 		DELETE: (id: string) => formatUrl(baseUrl, `sign/api/Sign/Delete/${id}`),
-		ADD_IMAGES: (signId: string, isNew: boolean) =>
+		// Image upload: PUT with FormData, isNew indicates if sign is new
+		ADD_IMAGES: (isNew: boolean) =>
 			formatUrl(baseUrl, `sign/api/Attachments/Sign/${isNew}`),
+		DOWNLOAD_ATTACHMENTS: (signId: string) =>
+			formatUrl(baseUrl, `sign/api/Attachments/DownloadAttachments/${signId}`),
 	},
 	SUPPORTS: {
 		INDEX: formatUrl(baseUrl, "sign/api/Support/GetSupports"),
@@ -34,34 +37,28 @@ const ENDPOINTS = {
 		DETAIL: (id: string) => formatUrl(baseUrl, `sign/api/Support/${id}`),
 		UPDATE: (id: string) => formatUrl(baseUrl, `sign/api/Support/Update/${id}`),
 		DELETE: (id: string) => formatUrl(baseUrl, `sign/api/Support/Delete/${id}`),
-		ADD_IMAGES: (supportId: string, isNew: boolean) =>
+		// Image upload: PUT with FormData, isNew indicates if support is new
+		ADD_IMAGES: (isNew: boolean) =>
 			formatUrl(baseUrl, `sign/api/Attachments/Support/${isNew}`),
-	},
-	MAINTENANCE: {
-		// POST - Fetch user's jobs with { CustomerId, ShowDataByLocation }
-		USER_JOBS: formatUrl(baseUrl, "maintenance/api/jobs/UserJobs"),
-		// POST - Update jobs with { jobs, assets }
-		UPDATE_USER_JOBS: formatUrl(baseUrl, "maintenance/api/Jobs/UpdateUserJobs"),
-		// PUT - Upload job image (FormData with file and jobId)
-		UPLOAD_JOB_IMAGE: formatUrl(baseUrl, "maintenance/api/Attachments/job"),
-		// GET - Download job attachments
-		DOWNLOAD_ATTACHMENTS: (jobId: string) =>
-			formatUrl(
-				baseUrl,
-				`maintenance/api/Attachments/DownloadAttachments/${jobId}`,
-			),
+		DOWNLOAD_ATTACHMENTS: (supportId: string) =>
+			formatUrl(baseUrl, `sign/api/Attachments/DownloadAttachments/${supportId}`),
 	},
 	SYNC: {
-		// POST - Sync data from app to server
+		// POST - Sync data from app to server (changeLogs, signs, supports)
 		GET_DATA_FROM_APP: formatUrl(baseUrl, "sign/api/sync/getDataFromApp"),
+		// GET - Fetch app data including supports, signsWithoutSupport, setups, setting
 		APP_DATA: formatUrl(baseUrl, "sign/api/sync/appData"),
+	},
+	MAINTENANCE: {
+		USER_JOBS: formatUrl(baseUrl, "maintenance/api/jobs/UserJobs"),
+		UPDATE_USER_JOBS: formatUrl(baseUrl, "maintenance/api/Jobs/UpdateUserJobs"),
+		UPLOAD_JOB_IMAGE: formatUrl(baseUrl, "maintenance/api/Attachments/job"),
+		DOWNLOAD_ATTACHMENTS: (jobId: string) =>
+			formatUrl(baseUrl, `maintenance/api/Attachments/DownloadAttachments/${jobId}`),
 	},
 	TRAFFIC_COUNTER: {
 		VEHICLE_CLASSIFICATIONS: (customerId: string) =>
-			formatUrl(
-				baseUrl,
-				`traffic/api/Setups/GetCustomerVehicleClassification/${customerId}`,
-			),
+			formatUrl(baseUrl, `traffic/api/Setups/GetCustomerVehicleClassification/${customerId}`),
 	},
 } as const;
 
