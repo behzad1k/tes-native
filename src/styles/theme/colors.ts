@@ -27,6 +27,7 @@ export const colors = {
 	red: "#ff4444",
 	disabled: "rgba(235, 235, 235, 1)",
 	disabledText: "rgba(109, 119, 122, 1)",
+  yellow: "rgba(255, 193, 7, 1)"
 } as const;
 
 export const lightTheme = {

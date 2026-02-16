@@ -2,13 +2,11 @@ import TextInputView from "@/src/components/ui/TextInputView";
 import TextView from "@/src/components/ui/TextView";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { colors } from "@/src/styles/theme/colors";
-import Typography from "@/src/styles/theme/typography";
 import { Theme } from "@/src/types/theme";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTheme } from "@/src/contexts/ThemeContext";
 import {
   TouchableOpacity,
-  Text,
   ActivityIndicator,
   StyleSheet,
   ViewStyle,
@@ -17,7 +15,7 @@ import {
   Platform,
   ScrollView,
   Dimensions,
-  TextInput,
+  FlatList,
 } from "react-native";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { CaretDown, CaretUp } from "phosphor-react-native";
@@ -81,43 +79,43 @@ interface SelectBoxViewProps {
 }
 
 const SelectBoxView: React.FC<SelectBoxViewProps> = ({
-  options,
-  value,
-  onChange,
-  placeholder = "Select an item",
-  label,
-  labelStyle,
-  title,
-  titleStyle,
-  loading = false,
-  loadingText,
-  loadingComponent,
-  disabled = false,
-  containerStyle,
-  selectBoxStyle,
-  textStyle,
-  iconStyle,
-  dropdownStyle,
-  optionStyle,
-  optionTextStyle,
-  selectedOptionStyle,
-  selectedOptionTextStyle,
-  errorTextStyle,
-  loadingContainerStyle,
-  accessibilityLabel,
-  accessibilityHint,
-  id,
-  fullWidth = false,
-  error = false,
-  errorMessage,
-  showDropdownIcon = true,
-  dropdownIcon,
-  closeOnSelect = true,
-  drawerHeight = "auto",
-  searchable = false,
-  searchPlaceholder = "Search...",
-  onSearch,
-}) => {
+                                                       options,
+                                                       value,
+                                                       onChange,
+                                                       placeholder = "Select an item",
+                                                       label,
+                                                       labelStyle,
+                                                       title,
+                                                       titleStyle,
+                                                       loading = false,
+                                                       loadingText,
+                                                       loadingComponent,
+                                                       disabled = false,
+                                                       containerStyle,
+                                                       selectBoxStyle,
+                                                       textStyle,
+                                                       iconStyle,
+                                                       dropdownStyle,
+                                                       optionStyle,
+                                                       optionTextStyle,
+                                                       selectedOptionStyle,
+                                                       selectedOptionTextStyle,
+                                                       errorTextStyle,
+                                                       loadingContainerStyle,
+                                                       accessibilityLabel,
+                                                       accessibilityHint,
+                                                       id,
+                                                       fullWidth = false,
+                                                       error = false,
+                                                       errorMessage,
+                                                       showDropdownIcon = true,
+                                                       dropdownIcon,
+                                                       closeOnSelect = true,
+                                                       drawerHeight = "auto",
+                                                       searchable = false,
+                                                       searchPlaceholder = "Search...",
+                                                       onSearch,
+                                                     }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const { openDrawer, closeDrawer, isDrawerOpen } = useDrawer();
   const { theme } = useTheme();
@@ -142,8 +140,8 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
   const filteredOptions =
     searchable && searchQuery
       ? options.filter((opt) =>
-          opt.label.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
+        opt.label.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
       : options;
 
   useEffect(() => {
@@ -151,6 +149,156 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
       setSearchQuery("");
     }
   }, [isOpen]);
+
+  const handleOptionPress = useCallback((optionValue: string | number | null) => {
+    onChange(optionValue);
+    if (closeOnSelect) {
+      closeDrawer(drawerId);
+      setSearchQuery("");
+    }
+  }, [onChange, closeOnSelect, closeDrawer, drawerId]);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    if (onSearch) {
+      onSearch(query);
+    }
+  }, [onSearch]);
+
+  // Memoize the drawer content renderer
+  const renderDrawerContent = useCallback(() => {
+    const currentFilteredOptions = searchable && searchQuery
+      ? options.filter((opt) =>
+        opt.label.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+      : options;
+
+    return (
+      <View style={[styles.drawerContentContainer, dropdownStyle]}>
+        {/* Header with Close Button */}
+        <View style={styles.drawerHeader}>
+          <TextView style={[styles.drawerTitle, titleStyle]}>
+            {title || placeholder}
+          </TextView>
+        </View>
+
+        {/* Search Input */}
+        {searchable && (
+          <View style={styles.searchContainer}>
+            <TextInputView
+              style={styles.searchInput}
+              placeholder={searchPlaceholder}
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+              autoFocus={false}
+            />
+          </View>
+        )}
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Options List */}
+        <View style={styles.optionsList}>
+          {currentFilteredOptions.length === 0 ? (
+            <View style={styles.noOptionsContainer}>
+              <TextView style={styles.noOptionsText}>
+                No options available
+              </TextView>
+            </View>
+          ) : (
+            <FlatList
+              data={currentFilteredOptions}
+              keyExtractor={(item) => `${item.value}`}
+              renderItem={({ item }) => {
+                const isSelected = item.value === value;
+                const isOptionDisabled = item.disabled || false;
+
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.option,
+                      isSelected && [
+                        styles.selectedOptionBox,
+                        selectedOptionStyle,
+                      ],
+                      isOptionDisabled && styles.disabledOption,
+                      optionStyle,
+                    ]}
+                    onPress={() => handleOptionPress(item.value)}
+                    disabled={isOptionDisabled}
+                    accessibilityRole="button"
+                    accessibilityState={{
+                      disabled: isOptionDisabled,
+                      selected: isSelected,
+                    }}
+                  >
+                    <TextView
+                      style={[
+                        styles.optionText,
+                        isSelected && [
+                          styles.selectedOptionText,
+                          selectedOptionTextStyle,
+                        ],
+                        isOptionDisabled && styles.disabledOptionText,
+                        optionTextStyle,
+                      ]}
+                    >
+                      {item.label}
+                    </TextView>
+                    <View
+                      style={{
+                        justifyContent: "center",
+                        alignItems: "center",
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        borderWidth: 0.5,
+                        borderColor: colors.green,
+                      }}
+                    >
+                      {isSelected && <View style={styles.selectedIcon}></View>}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
+        </View>
+      </View>
+    );
+  }, [
+    searchQuery,
+    searchable,
+    options,
+    value,
+    styles,
+    dropdownStyle,
+    titleStyle,
+    title,
+    placeholder,
+    searchPlaceholder,
+    handleSearchChange,
+    handleOptionPress,
+    selectedOptionStyle,
+    optionStyle,
+    selectedOptionTextStyle,
+    optionTextStyle,
+  ]);
+
+  // Update drawer content when search query or options change
+  useEffect(() => {
+    if (isOpen && searchable) {
+      openDrawer(drawerId, renderDrawerContent(), {
+        position: "bottom",
+        transitionType: "slide",
+        drawerHeight: "auto",
+        enableGestures: true,
+        enableOverlay: true,
+        overlayOpacity: 0.5,
+      });
+    }
+  }, [searchQuery]);
 
   const renderLoadingContent = () => {
     if (loadingComponent) {
@@ -198,20 +346,12 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
     );
   };
 
-  const handleOptionPress = (optionValue: string | number | null) => {
-    onChange(optionValue);
-    if (closeOnSelect) {
-      closeDrawer(drawerId);
-      setSearchQuery("");
-    }
-  };
-
   const handleOpen = () => {
     if (!isDisabled) {
       openDrawer(drawerId, renderDrawerContent(), {
         position: "bottom",
         transitionType: "slide",
-        drawerHeight: drawerHeight || Dimensions.get("window").height * 0.6,
+        drawerHeight: "auto",
         enableGestures: true,
         enableOverlay: true,
         overlayOpacity: 0.5,
@@ -222,110 +362,6 @@ const SelectBoxView: React.FC<SelectBoxViewProps> = ({
   const handleClose = () => {
     closeDrawer(drawerId);
     setSearchQuery("");
-  };
-
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-    if (onSearch) {
-      onSearch(query);
-    }
-  };
-
-  const renderDrawerContent = () => {
-    return (
-      <View style={[styles.drawerContentContainer, dropdownStyle]}>
-        {/* Header with Close Button */}
-        <View style={styles.drawerHeader}>
-          <TextView style={[styles.drawerTitle, titleStyle]}>
-            {title || placeholder}
-          </TextView>
-        </View>
-
-        {/* Search Input */}
-        {searchable && (
-          <View style={styles.searchContainer}>
-            <TextInputView
-              style={styles.searchInput}
-              placeholder={searchPlaceholder}
-              value={searchQuery}
-              onChangeText={handleSearchChange}
-              autoFocus={false}
-            />
-          </View>
-        )}
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Options List */}
-        <ScrollView
-          style={styles.optionsList}
-          showsVerticalScrollIndicator={true}
-        >
-          {filteredOptions.length === 0 ? (
-            <View style={styles.noOptionsContainer}>
-              <TextView style={styles.noOptionsText}>
-                No options available
-              </TextView>
-            </View>
-          ) : (
-            filteredOptions.map((option, index) => {
-              const isSelected = option.value === value;
-              const isOptionDisabled = option.disabled || false;
-
-              return (
-                <TouchableOpacity
-                  key={`${option.value}-${index}`}
-                  style={[
-                    styles.option,
-                    isSelected && [
-                      styles.selectedOptionBox,
-                      selectedOptionStyle,
-                    ],
-                    isOptionDisabled && styles.disabledOption,
-                    optionStyle,
-                  ]}
-                  onPress={() => handleOptionPress(option.value)}
-                  disabled={isOptionDisabled}
-                  accessibilityRole="button"
-                  accessibilityState={{
-                    disabled: isOptionDisabled,
-                    selected: isSelected,
-                  }}
-                >
-                  <TextView
-                    style={[
-                      styles.optionText,
-                      isSelected && [
-                        styles.selectedOptionText,
-                        selectedOptionTextStyle,
-                      ],
-                      isOptionDisabled && styles.disabledOptionText,
-                      optionTextStyle,
-                    ]}
-                  >
-                    {option.label}
-                  </TextView>
-                  <View
-                    style={{
-                      justifyContent: "center",
-                      alignItems: "center",
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      borderWidth: 0.5,
-                      borderColor: colors.green,
-                    }}
-                  >
-                    {isSelected && <View style={styles.selectedIcon}></View>}
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </ScrollView>
-      </View>
-    );
   };
 
   return (
@@ -433,12 +469,12 @@ const createStyles = (theme: Theme) =>
       fontSize: 13,
     },
     drawerContentContainer: {
-      flex: 1,
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,
       paddingBottom: 20,
       overflow: "hidden",
       backgroundColor: theme.background,
+      height: "auto",
     },
     drawerHeader: {
       flexDirection: "row",
@@ -483,11 +519,13 @@ const createStyles = (theme: Theme) =>
       borderRadius: 8,
       paddingHorizontal: 12,
       fontSize: 16,
+      lineHeight: 20,
       paddingVertical: 10,
     },
     optionsList: {
       flex: 1,
       paddingBottom: spacing.md,
+      maxHeight: Dimensions.get("window").height * 0.6,
     },
     optionText: {
       flex: 1,

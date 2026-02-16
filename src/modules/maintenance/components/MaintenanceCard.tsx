@@ -70,6 +70,7 @@ const createStyles = (theme: Theme) =>
       textAlign: "center",
       fontWeight: "semibold",
       fontSize: 16,
+      lineHeight: 24,
     },
     header: {
       flex: 1,

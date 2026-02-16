@@ -24,6 +24,7 @@ import { SignImage } from "@/src/types/models";
 import { scale } from "@/src/styles/theme/spacing";
 import { useAppSelector } from "@/src/store/hooks";
 import { v4 as uuidv4 } from "uuid";
+import { useRouteInfo } from "expo-router/build/hooks";
 
 const STEPS = ["details", "location", "images"] as const;
 type StepType = (typeof STEPS)[number];
@@ -36,20 +37,18 @@ interface ManageSignScreenParams {
 
 export default function ManageSignScreen() {
   const { t } = useTranslation();
-  const { id, mode, preselectedSupportId } =
-    useLocalSearchParams<ManageSignScreenParams>();
+  const { id } = useLocalSearchParams<ManageSignScreenParams>();
+  const { params } = useRouteInfo();
   const [step, setStep] = useState<number>(0);
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { createSign, editSign } = useSignOperations();
-
-  const isEditMode = mode === "edit" && !!id;
-
+  const isEditMode = !!id;
+  const preselectedSupportId = params?.preselectedSupportId?.toString();
   // Get existing sign data if editing
   const existingSign = useAppSelector((state) =>
     state.signs.signs.find((s) => s.id === id),
   );
-
   // Get customer ID for new signs
   const customerId = useAppSelector(
     (state) => state.auth.user.defaultCustomerId,
@@ -74,10 +73,11 @@ export default function ManageSignScreen() {
     reset,
     setValue,
   } = useForm<SignFormData>({
-    defaultValues: getDefaultSignFormData(),
+    defaultValues: isEditMode
+      ? signToFormData(existingSign)
+      : getDefaultSignFormData(),
     mode: "onChange",
   });
-
   // Load existing data when editing, or set defaults for creation
   useEffect(() => {
     if (isEditMode && existingSign) {
@@ -136,7 +136,6 @@ export default function ManageSignScreen() {
     },
     [trigger],
   );
-
   const handleChangeStep = useCallback(
     async (newStepIndex: number) => {
       if (newStepIndex > step) {

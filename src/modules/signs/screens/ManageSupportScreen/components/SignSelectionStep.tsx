@@ -17,9 +17,9 @@ import { useAppSelector } from "@/src/store/hooks";
 import { colors } from "@/src/styles/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SignsStackParamList } from "@/src/navigation/types";
-import FormInput from "@/src/components/ui/FormInput";
+import { useRouter } from "expo-router";
+import { ROUTES } from "@/src/constants/navigation";
 
 interface SignSelectionStepProps {
   selectedSignIds: string[];
@@ -34,8 +34,7 @@ export default function SignSelectionStep({
 }: SignSelectionStepProps) {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<SignsStackParamList>>();
+  const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -43,12 +42,13 @@ export default function SignSelectionStep({
   const allSigns = useAppSelector((state) => state.signs.signs);
   const signCodes = useAppSelector((state) => state.signs.codes);
   const backendImages = useAppSelector((state) => state.signs.backendImages);
-
   // Filter signs: show signs without a support OR already assigned to this support
+
   const availableSigns = useMemo(() => {
     return allSigns.filter((sign) => {
       // Include if sign has no support, or is already assigned to this support
-      const isAvailable = !sign.supportId || sign.supportId === supportId;
+      // const isAvailable = true;
+      const isAvailable = !sign.supportId || sign.supportId == supportId;
 
       // Apply search filter
       if (searchQuery) {
@@ -62,7 +62,8 @@ export default function SignSelectionStep({
       return isAvailable;
     });
   }, [allSigns, supportId, searchQuery, signCodes]);
-
+  console.log(supportId);
+  console.log(allSigns.map((e) => e.supportId));
   // Get selected signs data
   const selectedSigns = useMemo(() => {
     return allSigns.filter((sign) => selectedSignIds.includes(sign.id));
@@ -88,15 +89,10 @@ export default function SignSelectionStep({
 
   const handleAddNewSign = useCallback(() => {
     // Navigate to sign creation screen with callback to add the new sign
-    navigation.navigate("ManageSign", {
-      mode: "create",
-      preselectedSupportId: supportId,
-      onSignCreated: (newSignId: string) => {
-        // Add the newly created sign to selection
-        onSignsChange([...selectedSignIds, newSignId]);
-      },
+    router.push(`${ROUTES.SIGN_CREATE}?preselectedSupportId=${supportId}`, {
+      // onSignsChange([...selectedSignIds, newSignId]);
     });
-  }, [navigation, supportId, selectedSignIds, onSignsChange]);
+  }, [router, supportId, selectedSignIds, onSignsChange]);
 
   const getSignCode = useCallback(
     (signCodeId: string | undefined) => {

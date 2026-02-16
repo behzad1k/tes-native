@@ -1,3 +1,4 @@
+import { ActiveFilter, FilterField } from '@/src/types/layouts';
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import TextView from "@/src/components/ui/TextView";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
@@ -8,36 +9,52 @@ import { colors } from "@/src/styles/theme/colors";
 import ButtonView from "@/src/components/ui/ButtonView";
 import { useState } from "react";
 import { useDrawer } from "@/src/contexts/DrawerContext";
-import { Filter } from "@/src/types/layouts";
-import { FilterOperator } from "@/src/constants/global";
 
 interface FilterFormProps {
-  filters?: Filter[];
-  setFilters?: React.Dispatch<React.SetStateAction<Filter[]>>;
+  fields: FilterField[];
+  activeFilters?: ActiveFilter[];
+  onApply?: (filters: ActiveFilter[]) => void;
+  onCancel?: () => void;
 }
-const FilterForm = ({ filters, setFilters }: FilterFormProps) => {
-  const [selectedFilters, setSelectedFilters] = useState(filters);
+
+const FilterForm = ({
+                      fields,
+                      activeFilters = [],
+                      onApply,
+                      onCancel,
+                    }: FilterFormProps) => {
+  const [selectedFilters, setSelectedFilters] = useState<ActiveFilter[]>(activeFilters);
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
   const { closeDrawer } = useDrawer();
 
   const isFilterActive = (key: string, value: string) => {
-    return (
-      selectedFilters.find((e) => e.key == key) &&
-      selectedFilters.find((e) => e.key == key)?.value == value
-    );
+    const filter = selectedFilters.find((f) => f.key === key);
+    return filter?.value === value;
   };
 
-  const onChangeFilter = (filter: Filter) => {
+  const onChangeFilter = (field: FilterField, value: string) => {
     setSelectedFilters((prev) => {
-      const cp = [...prev];
-      const index = cp.findIndex((e) => e.key == filter.key);
+      const updated = [...prev];
+      const index = updated.findIndex((f) => f.key === field.key);
+      const newFilter: ActiveFilter = {
+        key: field.key,
+        operator: field.operator,
+        value,
+      };
+
       if (index > -1) {
-        cp[index] = filter;
+        // If clicking the same value, toggle it off
+        if (updated[index].value === value) {
+          updated.splice(index, 1);
+        } else {
+          updated[index] = newFilter;
+        }
       } else {
-        cp.push(filter);
+        updated.push(newFilter);
       }
-      return cp;
+
+      return updated;
     });
   };
 
@@ -46,11 +63,12 @@ const FilterForm = ({ filters, setFilters }: FilterFormProps) => {
   };
 
   const handleCloseDrawer = () => {
+    onCancel?.();
     closeDrawer();
   };
 
   const handleSubmitDrawer = () => {
-    setFilters(selectedFilters);
+    onApply?.(selectedFilters);
     closeDrawer();
   };
 
@@ -62,50 +80,37 @@ const FilterForm = ({ filters, setFilters }: FilterFormProps) => {
           <TextView style={styles.clearButtonText}>{t("clear")}</TextView>
         </TouchableOpacity>
       </View>
+
       <View style={styles.content}>
-        <TextView style={styles.filterTitleText}>{t("status")}</TextView>
-        <View style={styles.filterButtons}>
-          <ButtonView
-            variant={isFilterActive("status", "") ? "primary" : "outline"}
-            size="small"
-            style={styles.filterButton}
-            textStyle={[
-              styles.filterButtonText,
-              isFilterActive("status", "") && styles.selectedFilterButtonText,
-            ]}
-            onPress={() =>
-              onChangeFilter({
-                key: "status",
-                operator: FilterOperator.EQUAL,
-                value: "",
-              })
-            }
-          >
-            {t("")}
-          </ButtonView>
-          <ButtonView
-            variant={
-              isFilterActive("status", "support") ? "primary" : "outline"
-            }
-            size="small"
-            style={styles.filterButton}
-            textStyle={[
-              styles.filterButtonText,
-              isFilterActive("status", "support") &&
-                styles.selectedFilterButtonText,
-            ]}
-            onPress={() =>
-              onChangeFilter({
-                key: "status",
-                operator: FilterOperator.EQUAL,
-                value: "support",
-              })
-            }
-          >
-            {t("support")}
-          </ButtonView>
-        </View>
+        {fields.map((field) => (
+          <View key={field.key} style={styles.fieldContainer}>
+            <TextView style={styles.filterTitleText}>{field.label}</TextView>
+            <View style={styles.filterButtons}>
+              {field.options.map((option) => (
+                <ButtonView
+                  key={`${field.key}-${option.value}`}
+                  variant={
+                    isFilterActive(field.key, option.value)
+                      ? "primary"
+                      : "outline"
+                  }
+                  size="small"
+                  style={styles.filterButton}
+                  textStyle={[
+                    styles.filterButtonText,
+                    isFilterActive(field.key, option.value) &&
+                    styles.selectedFilterButtonText,
+                  ]}
+                  onPress={() => onChangeFilter(field, option.value)}
+                >
+                  {option.label}
+                </ButtonView>
+              ))}
+            </View>
+          </View>
+        ))}
       </View>
+
       <View style={styles.footer}>
         <ButtonView
           variant="outline"
@@ -151,6 +156,9 @@ const createStyles = (theme: Theme) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
     },
+    fieldContainer: {
+      gap: 12,
+    },
     filterTitleText: {
       fontSize: 16,
       color: theme.textSecondary,
@@ -158,10 +166,11 @@ const createStyles = (theme: Theme) =>
     filterButtons: {
       borderRadius: 20,
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: 8,
     },
     filterButton: {
-      borderColor: theme.primary,
+      borderColor: theme.border,
       borderWidth: 1,
       borderRadius: 100,
     },
@@ -184,4 +193,5 @@ const createStyles = (theme: Theme) =>
       paddingVertical: spacing.xs,
     },
   });
+
 export default FilterForm;

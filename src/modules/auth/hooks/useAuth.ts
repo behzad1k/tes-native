@@ -15,22 +15,26 @@ import { apiClient } from "@/src/services/api/apiClient";
 import { StorageService } from "@/src/utils/storage";
 import { ForgotPasswordRequest, UserProfile } from "../types";
 import ENDPOINTS from "@/src/services/api/endpoints";
+import { TokenStorage } from "@/src/store/persistence";
+import { persistor } from "@/src/store";
 
 // Complete any in-flight browser auth sessions on app start
 WebBrowser.maybeCompleteAuthSession();
 
-// Keys that get cleared on logout
 const AUTH_STORAGE_KEYS = [
+	"@auth_token", // TokenStorage key
+	"@refresh_token", // TokenStorage key
+	"@token_expiry", // TokenStorage key
+	"@app_store:auth_user", // ReduxStorage key
 	"token",
 	"refresh_token",
 	"userProfile",
 	"expDate",
-	"setup_signSetups",
-	"setup_collisionFields",
-	"setup_divisions",
-	"setup_vehicleClassifications",
-	"setup_generalSettings",
-	"setup_moduleOfModule",
+	"persist:auth",
+	"persist:signs",
+	"persist:supports",
+	"persist:maintenance",
+	"persist:trafficCount",
 ] as const;
 
 // ─── Hook ──────────────────────────────────────────────────────────
@@ -138,23 +142,31 @@ export const useAuth = () => {
 	/** Clear local state + open identity-server logout page */
 	const logout = useCallback(async () => {
 		try {
-			// Remote logout (identity server)
+			// Clear Redux state FIRST
+			dispatch(logoutAction());
+
+			// Clear all storage keys
+			await AsyncStorage.multiRemove([...AUTH_STORAGE_KEYS]);
+
+			// Also clear TokenStorage explicitly
+			await TokenStorage.clearTokens();
+
+			// Clear Redux persist
+			await persistor.purge();
+
+			// Remote logout (identity server) - do this last
 			await WebBrowser.openAuthSessionAsync(
 				AuthConfig.logoutUrl,
 				AuthConfig.redirectUri,
 			).catch(() => {});
 
-			// Local cleanup
-			await AsyncStorage.multiRemove([...AUTH_STORAGE_KEYS]);
-			dispatch(logoutAction());
 			router.replace(ROUTES.LOGIN);
 		} catch (error) {
 			console.warn("Logout error:", error);
-			// Force local cleanup even if browser step failed
-			dispatch(logoutAction());
+			// Force navigation even if cleanup failed
+			router.replace(ROUTES.LOGIN);
 		}
 	}, [dispatch, router]);
-
 	/** Send a forgot-password email */
 	const forgotPassword = useCallback(
 		async (request: ForgotPasswordRequest): Promise<boolean> => {

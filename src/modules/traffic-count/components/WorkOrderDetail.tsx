@@ -227,7 +227,7 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
         >
           Claim
         </ButtonView>
-        {counts.length > 0 && (
+        {counts.length > 0 && false && (
           <ButtonView variant="outline" size="medium" onPress={showEntries}>
             <View style={styles.entriesBtnContent}>
               <ListBullets size={18} color={colors.text} />

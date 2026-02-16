@@ -17,6 +17,7 @@ import {
 } from "@/src/types/api";
 import ENDPOINTS from "@/src/services/api/endpoints";
 import { RootState } from "@/src/store";
+import mockData from "../../data/mockTrafficCountData.json";
 
 // ─── State Interface ───────────────────────────────────────────────
 
@@ -202,7 +203,9 @@ export const fetchWorkOrders = createAsyncThunk<
 		const vehicleClassifications = backendClassifications.map((vc, index) =>
 			transformVehicleClassification(vc, index),
 		);
-
+		if (response.results?.workOrders?.length === 0) {
+			return mockData;
+		}
 		return {
 			workOrders: mergedWorkOrders,
 			vehicleClassifications,

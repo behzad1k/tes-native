@@ -33,10 +33,7 @@ import { BUser } from "@/src/types/api";
 import ENDPOINTS from "@/src/services/api/endpoints";
 import { apiClient } from "@/src/services/api/apiClient";
 import { ReduxStorage } from "@/src/store/persistence";
-import {
-  fetchVehicleClassifications,
-  fetchWorkOrders,
-} from "@/src/store/slices/trafficCountSlice";
+import { fetchWorkOrders } from "@/src/store/slices/trafficCountSlice";
 import TextView from "@/src/components/ui/TextView";
 import { colors } from "@/src/styles/theme/colors";
 
@@ -63,12 +60,10 @@ function AppContent() {
       if (!themeToken) {
         await AsyncStorage.setItem(STORAGE_KEYS.THEME, "light");
       }
-
       // 1. Initialize auth from storage
       await store.dispatch(initializeAuth());
 
       const authState = store.getState().auth;
-
       if (!authState.isAuthenticated) {
         if (router) {
           router.navigate(ROUTES.LOGIN);
@@ -84,16 +79,16 @@ function AppContent() {
         try {
           // 3. Update token if online
           setTextValue("Fetching User...");
-          // const user = await fetchUser();
+          const user = await fetchUser();
           // await getVehicleClassification(token);
           // await getClientGeneralSetting(token);
           // await getModuleOfModule(token);
           setTextValue("Fetching Jobs and signs...");
           await Promise.all([
-            // store.dispatch(fetchSignSupportSetups(user.defaultCustomerId)),
-            // store.dispatch(fetchJobs(user.defaultCustomerId)),
+            store.dispatch(fetchSignSupportSetups(user.defaultCustomerId)),
+            store.dispatch(fetchJobs(user.defaultCustomerId)),
             // store.dispatch(fetchVehicleClassifications(user.defaultCustomerId)),
-            // store.dispatch(fetchWorkOrders()),
+            store.dispatch(fetchWorkOrders()),
           ]);
         } catch (error) {
           console.error("Failed to fetch data:", error);
@@ -103,6 +98,7 @@ function AppContent() {
       }
     } catch (error) {
       console.error("App initialization failed:", error);
+
       router.navigate(ROUTES.LOGIN);
     } finally {
       setIsLoading(false);

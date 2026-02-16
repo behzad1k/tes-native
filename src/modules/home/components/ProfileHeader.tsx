@@ -18,6 +18,10 @@ export default function ProfileHeader() {
   const handleLogout = () => {
     logout();
   };
+
+  if (!user) {
+    return <></>;
+  }
   return (
     <View style={styles.container}>
       <UserCircle size={60} />

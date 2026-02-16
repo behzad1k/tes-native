@@ -46,6 +46,7 @@ import {
   Vibrate,
   DeviceRotate,
   ArrowCounterClockwise,
+  ArrowClockwise,
 } from "phosphor-react-native";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
@@ -174,6 +175,53 @@ export default function TrafficCounterScreen() {
   }, [customStreetNames, activeDirections, defaultStreetNames]);
 
   const [hasBeenLandscape, setHasBeenLandscape] = useState(false);
+  const [rotationOffset, setRotationOffset] = useState(0);
+
+  const rotateDirectionsClockwise = useCallback(() => {
+    setRotationOffset((prev) => (prev + 1) % 4);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  const rotateDirection = useCallback(
+    (dir: Direction): Direction => {
+      const order: Direction[] = ["N", "E", "S", "W"];
+      const idx = order.indexOf(dir);
+      return order[(idx + rotationOffset) % 4];
+    },
+    [rotationOffset],
+  );
+
+  const inverseRotateDirection = useCallback(
+    (dir: Direction): Direction => {
+      const order: Direction[] = ["N", "E", "S", "W"];
+      const idx = order.indexOf(dir);
+      return order[(idx - rotationOffset + 4) % 4];
+    },
+    [rotationOffset],
+  );
+
+  const rotatedDirections = useMemo(() => {
+    return activeDirections.map(rotateDirection);
+  }, [activeDirections, rotateDirection]);
+
+  const rotatedDirectionLabels = useMemo(() => {
+    const labels: Record<string, string> = {};
+    activeDirections.forEach((originalDir) => {
+      const rotatedDir = rotateDirection(originalDir);
+      labels[rotatedDir] = directionLabels[originalDir];
+    });
+    return labels;
+  }, [activeDirections, directionLabels, rotateDirection]);
+
+  // Maps screen position (N/E/S/W) to the original direction letter to display
+  const originalDirectionAtPosition = useMemo(() => {
+    const mapping: Record<string, Direction> = {};
+    activeDirections.forEach((originalDir) => {
+      const screenPosition = rotateDirection(originalDir);
+      mapping[screenPosition] = originalDir;
+    });
+    return mapping;
+  }, [activeDirections, rotateDirection]);
 
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
@@ -273,7 +321,7 @@ export default function TrafficCounterScreen() {
     const cy = height / 2;
     const zs = Math.min(width, height) * 0.25;
 
-    if (activeDirections.includes("N"))
+    if (rotatedDirections.includes("N"))
       zones.push({
         direction: "N",
         x: cx - zs,
@@ -281,7 +329,7 @@ export default function TrafficCounterScreen() {
         width: zs * 2,
         height: cy - zs * 0.2,
       });
-    if (activeDirections.includes("S"))
+    if (rotatedDirections.includes("S"))
       zones.push({
         direction: "S",
         x: cx - zs,
@@ -289,7 +337,7 @@ export default function TrafficCounterScreen() {
         width: zs * 2,
         height: height - cy - zs * 0.2,
       });
-    if (activeDirections.includes("W"))
+    if (rotatedDirections.includes("W"))
       zones.push({
         direction: "W",
         x: 0,
@@ -297,7 +345,7 @@ export default function TrafficCounterScreen() {
         width: cx - zs * 0.2,
         height: zs * 2,
       });
-    if (activeDirections.includes("E"))
+    if (rotatedDirections.includes("E"))
       zones.push({
         direction: "E",
         x: cx + zs * 0.2,
@@ -307,7 +355,7 @@ export default function TrafficCounterScreen() {
       });
 
     dropZonesRef.current = zones;
-  }, [activeDirections, width, height]);
+  }, [rotatedDirections, width, height]);
 
   const findDropZone = useCallback((x: number, y: number): Direction | null => {
     for (const z of dropZonesRef.current) {
@@ -316,23 +364,54 @@ export default function TrafficCounterScreen() {
     }
     return null;
   }, []);
-  const handleVehicleCount = (
-    fromDirection: string, // e.g., "N", "S", "E", "W"
-    toDirection: string, // e.g., "T" (through), "L" (left), "R" (right)
-    classificationId: string, // e.g., vehicle type ID
-    classificationName: string, // e.g., "Car", "Truck"
-  ) => {
-    recordMovement(
+  const handleVehicleCount = useCallback(
+    (
+      fromDirection: string,
+      toDirection: string,
+      classificationId: string,
+      classificationName: string,
+    ) => {
+      // Convert rotated directions back to original directions for recording
+      const originalFrom = inverseRotateDirection(fromDirection as Direction);
+      const originalTo = inverseRotateDirection(toDirection as Direction);
+
+      triggerFeedback("drop");
+
+      recordMovement(
+        workOrderId,
+        originalFrom,
+        originalTo,
+        classificationId,
+        classificationName,
+        { lat: workOrder?.latitude, long: workOrder?.longitude },
+        defaultCustomerId,
+        workOrder?.aggregationInterval,
+      );
+
+      setTotalCount((p) => p + 1);
+
+      const countId = uuidv4();
+      const record: RecordEntry = {
+        id: countId,
+        from: originalFrom,
+        to: originalTo,
+        vehicle: classificationName,
+        vehicleId: classificationId,
+        timestamp: Date.now(),
+      };
+      recordHistoryRef.current.push(record);
+      showToast(record);
+    },
+    [
+      inverseRotateDirection,
+      triggerFeedback,
+      recordMovement,
       workOrderId,
-      fromDirection,
-      toDirection,
-      classificationId,
-      classificationName,
-      { lat: workOrder.latitude, long: workOrder.longitude },
-      defaultCustomerId, // Get from auth context
-      workOrder.aggregationInterval,
-    );
-  };
+      workOrder,
+      defaultCustomerId,
+      showToast,
+    ],
+  );
 
   // const recordMovement = useCallback(
   //   (from: Direction, to: Direction, classId: string, className: string) => {
@@ -529,59 +608,75 @@ export default function TrafficCounterScreen() {
           <View style={[s.corner, s.cBL]} />
           <View style={[s.corner, s.cBR]} />
 
-          {(activeDirections.includes("N") ||
-            activeDirections.includes("S")) && (
+          {(rotatedDirections.includes("N") ||
+            rotatedDirections.includes("S")) && (
             <View style={s.vRoad}>
-              {Array.from({ length: 40 }).map((_, i) => (
+              {Array.from({ length: Math.ceil(height / 14) }).map((_, i) => (
                 <View key={`vd${i}`} style={i % 2 === 0 ? s.vDash : s.vGap} />
               ))}
             </View>
           )}
 
-          {(activeDirections.includes("W") ||
-            activeDirections.includes("E")) && (
+          {(rotatedDirections.includes("W") ||
+            rotatedDirections.includes("E")) && (
             <View style={s.hRoad}>
-              {Array.from({ length: 60 }).map((_, i) => (
+              {Array.from({ length: Math.ceil(width / 14) }).map((_, i) => (
                 <View key={`hd${i}`} style={i % 2 === 0 ? s.hDash : s.hGap} />
               ))}
             </View>
           )}
 
-          {activeDirections.includes("N") && (
+          {rotatedDirections.includes("N") && (
             <View style={s.northArea}>
-              <DirLabel dir="N" street={directionLabels["N"]} />
+              <DirLabel
+                dir={originalDirectionAtPosition["N"]}
+                street={rotatedDirectionLabels["N"]}
+              />
               {renderVehicles("N")}
             </View>
           )}
 
-          {activeDirections.includes("S") && (
+          {rotatedDirections.includes("S") && (
             <View style={s.southArea}>
               {renderVehicles("S")}
-              <DirLabel dir="S" street={directionLabels["S"]} />
+              <DirLabel
+                dir={originalDirectionAtPosition["S"]}
+                street={rotatedDirectionLabels["S"]}
+              />
             </View>
           )}
 
-          {activeDirections.includes("W") && (
+          {rotatedDirections.includes("W") && (
             <View style={s.westArea}>
-              <DirLabel dir="W" street={directionLabels["W"]} />
+              <DirLabel
+                dir={originalDirectionAtPosition["W"]}
+                street={rotatedDirectionLabels["W"]}
+              />
               <View style={s.sideVehicles}>{renderVehicles("W")}</View>
             </View>
           )}
 
-          {activeDirections.includes("E") && (
+          {rotatedDirections.includes("E") && (
             <View style={s.eastArea}>
               <View style={s.sideVehicles}>{renderVehicles("E")}</View>
-              <DirLabel dir="E" street={directionLabels["E"]} />
+              <DirLabel
+                dir={originalDirectionAtPosition["E"]}
+                street={rotatedDirectionLabels["E"]}
+              />
             </View>
           )}
 
           {dragUi.isDragging &&
-            activeDirections
+            rotatedDirections
               .filter((d) => d !== dragUi.originDirection)
               .map((d) => <DropOverlay key={d} direction={d} />)}
         </View>
 
         <View style={s.toolbar}>
+          <TouchableOpacity style={s.tbBtn} onPress={rotateDirectionsClockwise}>
+            <ArrowClockwise size={22} color="#D4D4B0" weight="regular" />
+          </TouchableOpacity>
+          <View style={s.tbDivider} />
           <TouchableOpacity
             style={[s.tbBtn, feedbackMode === "none" && s.tbBtnActive]}
             onPress={
@@ -907,6 +1002,7 @@ const s = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
     zIndex: 2,
+    overflow: "hidden",
   },
   vDash: { width: 2, height: 8, backgroundColor: "#C4A635" },
   vGap: { width: 2, height: 6, backgroundColor: "transparent" },
@@ -921,6 +1017,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     zIndex: 2,
+    overflow: "hidden",
   },
   hDash: { width: 8, height: 2, backgroundColor: "#C4A635" },
   hGap: { width: 6, height: 2, backgroundColor: "transparent" },
@@ -976,11 +1073,17 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     zIndex: 100,
+    alignItems: "center",
   },
   tbBtn: { padding: 4 },
   tbBtnActive: {
     backgroundColor: "rgba(196,166,53,0.2)",
     borderRadius: 6,
+  },
+  tbDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: "rgba(212,212,176,0.3)",
   },
 
   toast: {

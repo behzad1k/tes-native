@@ -88,7 +88,7 @@ export const store = configureStore({
 			serializableCheck: {
 				ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
 				ignoredActionPaths: ["payload.dateInstalled"],
-				ignoredPaths: ["signs.signs", "supports.supports", "maintenance.jobs"],
+				ignoredPaths: ["signs.signs", "supports", "maintenance.jobs"],
 			},
 		}),
 });

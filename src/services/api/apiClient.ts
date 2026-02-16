@@ -73,6 +73,7 @@ function createApiClient(config: ApiClientConfig = {}) {
 	 *   apiClient('connect/token', { useToken: false })             // GET, no token
 	 *   apiClient.post('items', { name: 'x' })                     // POST JSON, with token
 	 *   apiClient.get('public/health', { useToken: false })         // GET, no token
+	 *   apiClient.post('upload', formData)                          // POST FormData, with token
 	 */
 	async function apiClient<T = any>(
 		path: string,
@@ -95,6 +96,9 @@ function createApiClient(config: ApiClientConfig = {}) {
 			...rest
 		} = options;
 
+		// Check if body is FormData
+		const isFormData = body instanceof FormData;
+
 		// ── Build headers ────────────────────────────────────────────
 		const mergedHeaders: Record<string, string> = {
 			...defaultHeaders,
@@ -109,8 +113,10 @@ function createApiClient(config: ApiClientConfig = {}) {
 			}
 		}
 
-		// Default Content-Type for JSON bodies
-		if (body !== undefined && !mergedHeaders["Content-Type"]) {
+		// Default Content-Type for JSON bodies (but NOT for FormData)
+		// For FormData, the browser/runtime will automatically set
+		// multipart/form-data with the correct boundary
+		if (body !== undefined && !mergedHeaders["Content-Type"] && !isFormData) {
 			if (typeof body === "string") {
 				// Likely form-encoded — caller should set Content-Type explicitly
 			} else {
@@ -132,9 +138,11 @@ function createApiClient(config: ApiClientConfig = {}) {
 				body:
 					body === undefined
 						? undefined
-						: typeof body === "string"
-							? body
-							: JSON.stringify(body),
+						: isFormData
+							? (body as FormData) // Pass FormData directly — don't stringify
+							: typeof body === "string"
+								? body
+								: JSON.stringify(body),
 				signal: controller.signal,
 				...rest,
 			});
@@ -149,20 +157,18 @@ function createApiClient(config: ApiClientConfig = {}) {
 				} catch {}
 
 				const error = new ApiError(
-					`${method} ${url} failed with status ${response.status}`,
-					response.status,
 					errorBody,
+					response.status,
+					`${method} ${url} failed with status ${response.status}`,
 				);
 				throw error;
 			}
-
 			// ── Parse response ───────────────────────────────────────
 			const contentType = response.headers.get("Content-Type") || "";
 
 			if (response.status === 204 || contentType.length === 0) {
 				return undefined as T;
 			}
-
 			if (contentType.includes("application/json")) {
 				return (await response.json()) as T;
 			}

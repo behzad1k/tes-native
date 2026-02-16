@@ -6,149 +6,157 @@ import { useThemedStyles } from "@/src/hooks/useThemedStyles";
 import { Theme } from "@/src/types/theme";
 import { scale, spacing } from "@/src/styles/theme/spacing";
 import { useAppSelector } from "@/src/store/hooks";
-import MapLocationPicker from "@/src/components/ui/MapLocationPicker";
+import CustomMapView from "@/src/components/layouts/MapView";
 import { colors } from "@/src/styles/theme/colors";
 import { SupportFormData } from "../../../types";
 import { useTranslation } from "react-i18next";
 import FormSelectBox from "@/src/components/ui/FormSelectBox";
+import { LatLng } from "react-native-maps";
 
 interface LocationStepProps {
-	control: Control<SupportFormData>;
-	errors: any;
-	trigger: any;
-	getValues: () => SupportFormData;
+  control: Control<SupportFormData>;
+  errors: any;
+  trigger: any;
+  getValues: () => SupportFormData;
 }
 
 export default function LocationStep({
-	control,
-	errors,
-	trigger,
-	getValues,
+  control,
+  errors,
+  trigger,
+  getValues,
 }: LocationStepProps) {
-	const styles = useThemedStyles(createStyles);
-	const { t } = useTranslation();
+  const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
-	// Get setup options from Redux store
-	const locationTypes = useAppSelector((state) => state.supports.locationTypes);
-	const user = useAppSelector((state) => state.auth.user);
+  // Get setup options from Redux store
+  const locationTypes = useAppSelector((state) => state.supports.locationTypes);
 
-	// Transform to select options
-	const locationTypeOptions = locationTypes.map((type) => ({
-		label: type.name,
-		value: type.id,
-	}));
+  // Transform to select options
+  const locationTypeOptions = locationTypes.map((type) => ({
+    label: type.name,
+    value: type.id,
+  }));
 
-	const handleLocationSelect = (
-		latitude: number,
-		longitude: number,
-		address?: string
-	) => {
-		// Update form values with selected coordinates
-		control._formValues.latitude = latitude;
-		control._formValues.longitude = longitude;
+  const handleLocationSelect = (coordinate: LatLng) => {
+    // Update form values with selected coordinates
+    control._formValues.latitude = coordinate.latitude;
+    control._formValues.longitude = coordinate.longitude;
 
-		if (address) {
-			control._formValues.address = address;
-		}
+    trigger(["latitude", "longitude"]);
+  };
 
-		trigger(["latitude", "longitude"]);
-	};
+  const currentLatitude = getValues().latitude;
+  const currentLongitude = getValues().longitude;
 
-	const currentLatitude = getValues().latitude;
-	const currentLongitude = getValues().longitude;
+  // Build selected location if coordinates exist
+  const selectedLocation: LatLng | undefined =
+    currentLatitude && currentLongitude
+      ? { latitude: currentLatitude, longitude: currentLongitude }
+      : undefined;
 
-	return (
-		<ScrollView
-			style={styles.container}
-			showsVerticalScrollIndicator={false}
-			contentContainerStyle={styles.contentContainer}
-		>
-			<View style={styles.section}>
-				<FormSelectBox
-					id="location-type"
-					label={`${t("locationType")} :`}
-					control={control}
-					name="supportLocationTypeId"
-					options={locationTypeOptions}
-					placeholder={t("pressToSelect")}
-					title={t("locationType")}
-					searchable={true}
-				/>
+  // Build initial region based on current coordinates or default
+  const initialRegion = {
+    latitude: currentLatitude || 37.78825,
+    longitude: currentLongitude || -122.4324,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  };
 
-				<TextView style={styles.sectionTitle}>{t("location")}</TextView>
+  return (
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.contentContainer}
+    >
+      <View style={styles.section}>
+        <FormSelectBox
+          id="location-type"
+          label={`${t("locationType")} :`}
+          control={control}
+          name="locationTypeId"
+          options={locationTypeOptions}
+          placeholder={t("pressToSelect")}
+          title={t("locationType")}
+          searchable={true}
+        />
 
-				{/* Map View */}
-				<View style={styles.mapContainer}>
-					<MapLocationPicker
-						initialLatitude={currentLatitude}
-						initialLongitude={currentLongitude}
-						onLocationSelect={handleLocationSelect}
-						height={300}
-					/>
-				</View>
+        <TextView style={styles.sectionTitle}>{t("location")}</TextView>
 
-				{/* Validation Message */}
-				{!currentLatitude && !currentLongitude && (
-					<View style={styles.validationMessage}>
-						<TextView style={styles.validationText}>
-							{t("validation.selectLocation")}
-						</TextView>
-					</View>
-				)}
+        {/* Map View */}
+        <View style={styles.mapContainer}>
+          <CustomMapView
+            mode="picker"
+            initialRegion={initialRegion}
+            selectedLocation={selectedLocation}
+            onLocationSelect={handleLocationSelect}
+            showUserLocation={true}
+            centerOnUserLocation={!selectedLocation}
+            controls={{
+              showSearch: false,
+              showZoomControls: true,
+              showCompass: true,
+              showStyleToggle: false,
+              showMyLocation: true,
+              showLegend: false,
+            }}
+          />
+        </View>
 
-				{/* Hidden Controllers for latitude/longitude */}
-				<Controller
-					control={control}
-					name="latitude"
-					render={() => null}
-				/>
+        {/* Validation Message */}
+        {!currentLatitude && !currentLongitude && (
+          <View style={styles.validationMessage}>
+            <TextView style={styles.validationText}>
+              {t("validation.selectLocation")}
+            </TextView>
+          </View>
+        )}
 
-				<Controller
-					control={control}
-					name="longitude"
-					render={() => null}
-				/>
-			</View>
-		</ScrollView>
-	);
+        {/* Hidden Controllers for latitude/longitude */}
+        <Controller control={control} name="latitude" render={() => null} />
+
+        <Controller control={control} name="longitude" render={() => null} />
+      </View>
+    </ScrollView>
+  );
 }
 
 const createStyles = (theme: Theme) =>
-	StyleSheet.create({
-		container: {
-			flex: 1,
-		},
-		contentContainer: {
-			padding: spacing.md,
-			paddingBottom: 100,
-		},
-		section: {
-			gap: spacing.sm,
-		},
-		sectionTitle: {
-			fontSize: 18,
-			fontWeight: "600",
-			color: theme.text,
-			marginTop: spacing.sm,
-		},
-		mapContainer: {
-			marginBottom: spacing.md,
-			borderRadius: 12,
-			borderWidth: 1,
-			height: scale(300),
-			borderColor: theme.border,
-			overflow: "hidden",
-		},
-		validationMessage: {
-			backgroundColor: colors.warning + "20",
-			padding: spacing.sm,
-			borderRadius: 8,
-			borderLeftWidth: 4,
-			borderLeftColor: colors.warning,
-		},
-		validationText: {
-			fontSize: 14,
-			color: colors.warning,
-			fontWeight: "500",
-		},
-	});
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    contentContainer: {
+      padding: spacing.md,
+      paddingBottom: 100,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: theme.text,
+      marginTop: spacing.sm,
+    },
+    mapContainer: {
+      marginBottom: spacing.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      height: scale(300),
+      borderColor: theme.border,
+      overflow: "hidden",
+    },
+    validationMessage: {
+      backgroundColor: colors.warning + "20",
+      padding: spacing.sm,
+      borderRadius: 8,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.warning,
+    },
+    validationText: {
+      fontSize: 14,
+      color: colors.warning,
+      fontWeight: "500",
+    },
+  });

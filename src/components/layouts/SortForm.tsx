@@ -21,7 +21,6 @@ const SortForm = ({ sort, setSort, params }: SortFormProps) => {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
   const { closeDrawer } = useDrawer();
-
   const isSortActive = (key: string, dir: string) => {
     return selectedSort.key == key && selectedSort.dir == dir;
   };

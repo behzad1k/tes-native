@@ -24,7 +24,7 @@ export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ProfileHeader />
       <ScrollView
@@ -76,6 +76,7 @@ const createStyles = (theme: Theme) =>
       paddingHorizontal: 16,
     },
     content: {
+      paddingBottom: 16,
       gap: 8,
     },
     loadingContainer: {

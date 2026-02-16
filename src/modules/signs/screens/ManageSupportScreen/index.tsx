@@ -35,19 +35,18 @@ interface ManageSupportScreenParams {
 
 export default function ManageSupportScreen() {
   const { t } = useTranslation();
-  const { id, mode } = useLocalSearchParams<ManageSupportScreenParams>();
+  const { id } = useLocalSearchParams<ManageSupportScreenParams>();
   const [step, setStep] = useState<number>(0);
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { createSupport, editSupport } = useSupportOperations();
 
-  const isEditMode = mode === "edit" && !!id;
+  const isEditMode = !!id;
 
   // Get existing support data if editing
   const existingSupport = useAppSelector((state) =>
     state.supports.supports.find((s) => s.id === id),
   );
-
   // Get customer ID for new supports
   const customerId = useAppSelector(
     (state) => state.auth.user.defaultCustomerId,
@@ -61,12 +60,7 @@ export default function ManageSupportScreen() {
 
   // Step labels for indicator
   const stepLabels = useMemo(
-    () => [
-      t("supports.details"),
-      t("supports.location"),
-      t("supports.signs"),
-      t("supports.images"),
-    ],
+    () => [t("details"), t("location"), t("signs.signs"), t("images")],
     [t],
   );
 
@@ -79,10 +73,11 @@ export default function ManageSupportScreen() {
     getValues,
     reset,
   } = useForm<SupportFormData>({
-    defaultValues: getDefaultSupportFormData(),
+    defaultValues: isEditMode
+      ? supportToFormData(existingSupport)
+      : getDefaultSupportFormData(),
     mode: "onChange",
   });
-
   // Load existing data when editing, or set defaults for creation
   useEffect(() => {
     if (isEditMode && existingSupport) {

@@ -422,7 +422,10 @@ const signsSlice = createSlice({
 			})
 			.addCase(fetchJobs.fulfilled, (state, action) => {
 				// Merge backend signs with local unsynced signs
-				state.signs = mergeSigns(action.payload.signWithouSupport, state.signs);
+				state.signs = mergeSigns(
+					action.payload.signsWithoutSupport,
+					state.signs,
+				);
 				state.isLoading = false;
 				state.lastFetched = Date.now();
 				saveSignsToStorage(state);

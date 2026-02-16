@@ -167,7 +167,7 @@ export const fetchJobs = createAsyncThunk<
 	{
 		jobs: MaintenanceJob[];
 		supports: Support[];
-		signWithouSupport: Sign[];
+		signsWithoutSupport: Sign[];
 		jobStatuses: JobStatus[];
 		jobTypes: JobType[];
 	},
@@ -219,7 +219,7 @@ export const fetchJobs = createAsyncThunk<
 			);
 
 			// Transform signs without support
-			const signWithouSupport: Sign[] = response.signsWithoutSupport.map(
+			const signsWithoutSupport: Sign[] = response.signsWithoutSupport.map(
 				(sign) => transformBackendSign(sign),
 			);
 
@@ -240,7 +240,7 @@ export const fetchJobs = createAsyncThunk<
 			return {
 				jobs,
 				supports,
-				signWithouSupport,
+				signsWithoutSupport,
 				jobStatuses,
 				jobTypes,
 			};
@@ -284,12 +284,13 @@ export const syncSignSupportData = createAsyncThunk<
 
 		// Get unsynced signs (both standalone and within supports)
 		const unsyncedSigns = signs.filter((s) => s.isNew && !s.isSynced);
-
+		console.log(unsyncedSigns);
+		console.log(unsyncedSupports);
 		// Prepare sync request
 		const syncRequest: BSyncDataRequest = {
 			changeLogs: changeLogs as BChangeLog[],
 			signs: unsyncedSigns.map((sign) => ({
-				id: sign.id,
+				// id: sign.id,
 				signId: sign.signId,
 				supportId: sign.supportId,
 				customerId: sign.customerId,
@@ -316,8 +317,8 @@ export const syncSignSupportData = createAsyncThunk<
 				isSynced: sign.isSynced,
 			})),
 			supports: unsyncedSupports.map((support) => ({
-				id: support.id,
-				supportId: support.supportId,
+				// id: support.id,
+				// supportId: support.supportId,
 				customerId: support.customerId,
 				supportCodeId: support.supportCodeId,
 				supportLocationTypeId: support.supportLocationTypeId,
@@ -333,7 +334,7 @@ export const syncSignSupportData = createAsyncThunk<
 				signs: support.signs.map((sign) => ({
 					id: sign.id,
 					signId: sign.signId,
-					supportId: support.id,
+					// supportId: support.id,
 					customerId: sign.customerId,
 					signCodeId: sign.signCodeId,
 					locationTypeId: sign.locationTypeId,
@@ -349,7 +350,7 @@ export const syncSignSupportData = createAsyncThunk<
 					dateInstalled: sign.dateInstalled,
 					conditionId: sign.conditionId,
 					note: sign.note,
-					images: sign.images.map((img) => ({
+					images: sign.images?.map((img) => ({
 						id: img.imageId || "",
 						signId: sign.id,
 						uri: img.uri,
@@ -357,7 +358,7 @@ export const syncSignSupportData = createAsyncThunk<
 					isNew: sign.isNew,
 					isSynced: sign.isSynced,
 				})),
-				images: support.images.map((img) => ({
+				images: support.images?.map((img) => ({
 					id: img.imageId || "",
 					supportId: support.id,
 					uri: img.uri,
@@ -394,14 +395,10 @@ export const syncSignSupportData = createAsyncThunk<
 						} as any);
 						formData.append(support.id, support.id);
 
+						console.log(formData);
 						await apiClient.put(
 							ENDPOINTS.SUPPORTS.ADD_IMAGES(support.isNew),
 							formData,
-							{
-								headers: {
-									"Content-Type": "multipart/form-data",
-								},
-							},
 						);
 
 						syncedImageIds.push(image.imageId || image.uri);
@@ -427,15 +424,10 @@ export const syncSignSupportData = createAsyncThunk<
 							type: "image/jpg",
 						} as any);
 						formData.append(sign.id, sign.id);
-
+						console.log(formData);
 						await apiClient.put(
 							ENDPOINTS.SIGNS.ADD_IMAGES(sign.isNew),
 							formData,
-							{
-								headers: {
-									"Content-Type": "multipart/form-data",
-								},
-							},
 						);
 
 						syncedImageIds.push(image.imageId || image.uri);
@@ -633,7 +625,6 @@ export const syncMaintenanceData = createAsyncThunk<
 
 		const syncedJobIds: string[] = [];
 		const syncedImageIds: string[] = [];
-
 		// Sync jobs and assets if there are any
 		if (editedJobs.length > 0 || editedAssets.length > 0) {
 			const updateRequest: BUpdateUserJobsRequest = {
@@ -659,9 +650,9 @@ export const syncMaintenanceData = createAsyncThunk<
 				updateRequest,
 			);
 
-			if (response) {
-				editedJobs.forEach((job) => syncedJobIds.push(job.id));
-			}
+			// if (response) {
+			editedJobs.forEach((job) => syncedJobIds.push(job.id));
+			// }
 		}
 
 		// Upload images
@@ -683,16 +674,11 @@ export const syncMaintenanceData = createAsyncThunk<
 							name: filename,
 							type,
 						} as any);
-						formData.append("jobId", image.jobId);
+						formData.append(image.jobId, image.jobId);
 
 						const response = await apiClient.put(
 							ENDPOINTS.MAINTENANCE.UPLOAD_JOB_IMAGE,
 							formData,
-							{
-								headers: {
-									"Content-Type": "multipart/form-data",
-								},
-							},
 						);
 
 						if (response) {

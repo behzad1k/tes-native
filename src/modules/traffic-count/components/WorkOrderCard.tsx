@@ -61,7 +61,7 @@ export default function WorkOrderCard({ item, onPress }: WorkOrderCardProps) {
       case "To Do":
         return theme.secondary;
       case "In Progress":
-        return colors.lightGreen;
+        return colors.yellow;
       case "Done":
         return colors.lightGreen;
       default:
@@ -74,7 +74,7 @@ export default function WorkOrderCard({ item, onPress }: WorkOrderCardProps) {
       <View style={styles.content}>
         <View style={styles.topRow}>
           <View style={styles.woInfo}>
-            <TextView style={styles.woNumber}>Work NO : {item.no}</TextView>
+            <TextView style={styles.woNumber}>{item.no}</TextView>
             <View style={[styles.syncBadge, getSyncStatusStyle()]}>
               {item.syncStatus === "Synced" && (
                 <TextView style={[styles.syncIcon]}>↻</TextView>
@@ -142,20 +142,20 @@ const createStyles = (theme: Theme) =>
       gap: 3,
     },
     syncBadgeSynced: {
-      backgroundColor: "#e8f5e9",
+      backgroundColor: "#4caf50",
     },
     syncBadgeNotSynced: {
-      backgroundColor: "#ffebee",
+      backgroundColor: "#f44336",
     },
     syncText: {
       fontSize: FontSizes.xxs,
       fontWeight: FontWeights.semiBold,
     },
     syncTextSynced: {
-      color: "#4caf50",
+      color: colors.white,
     },
     syncTextNotSynced: {
-      color: "#f44336",
+      color: colors.white,
     },
     syncIcon: {
       fontSize: 10,
@@ -163,7 +163,7 @@ const createStyles = (theme: Theme) =>
     },
     warningIcon: {
       fontSize: 9,
-      color: "#f44336",
+      color: colors.white,
     },
     statusText: {
       fontSize: FontSizes.sm,

@@ -1,84 +1,480 @@
 {
-  "workOrders": [
+  "vehicleClassifications": [
     {
-      "id": "wo-001",
-      "studyId": "study-001",
-      "no": "24197",
-      "locationName": "RAINBOW DR @ STAR AV",
-      "startDT": "2025-11-10T07:30:00.000Z",
-      "endDT": "2025-11-10T17:30:00.000Z",
-      "latitude": 43.6532,
-      "longitude": -79.3832,
-      "note": "You are about to export the data for",
-      "siteType": 1,
-      "aggregationInterval": 15,
-      "isCompleted": false,
-      "isSynced": false,
-      "isEdited": false,
-      "status": "To Do",
-      "syncStatus": "Not Synced",
-      "daysLeft": 5,
-      "counts": []
+      "id": "93653ab5-c782-43b6-b89d-cfc71f0734b8",
+      "in": 1,
+      "name": "Car",
+      "isPedestrian": false,
+      "order": 1,
+      "fromLength": 0.0,
+      "toLength": 0.0,
+      "nameInImport": null
     },
     {
-      "id": "wo-002",
-      "studyId": "study-002",
-      "no": "24197",
-      "locationName": "RAINBOW DR @ STAR AV",
-      "startDT": "2025-11-10T07:30:00.000Z",
-      "endDT": "2025-11-10T17:30:00.000Z",
-      "latitude": 43.6532,
-      "longitude": -79.3832,
-      "note": "You are about to export the data for",
-      "siteType": 1,
+      "id": "b55b1a93-e5b0-4c25-b24f-364caae69dcc",
+      "in": 2,
+      "name": "Truck",
+      "isPedestrian": false,
+      "order": 2,
+      "fromLength": 0.0,
+      "toLength": 0.0,
+      "nameInImport": null
+    },
+    {
+      "id": "70cc9b57-c808-4b3c-bfcd-a164ba0efa1f",
+      "in": 3,
+      "name": "Heavy Truck",
+      "isPedestrian": false,
+      "order": 3,
+      "fromLength": 0.0,
+      "toLength": 0.0,
+      "nameInImport": null
+    },
+    {
+      "id": "33c62702-b6ce-474f-8518-e4086a62e7eb",
+      "in": 4,
+      "name": "Pedestrian",
+      "isPedestrian": true,
+      "order": 4,
+      "fromLength": 0.0,
+      "toLength": 0.0,
+      "nameInImport": null
+    },
+    {
+      "id": "da0b82a6-4028-468d-adf3-59ffa8ae0dbe",
+      "in": 5,
+      "name": "Cyclist",
+      "isPedestrian": false,
+      "order": 5,
+      "fromLength": 0.0,
+      "toLength": 0.0,
+      "nameInImport": null
+    }
+  ],
+  "workOrders": [
+    {
+      "studyId": "study-001",
+      "no": "WO-2026-001",
+      "description": "Main St & Oak Ave Intersection",
+      "geoId": "GEO-SF-001",
+      "latitude": 37.7849,
+      "longitude": -122.4094,
+      "startDT": "2026-02-10T06:00:00.000Z",
+      "endDT": "2026-02-20T18:00:00.000Z",
       "aggregationInterval": 15,
+      "siteType": 1,
+      "note": "Peak hour traffic study - 4-way intersection near downtown",
       "isCompleted": false,
-      "isSynced": true,
-      "isEdited": false,
-      "status": "In Progress",
-      "syncStatus": "Synced",
-      "daysLeft": 5,
+      "status": "Done",
       "counts": [
         {
-          "id": "count-001",
-          "siteId": "study-002",
+          "id": "count-001-a",
+          "siteId": "study-001",
           "isSynced": true,
-          "videoId": "",
-          "lat": 43.6532,
-          "long": -79.3832,
+          "videoId": "vid-001",
+          "lat": 37.7849,
+          "long": -122.4094,
           "userId": "user-001",
-          "dateTime": "2025-11-10T07:30:00.000Z",
+          "dateTime": "2026-02-12T08:00:00.000Z",
           "slot": 15,
-          "movements": {}
+          "movements": {
+            "1": { "CAR": 45, "TRUCK": 8, "MOTO": 3 },
+            "2": { "CAR": 22, "BUS": 2 },
+            "4": { "CAR": 38, "TRUCK": 5 },
+            "7": { "CAR": 52, "TRUCK": 10, "CYCLE": 4 }
+          }
+        },
+        {
+          "id": "count-001-b",
+          "siteId": "study-001",
+          "isSynced": true,
+          "videoId": "vid-002",
+          "lat": 37.7849,
+          "long": -122.4094,
+          "userId": "user-001",
+          "dateTime": "2026-02-12T08:15:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 51, "TRUCK": 12, "MOTO": 5 },
+            "2": { "CAR": 28, "BUS": 3 },
+            "4": { "CAR": 42, "TRUCK": 7 },
+            "7": { "CAR": 48, "TRUCK": 8, "CYCLE": 6 }
+          }
+        },
+        {
+          "id": "count-001-c",
+          "siteId": "study-001",
+          "isSynced": false,
+          "videoId": "vid-003",
+          "lat": 37.7849,
+          "long": -122.4094,
+          "userId": "user-001",
+          "dateTime": "2026-02-12T08:30:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 58, "TRUCK": 14, "MOTO": 4 },
+            "2": { "CAR": 31, "BUS": 4 },
+            "4": { "CAR": 45, "TRUCK": 9 },
+            "7": { "CAR": 55, "TRUCK": 11, "CYCLE": 8 }
+          }
         }
       ]
     },
     {
-      "id": "wo-003",
-      "studyId": "study-003",
-      "no": "24197",
-      "locationName": "RAINBOW DR @ STAR AV",
-      "startDT": "2025-11-10T07:30:00.000Z",
-      "endDT": "2025-11-10T17:30:00.000Z",
-      "latitude": 43.6532,
-      "longitude": -79.3832,
-      "note": "You are about to export the data for",
-      "siteType": 2,
+      "studyId": "study-002",
+      "no": "WO-2026-002",
+      "description": "Highway 101 On-Ramp at Cesar Chavez",
+      "geoId": "GEO-SF-002",
+      "latitude": 37.7499,
+      "longitude": -122.4034,
+      "startDT": "2026-02-14T05:00:00.000Z",
+      "endDT": "2026-02-28T20:00:00.000Z",
       "aggregationInterval": 5,
+      "siteType": 6,
+      "note": "Highway merge study - 2-way North/South",
+      "isCompleted": false,
+      "status": "To Do",
+      "counts": [
+        {
+          "id": "count-002-a",
+          "siteId": "study-002",
+          "isSynced": true,
+          "videoId": "vid-004",
+          "lat": 37.7499,
+          "long": -122.4034,
+          "userId": "user-002",
+          "dateTime": "2026-02-15T07:00:00.000Z",
+          "slot": 5,
+          "movements": {
+            "1": { "CAR": 18, "TRUCK": 4 },
+            "7": { "CAR": 22, "TRUCK": 6 }
+          }
+        },
+        {
+          "id": "count-002-b",
+          "siteId": "study-002",
+          "isSynced": false,
+          "videoId": "vid-005",
+          "lat": 37.7499,
+          "long": -122.4034,
+          "userId": "user-002",
+          "dateTime": "2026-02-15T07:05:00.000Z",
+          "slot": 5,
+          "movements": {
+            "1": { "CAR": 21, "TRUCK": 5, "MOTO": 2 },
+            "7": { "CAR": 25, "TRUCK": 7 }
+          }
+        }
+      ]
+    },
+    {
+      "studyId": "study-003",
+      "no": "WO-2026-003",
+      "description": "Market St & Van Ness T-Junction",
+      "geoId": "GEO-SF-003",
+      "latitude": 37.7751,
+      "longitude": -122.4193,
+      "startDT": "2026-02-08T06:00:00.000Z",
+      "endDT": "2026-02-18T19:00:00.000Z",
+      "aggregationInterval": 15,
+      "siteType": 2,
+      "note": "T-junction study (no East approach) - high pedestrian area",
+      "isCompleted": false,
+      "status": "In Progress",
+      "counts": [
+        {
+          "id": "count-003-a",
+          "siteId": "study-003",
+          "isSynced": true,
+          "videoId": "vid-006",
+          "lat": 37.7751,
+          "long": -122.4193,
+          "userId": "user-001",
+          "dateTime": "2026-02-10T12:00:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 35, "BUS": 5, "CYCLE": 12 },
+            "2": { "CAR": 18, "MOTO": 3 },
+            "7": { "CAR": 40, "BUS": 6 },
+            "13": { "PED": 85 },
+            "17": { "PED": 72 }
+          }
+        },
+        {
+          "id": "count-003-b",
+          "siteId": "study-003",
+          "isSynced": true,
+          "videoId": "vid-007",
+          "lat": 37.7751,
+          "long": -122.4193,
+          "userId": "user-001",
+          "dateTime": "2026-02-10T12:15:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 38, "BUS": 4, "CYCLE": 15 },
+            "2": { "CAR": 21, "MOTO": 2 },
+            "7": { "CAR": 44, "BUS": 7 },
+            "13": { "PED": 92 },
+            "17": { "PED": 78 }
+          }
+        }
+      ]
+    },
+    {
+      "studyId": "study-004",
+      "no": "WO-2026-004",
+      "description": "Embarcadero & Mission St",
+      "geoId": "GEO-SF-004",
+      "latitude": 37.7929,
+      "longitude": -122.394,
+      "startDT": "2026-02-01T06:00:00.000Z",
+      "endDT": "2026-02-10T18:00:00.000Z",
+      "aggregationInterval": 15,
+      "siteType": 1,
+      "note": "Completed study - Financial district intersection",
       "isCompleted": true,
-      "isSynced": false,
-      "isEdited": false,
-      "status": "Done",
-      "syncStatus": "Not Synced",
-      "daysLeft": 5,
+      "counts": [
+        {
+          "id": "count-004-a",
+          "siteId": "study-004",
+          "isSynced": true,
+          "videoId": "vid-008",
+          "lat": 37.7929,
+          "long": -122.394,
+          "userId": "user-003",
+          "dateTime": "2026-02-05T08:00:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 62, "TRUCK": 8, "BUS": 4 },
+            "2": { "CAR": 45, "MOTO": 6 },
+            "4": { "CAR": 58, "TRUCK": 10 },
+            "5": { "CAR": 32, "CYCLE": 8 },
+            "7": { "CAR": 71, "TRUCK": 12, "BUS": 5 },
+            "8": { "CAR": 38, "MOTO": 4 },
+            "10": { "CAR": 55, "TRUCK": 7 },
+            "11": { "CAR": 29, "CYCLE": 6 },
+            "13": { "PED": 120 },
+            "15": { "PED": 95 },
+            "17": { "PED": 110 },
+            "19": { "PED": 88 }
+          }
+        },
+        {
+          "id": "count-004-b",
+          "siteId": "study-004",
+          "isSynced": true,
+          "videoId": "vid-009",
+          "lat": 37.7929,
+          "long": -122.394,
+          "userId": "user-003",
+          "dateTime": "2026-02-05T08:15:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 68, "TRUCK": 10, "BUS": 5 },
+            "2": { "CAR": 48, "MOTO": 7 },
+            "4": { "CAR": 63, "TRUCK": 11 },
+            "5": { "CAR": 35, "CYCLE": 10 },
+            "7": { "CAR": 75, "TRUCK": 14, "BUS": 6 },
+            "8": { "CAR": 41, "MOTO": 5 },
+            "10": { "CAR": 59, "TRUCK": 8 },
+            "11": { "CAR": 32, "CYCLE": 7 },
+            "13": { "PED": 135 },
+            "15": { "PED": 102 },
+            "17": { "PED": 118 },
+            "19": { "PED": 94 }
+          }
+        }
+      ]
+    },
+    {
+      "studyId": "study-005",
+      "no": "WO-2026-005",
+      "description": "Golden Gate Park - JFK Drive Entry",
+      "geoId": "GEO-SF-005",
+      "latitude": 37.7694,
+      "longitude": -122.4862,
+      "startDT": "2026-02-18T08:00:00.000Z",
+      "endDT": "2026-03-01T17:00:00.000Z",
+      "aggregationInterval": 15,
+      "siteType": 8,
+      "note": "One-way East - Weekend recreational traffic study",
+      "isCompleted": false,
+      "counts": []
+    },
+    {
+      "studyId": "study-006",
+      "no": "WO-2026-006",
+      "description": "Castro St & 18th St",
+      "geoId": "GEO-SF-006",
+      "latitude": 37.7609,
+      "longitude": -122.435,
+      "startDT": "2026-02-12T10:00:00.000Z",
+      "endDT": "2026-02-22T20:00:00.000Z",
+      "aggregationInterval": 15,
+      "siteType": 1,
+      "note": "Commercial district 4-way - high foot traffic",
+      "isCompleted": false,
+      "counts": [
+        {
+          "id": "count-006-a",
+          "siteId": "study-006",
+          "isSynced": false,
+          "videoId": "vid-010",
+          "lat": 37.7609,
+          "long": -122.435,
+          "userId": "user-001",
+          "dateTime": "2026-02-14T14:00:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 28, "MOTO": 4 },
+            "2": { "CAR": 15 },
+            "4": { "CAR": 32, "CYCLE": 6 },
+            "7": { "CAR": 25, "BUS": 2 },
+            "13": { "PED": 145 },
+            "15": { "PED": 132 },
+            "17": { "PED": 158 },
+            "19": { "PED": 128 }
+          }
+        }
+      ]
+    },
+    {
+      "studyId": "study-007",
+      "no": "WO-2026-007",
+      "description": "Divisadero St & Haight St T-Junction",
+      "geoId": "GEO-SF-007",
+      "latitude": 37.7712,
+      "longitude": -122.4378,
+      "startDT": "2026-02-20T06:00:00.000Z",
+      "endDT": "2026-03-05T18:00:00.000Z",
+      "aggregationInterval": 5,
+      "siteType": 3,
+      "note": "T-junction (no West) - residential area study",
+      "isCompleted": false,
+      "counts": []
+    },
+    {
+      "studyId": "study-008",
+      "no": "WO-2026-008",
+      "description": "16th St BART Station Entry",
+      "geoId": "GEO-SF-008",
+      "latitude": 37.765,
+      "longitude": -122.4194,
+      "startDT": "2026-02-05T05:00:00.000Z",
+      "endDT": "2026-02-15T22:00:00.000Z",
+      "aggregationInterval": 5,
+      "siteType": 6,
+      "note": "Transit hub - 2-way pedestrian and vehicle study",
+      "isCompleted": false,
+      "counts": [
+        {
+          "id": "count-008-a",
+          "siteId": "study-008",
+          "isSynced": true,
+          "videoId": "vid-011",
+          "lat": 37.765,
+          "long": -122.4194,
+          "userId": "user-002",
+          "dateTime": "2026-02-10T17:30:00.000Z",
+          "slot": 5,
+          "movements": {
+            "1": { "CAR": 12, "BUS": 3 },
+            "7": { "CAR": 15, "BUS": 4 },
+            "13": { "PED": 78 },
+            "17": { "PED": 82 }
+          }
+        },
+        {
+          "id": "count-008-b",
+          "siteId": "study-008",
+          "isSynced": true,
+          "videoId": "vid-012",
+          "lat": 37.765,
+          "long": -122.4194,
+          "userId": "user-002",
+          "dateTime": "2026-02-10T17:35:00.000Z",
+          "slot": 5,
+          "movements": {
+            "1": { "CAR": 14, "BUS": 2 },
+            "7": { "CAR": 18, "BUS": 3 },
+            "13": { "PED": 95 },
+            "17": { "PED": 88 }
+          }
+        },
+        {
+          "id": "count-008-c",
+          "siteId": "study-008",
+          "isSynced": false,
+          "videoId": "vid-013",
+          "lat": 37.765,
+          "long": -122.4194,
+          "userId": "user-002",
+          "dateTime": "2026-02-10T17:40:00.000Z",
+          "slot": 5,
+          "movements": {
+            "1": { "CAR": 16, "BUS": 4 },
+            "7": { "CAR": 20, "BUS": 5 },
+            "13": { "PED": 112 },
+            "17": { "PED": 98 }
+          }
+        }
+      ]
+    },
+    {
+      "studyId": "study-009",
+      "no": "WO-2026-009",
+      "description": "Lombard St & Van Ness Ave",
+      "geoId": "GEO-SF-009",
+      "latitude": 37.8002,
+      "longitude": -122.423,
+      "startDT": "2026-01-25T06:00:00.000Z",
+      "endDT": "2026-02-05T18:00:00.000Z",
+      "aggregationInterval": 15,
+      "siteType": 1,
+      "note": "Completed - Major arterial intersection near Marina",
+      "isCompleted": true,
+      "counts": [
+        {
+          "id": "count-009-a",
+          "siteId": "study-009",
+          "isSynced": true,
+          "videoId": "vid-014",
+          "lat": 37.8002,
+          "long": -122.423,
+          "userId": "user-003",
+          "dateTime": "2026-01-28T08:00:00.000Z",
+          "slot": 15,
+          "movements": {
+            "1": { "CAR": 85, "TRUCK": 15, "BUS": 6 },
+            "2": { "CAR": 42, "MOTO": 8 },
+            "3": { "CAR": 38 },
+            "4": { "CAR": 78, "TRUCK": 12 },
+            "5": { "CAR": 35, "CYCLE": 5 },
+            "6": { "CAR": 40 },
+            "7": { "CAR": 92, "TRUCK": 18, "BUS": 7 },
+            "8": { "CAR": 45, "MOTO": 6 },
+            "9": { "CAR": 32 },
+            "10": { "CAR": 72, "TRUCK": 10 },
+            "11": { "CAR": 28, "CYCLE": 4 },
+            "12": { "CAR": 35 }
+          }
+        }
+      ]
+    },
+    {
+      "studyId": "study-010",
+      "no": "WO-2026-010",
+      "description": "Ocean Ave & 19th Ave",
+      "geoId": "GEO-SF-010",
+      "latitude": 37.7268,
+      "longitude": -122.4755,
+      "startDT": "2026-02-22T06:00:00.000Z",
+      "endDT": "2026-03-08T18:00:00.000Z",
+      "aggregationInterval": 15,
+      "siteType": 1,
+      "note": "Future study - Major commuter intersection near SFSU",
+      "isCompleted": false,
       "counts": []
     }
-  ],
-  "classifications": [
-    { "id": "1", "in": "c1", "name": "Car", "isPedestrian": false, "applicationClassification": 1 },
-    { "id": "2", "in": "c2", "name": "Truck", "isPedestrian": false, "applicationClassification": 2 },
-    { "id": "3", "in": "c3", "name": "Bus", "isPedestrian": false, "applicationClassification": 3 },
-    { "id": "4", "in": "c4", "name": "Cyclist", "isPedestrian": false, "applicationClassification": 4 },
-    { "id": "5", "in": "c5", "name": "Pedestrian", "isPedestrian": true, "applicationClassification": 5 }
   ]
 }

@@ -141,6 +141,7 @@ const supportsSlice = createSlice({
 			const newSupport: Support = {
 				...action.payload,
 				id: localId,
+				supportId: localId,
 				localId,
 				isNew: true,
 				isSynced: false,

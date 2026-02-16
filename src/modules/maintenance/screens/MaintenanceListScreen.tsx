@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -18,16 +18,16 @@ import { House, MagnifyingGlass, ArrowsClockwise } from "phosphor-react-native";
 import { colors } from "@/src/styles/theme/colors";
 import { useTranslation } from "react-i18next";
 import { useDrawer } from "@/src/contexts/DrawerContext";
-import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
+import { useAppSelector } from "@/src/store/hooks";
 import { ROUTES } from "@/src/constants/navigation";
 import { Toast } from "toastify-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
 import { MaintenanceJob } from "@/src/types/models";
 import JobDetailForm from "../components/JobDetailForm";
 import TaskMapView from "../components/TaskMapView";
-import FilterMaintenanceForm from "../components/FilterMaintenanceForm";
+import FilterForm from "@/src/components/layouts/FilterForm";
 import Tabs from "@/src/components/layouts/Tabs";
-import { Sort, TabsType } from "@/src/types/layouts";
+import { ActiveFilter, FilterField, Sort, TabsType } from '@/src/types/layouts';
 import MaintenanceCard from "../components/MaintenanceCard";
 import SortForm from "@/src/components/layouts/SortForm";
 import { useMaintenanceOperations } from "../hooks/useMaintenanceOperations";
@@ -42,8 +42,7 @@ export default function MaintenanceListScreen() {
 
   const styles = useThemedStyles(createStyles);
   const { theme } = useTheme();
-  const dispatch = useAppDispatch();
-  const { openDrawer } = useDrawer();
+  const { openDrawer, closeDrawer } = useDrawer();
 
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState(Object.values(TABS)[0].id);
@@ -60,30 +59,59 @@ export default function MaintenanceListScreen() {
     getUnsyncedJobsCount,
     getUnsyncedImagesCount,
   } = useMaintenanceOperations();
+
   // Get supports from store
   const supports = useAppSelector((state) => state.supports.supports);
 
   // Filter and sort state
-  const [filterByStatus, setFilterByStatus] = useState<string[]>([]);
-  const [filterByType, setFilterByType] = useState<string[]>([]);
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
   const [sort, setSort] = useState<Sort>({ key: "assignDate", dir: "DESC" });
 
   // Calculate pending count
   const pendingCount = getUnsyncedJobsCount() + getUnsyncedImagesCount();
 
+  // Build filter fields from jobStatuses and jobTypes
+  const filterFields: FilterField[] = useMemo(() => {
+    const fields: FilterField[] = [];
+
+    if (jobStatuses.length > 0) {
+      fields.push({
+        key: "statusName",
+        label: t("status"),
+        operator: "EQUAL",
+        options: jobStatuses.map((status) => ({
+          label: status.name,
+          value: status.name,
+        })),
+      });
+    }
+
+    if (jobTypes.length > 0) {
+      fields.push({
+        key: "typeName",
+        label: t("type"),
+        operator: "EQUAL",
+        options: jobTypes.map((type) => ({
+          label: type.name,
+          value: type.name,
+        })),
+      });
+    }
+
+    return fields;
+  }, [jobStatuses, jobTypes, t]);
+
   // Filter and sort jobs
   const filteredJobs = useMemo(() => {
     let result = [...jobs];
 
-    // Apply status filter
-    if (filterByStatus.length > 0) {
-      result = result.filter((job) => filterByStatus.includes(job.statusName));
-    }
-
-    // Apply type filter
-    if (filterByType.length > 0) {
-      result = result.filter((job) => filterByType.includes(job.typeName));
-    }
+    // Apply filters from activeFilters
+    activeFilters.forEach((filter) => {
+      result = result.filter((job) => {
+        const value = job[filter.key as keyof MaintenanceJob];
+        return String(value) === filter.value;
+      });
+    });
 
     // Apply sorting
     result.sort((a, b) => {
@@ -104,7 +132,7 @@ export default function MaintenanceListScreen() {
     });
 
     return result;
-  }, [jobs, filterByStatus, filterByType, sort]);
+  }, [jobs, activeFilters, sort]);
 
   // Handle sync
   const handleSync = async () => {
@@ -128,7 +156,6 @@ export default function MaintenanceListScreen() {
   // Handle refresh (just shows toast - data is fetched on app start)
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Data is fetched on app start, so just show a message
     setTimeout(() => {
       setRefreshing(false);
       Toast.info("Data is refreshed on app start");
@@ -142,17 +169,20 @@ export default function MaintenanceListScreen() {
     });
   };
 
+  // Handle apply filters
+  const handleApplyFilters = useCallback((filters: ActiveFilter[]) => {
+    setActiveFilters(filters);
+  }, []);
+
   // Handle filter press
   const handleFilterPress = () => {
     openDrawer(
       "filter-jobs",
-      <FilterMaintenanceForm
-        filterByStatus={filterByStatus}
-        setFilterByStatus={setFilterByStatus}
-        filterByType={filterByType}
-        setFilterByType={setFilterByType}
-        jobStatuses={jobStatuses}
-        jobTypes={jobTypes}
+      <FilterForm
+        fields={filterFields}
+        activeFilters={activeFilters}
+        onApply={handleApplyFilters}
+        onCancel={closeDrawer}
       />,
       { drawerHeight: "auto" },
     );
@@ -177,9 +207,9 @@ export default function MaintenanceListScreen() {
 
   // Render job item
   const renderJobItem = ({
-    item,
-    index,
-  }: {
+                           item,
+                           index,
+                         }: {
     item: MaintenanceJob;
     index: number;
   }) => (
@@ -275,7 +305,15 @@ export default function MaintenanceListScreen() {
                 <TextView style={styles.listActionText}>{t("sort")}</TextView>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleFilterPress}>
-                <TextView style={styles.listActionText}>{t("filter")}</TextView>
+                <TextView
+                  style={[
+                    styles.listActionText,
+                    activeFilters.length > 0 && styles.activeFilterText,
+                  ]}
+                >
+                  {t("filter")}
+                  {activeFilters.length > 0 && ` (${activeFilters.length})`}
+                </TextView>
               </TouchableOpacity>
             </View>
           </View>
@@ -357,6 +395,9 @@ const createStyles = (theme: Theme) =>
       fontSize: 15,
       fontWeight: "400",
       color: colors.lightBlue,
+    },
+    activeFilterText: {
+      fontWeight: "600",
     },
     emptyList: {
       flex: 1,

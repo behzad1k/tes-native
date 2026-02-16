@@ -18,3 +18,22 @@ export type Sort = {
 	key: string;
 	dir: (typeof SortDirection)[keyof typeof SortDirection];
 };
+
+
+export interface FilterOption {
+  label: string;
+  value: string;
+}
+
+export interface FilterField {
+  key: string;
+  label: string;
+  operator: string;
+  options: FilterOption[];
+}
+
+export interface ActiveFilter {
+  key: string;
+  operator: string;
+  value: string;
+}

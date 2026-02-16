@@ -1,3 +1,5 @@
+import SortForm from '@/src/components/layouts/SortForm';
+import { Sort } from '@/src/types/layouts';
 import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
@@ -55,12 +57,11 @@ export default function TrafficCountListScreen() {
   const { refresh, isRefreshing } = useTrafficCountRefresh();
   const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-
   const [filterByStatus, setFilterByStatus] = useState<WorkOrderStatus[]>([]);
   const [filterBySyncStatus, setFilterBySyncStatus] = useState<
     SyncStatusType[]
   >([]);
-  const [sortBy, setSortBy] = useState<SortOption>(null);
+  const [sortBy, setSortBy] = useState<Sort>({ key: "status", dir:'ASC' });
 
   useEffect(() => {
     handleRefresh();
@@ -79,30 +80,30 @@ export default function TrafficCountListScreen() {
       );
     }
 
-    switch (sortBy) {
-      case "newest":
-        result.sort(
-          (a, b) =>
-            new Date(b.startDT).getTime() - new Date(a.startDT).getTime(),
-        );
-        break;
-      case "oldest":
-        result.sort(
-          (a, b) =>
-            new Date(a.startDT).getTime() - new Date(b.startDT).getTime(),
-        );
-        break;
-      case "nearer_due":
-        result.sort(
-          (a, b) => new Date(a.endDT).getTime() - new Date(b.endDT).getTime(),
-        );
-        break;
-      case "later_due":
-        result.sort(
-          (a, b) => new Date(b.endDT).getTime() - new Date(a.endDT).getTime(),
-        );
-        break;
-    }
+    // switch (sortBy) {
+    //   case "newest":
+    //     result.sort(
+    //       (a, b) =>
+    //         new Date(b.startDT).getTime() - new Date(a.startDT).getTime(),
+    //     );
+    //     break;
+    //   case "oldest":
+    //     result.sort(
+    //       (a, b) =>
+    //         new Date(a.startDT).getTime() - new Date(b.startDT).getTime(),
+    //     );
+    //     break;
+    //   case "nearer_due":
+    //     result.sort(
+    //       (a, b) => new Date(a.endDT).getTime() - new Date(b.endDT).getTime(),
+    //     );
+    //     break;
+    //   case "later_due":
+    //     result.sort(
+    //       (a, b) => new Date(b.endDT).getTime() - new Date(a.endDT).getTime(),
+    //     );
+    //     break;
+    // }
 
     return result;
   }, [workOrders, filterByStatus, filterBySyncStatus, sortBy]);
@@ -144,7 +145,9 @@ export default function TrafficCountListScreen() {
   const handleSortPress = () => {
     openDrawer(
       "sort-traffic-count",
-      <SortTrafficCountForm sortBy={sortBy} setSortBy={setSortBy} />,
+      <SortForm sort={sortBy} setSort={setSortBy} params={
+        {'status': 'Status'}
+      } />,
       { drawerHeight: "auto" },
     );
   };
@@ -163,7 +166,11 @@ export default function TrafficCountListScreen() {
   };
 
   const renderWorkOrderItem = ({ item }: { item: TrafficCountWorkOrder }) => (
-    <WorkOrderCard item={item} onPress={() => handleWorkOrderPress(item)} />
+    <WorkOrderCard
+      key={item.id}
+      item={item}
+      onPress={() => handleWorkOrderPress(item)}
+    />
   );
 
   const renderEmptyList = () => {
@@ -237,13 +244,13 @@ export default function TrafficCountListScreen() {
         renderItem={renderWorkOrderItem}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={renderEmptyList}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.lightGreen}
-          />
-        }
+        // refreshControl={
+        //   <RefreshControl
+        //     refreshing={refreshing}
+        //     onRefresh={handleRefresh}
+        //     tintColor={colors.lightGreen}
+        //   />
+        // }
         contentContainerStyle={
           filteredWorkOrders.length === 0 ? styles.emptyList : undefined
         }

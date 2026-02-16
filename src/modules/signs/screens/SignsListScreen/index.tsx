@@ -1,12 +1,10 @@
+import FilterForm from '@/src/components/layouts/FilterForm';
 import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  FlatList,
-  Image,
-  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemedStyles } from "@/src/hooks/useThemedStyles";
@@ -15,10 +13,17 @@ import { Header } from "@/src/components/layouts/Header";
 import TextView from "@/src/components/ui/TextView";
 import { spacing } from "@/src/styles/theme/spacing";
 import { router } from "expo-router";
-import { House, MagnifyingGlass, Repeat, Plus } from "phosphor-react-native";
+import {
+  House,
+  MagnifyingGlass,
+  Repeat,
+  Plus,
+  Warning,
+  Wrench,
+} from "phosphor-react-native";
 import { colors } from "@/src/styles/theme/colors";
 import Tabs from "@/src/components/layouts/Tabs";
-import { TabsType } from "@/src/types/layouts";
+import { ActiveFilter, TabsType } from '@/src/types/layouts';
 import { useTranslation } from "react-i18next";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
@@ -28,10 +33,11 @@ import { Toast } from "toastify-react-native";
 import { useTheme } from "@/src/contexts/ThemeContext";
 import SyncStatusSummary from "@/src/components/ui/SyncStatusSummary";
 import SortForm from "@/src/components/layouts/SortForm";
-import SignSupportMapView from "../../components/SignSupportMapView";
-import { syncSignSupportData, fetchSignSupportData } from "@/src/store/thunks";
-import { Ionicons } from "@expo/vector-icons";
-import FilterSignForm from "./components/FilterSignForm";
+import CustomMapView, {
+  MapPinData,
+  MapLegendItem,
+} from "@/src/components/layouts/MapView";
+import { syncSignSupportData } from "@/src/store/thunks";
 import NewSignType from "./components/NewSignType";
 import SignSupportList from "./components/SignList";
 
@@ -60,21 +66,16 @@ export default function SignsListScreen() {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [tab, setTab] = useState(Object.keys(TABS)[0]);
-  const { openDrawer } = useDrawer();
-
-  // State from SignsListScreen2
+  const { openDrawer, closeDrawer } = useDrawer();
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Local state for filtering and sorting (from Screen1)
-  const [filters, setFilters] = useState<any[]>([]);
   const [sort, setSort] = useState<{ key: string; dir: "ASC" | "DESC" }>({
     key: "id",
     dir: "DESC",
   });
 
-  // Get data from Redux store (from Screen2)
   const signs = useAppSelector((state) => state.signs.signs);
   const supports = useAppSelector((state) => state.supports.supports);
   const signCodes = useAppSelector((state) => state.signs.codes);
@@ -89,12 +90,39 @@ export default function SignsListScreen() {
   const isSyncing = useAppSelector((state) => state.sync.isSyncing);
   const syncProgress = useAppSelector((state) => state.sync.syncProgress);
 
-  // Transform and filter data (from Screen2)
+  // Filter fields configuration
+  const filterFields = useMemo(() => [
+    {
+      key: "type",
+      label: t("type"),
+      operator: "EQUAL",
+      options: [
+        { label: t("sign"), value: "sign" },
+        { label: t("support"), value: "support" },
+      ],
+    },
+    {
+      key: "isSynced",
+      label: t("syncStatus"),
+      operator: "EQUAL",
+      options: [
+        { label: t("synced"), value: "true" },
+        { label: t("unsynced"), value: "false" },
+      ],
+    },
+  ], [t]);
+
+  // Transform and filter data
   const listItems: ListItem[] = useMemo(() => {
     const items: ListItem[] = [];
 
+    // Get type filter if exists
+    const typeFilter = activeFilters.find((f) => f.key === "type");
+    const shouldShowSigns = !typeFilter || typeFilter.value === "sign";
+    const shouldShowSupports = !typeFilter || typeFilter.value === "support";
+
     // Add signs
-    if (filterType === "all" || filterType === "signs") {
+    if (shouldShowSigns) {
       signs.forEach((sign) => {
         const signCode = signCodes.find((c) => c.id === sign.signCodeId);
         const imageUrl =
@@ -122,7 +150,7 @@ export default function SignsListScreen() {
     }
 
     // Add supports
-    if (filterType === "all" || filterType === "supports") {
+    if (shouldShowSupports) {
       supports.forEach((support) => {
         const supportCode = supportCodes.find(
           (c) => c.id === support.supportCodeId,
@@ -133,8 +161,8 @@ export default function SignsListScreen() {
         const matchesSearch =
           !searchQuery ||
           support.supportId
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
           supportCode?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
         if (matchesSearch) {
@@ -167,20 +195,32 @@ export default function SignsListScreen() {
     supportCodes,
     signBackendImages,
     supportBackendImages,
-    filterType,
+    activeFilters,
     searchQuery,
     t,
   ]);
 
-  // Apply additional filters and sorting from Screen1
+  // Apply additional filters and sorting
   const filteredSigns = useMemo(() => {
     let result = [...listItems];
 
-    // Apply filters
-    filters.forEach((filter) => {
+    // Apply filters from activeFilters
+    activeFilters.forEach((filter) => {
+      if (filter.key === "type") {
+        // Type filter is already handled in listItems
+        return;
+      }
+
+      if (filter.key === "isSynced") {
+        const syncValue = filter.value === "true";
+        result = result.filter((item) => item.isSynced === syncValue);
+        return;
+      }
+
+      // Handle other dynamic filters on the data object
       result = result.filter((item) => {
         const value = item.data[filter.key as keyof (Sign | Support)];
-        return value === filter.value;
+        return String(value) === filter.value;
       });
     });
 
@@ -201,9 +241,77 @@ export default function SignsListScreen() {
     });
 
     return result;
-  }, [listItems, filters, sort]);
+  }, [listItems, activeFilters, sort]);
 
-  // Count stats (from Screen2)
+  // Transform filtered items to map pins for CustomMapView
+  const mapPins: MapPinData[] = useMemo(() => {
+    return filteredSigns
+    .filter(
+      (item) =>
+        item.latitude &&
+        item.longitude &&
+        item.latitude !== 0 &&
+        item.longitude !== 0,
+    )
+    .map((item) => {
+      // Determine pin color based on sync status and type
+      let pinColor: string;
+      if (!item.isSynced) {
+        pinColor = colors.warning;
+      } else {
+        pinColor = item.type === "sign" ? colors.primary : colors.success;
+      }
+
+      return {
+        id: item.id,
+        coordinate: {
+          latitude: item.latitude!,
+          longitude: item.longitude!,
+        },
+        title: item.title,
+        description: item.subtitle,
+        color: pinColor,
+        icon:
+          item.type === "sign" ? (
+            <Warning size={20} color={colors.white} weight="fill" />
+          ) : (
+            <Wrench size={20} color={colors.white} weight="fill" />
+          ),
+        onPress: () => handleItemPress(item),
+      };
+    });
+  }, [filteredSigns]);
+
+  // Legend items for the map
+  const mapLegend: MapLegendItem[] = useMemo(() => {
+    const legendItems: MapLegendItem[] = [];
+    const typeFilter = activeFilters.find((f) => f.key === "type");
+
+    if (!typeFilter || typeFilter.value === "sign") {
+      legendItems.push({
+        label: t("signs.signs"),
+        color: colors.primary,
+        icon: <Warning size={12} color={colors.white} weight="fill" />,
+      });
+    }
+
+    if (!typeFilter || typeFilter.value === "support") {
+      legendItems.push({
+        label: t("supports"),
+        color: colors.success,
+        icon: <Wrench size={12} color={colors.white} weight="fill" />,
+      });
+    }
+
+    legendItems.push({
+      label: t("unsynced"),
+      color: colors.warning,
+    });
+
+    return legendItems;
+  }, [activeFilters, t]);
+
+  // Count stats
   const stats = useMemo(() => {
     const unsyncedSigns = signs.filter((s) => !s.isSynced).length;
     const unsyncedSupports = supports.filter((s) => !s.isSynced).length;
@@ -216,7 +324,7 @@ export default function SignsListScreen() {
     };
   }, [signs, supports]);
 
-  // Pending operations for badge (derived from stats)
+  // Pending operations for badge
   const pendingOperations = useMemo(
     () => ({
       creates: 0,
@@ -229,18 +337,6 @@ export default function SignsListScreen() {
 
   const totalPending = stats.unsynced;
 
-  // Handlers from Screen2
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      await dispatch(fetchSignSupportData()).unwrap();
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [dispatch]);
-
   const handleSync = useCallback(async () => {
     if (totalPending === 0) {
       Toast.info("No changes to sync");
@@ -248,7 +344,7 @@ export default function SignsListScreen() {
     }
 
     try {
-      const result = await dispatch(syncSignSupportData()).unwrap();
+      await dispatch(syncSignSupportData()).unwrap();
       Toast.success(`Successfully synced items`);
     } catch (error: any) {
       Toast.error(error?.message || "Sync failed. Please try again.");
@@ -261,21 +357,29 @@ export default function SignsListScreen() {
     );
   }, []);
 
-  // Handlers from Screen1
   const handleSortPress = () => {
     openDrawer(
       "sort-sign",
-      <SortForm sort={sort} setSort={setSort} params={undefined} />,
+      <SortForm sort={sort} setSort={setSort} params={{ "status": t("status") }} />,
       {
         drawerHeight: "auto",
       },
     );
   };
 
+  const handleApplyFilters = useCallback((filters: ActiveFilter[]) => {
+    setActiveFilters(filters);
+  }, []);
+
   const handleFilterPress = () => {
     openDrawer(
       "filter-sign",
-      <FilterSignForm filters={filters} setFilters={setFilters} />,
+      <FilterForm
+        fields={filterFields}
+        activeFilters={activeFilters}
+        onApply={handleApplyFilters}
+        onCancel={closeDrawer}
+      />,
       { drawerHeight: "auto" },
     );
   };
@@ -284,7 +388,7 @@ export default function SignsListScreen() {
     openDrawer("new-sign-type", <NewSignType />, { drawerHeight: "auto" });
   };
 
-  // Adapter to convert ListItem to Sign | Support for SignSupportList
+  // Adapter for SignSupportList
   const listData = useMemo(() => {
     return filteredSigns.map((item) => item.data);
   }, [filteredSigns]);
@@ -357,50 +461,64 @@ export default function SignsListScreen() {
 
       <Tabs setTab={setTab} tab={tab} tabs={TABS} />
 
-      <View style={styles.listHeader}>
-        <View style={styles.listHeaderLeft}>
-          <TextView style={styles.itemsLengthText}>
-            {filteredSigns.length} {t("items")}
-          </TextView>
-          <SyncStatusSummary
-            pendingCreates={pendingOperations.creates}
-            pendingUpdates={pendingOperations.updates}
-            pendingImages={pendingOperations.images}
-          />
-        </View>
-        <View style={styles.listActions}>
-          <TouchableOpacity onPress={handleSortPress}>
-            <TextView style={styles.listActionText}>{t("sort")}</TextView>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleFilterPress}>
-            <TextView style={styles.listActionText}>{t("filter")}</TextView>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       {tab === "LIST" ? (
-        <SignSupportList
-          list={listData}
-          onItemPress={handleListItemPress}
-          loading={isLoading}
-          // refreshControl={
-          //   <RefreshControl
-          //     refreshing={isRefreshing}
-          //     onRefresh={handleRefresh}
-          //     colors={[colors.primary]}
-          //   />
-          // }
-        />
+        <>
+          <View style={styles.listHeader}>
+            <View style={styles.listHeaderLeft}>
+              <TextView style={styles.itemsLengthText}>
+                {filteredSigns.length} {t("items")}
+              </TextView>
+              <SyncStatusSummary
+                pendingCreates={pendingOperations.creates}
+                pendingUpdates={pendingOperations.updates}
+                pendingImages={pendingOperations.images}
+              />
+            </View>
+            <View style={styles.listActions}>
+              <TouchableOpacity onPress={handleSortPress}>
+                <TextView style={styles.listActionText}>{t("sort")}</TextView>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleFilterPress}>
+                <TextView
+                  style={[
+                    styles.listActionText,
+                    activeFilters.length > 0 && styles.activeFilterText,
+                  ]}
+                >
+                  {t("filter")}
+                  {activeFilters.length > 0 && ` (${activeFilters.length})`}
+                </TextView>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <SignSupportList
+            list={listData}
+            onItemPress={handleListItemPress}
+            loading={isLoading}
+          />
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreateSign}
+          >
+            <Plus size={60} color={colors.white} weight="bold" />
+          </TouchableOpacity>
+        </>
       ) : (
-        <SignSupportMapView
-          showSigns={filterType !== "supports"}
-          showSupports={filterType !== "signs"}
+        <CustomMapView
+          pins={mapPins}
+          legend={mapLegend}
+          mode="view"
+          showUserLocation={true}
+          controls={{
+            showSearch: true,
+            showZoomControls: true,
+            showCompass: true,
+            showStyleToggle: true,
+            showMyLocation: true,
+            showLegend: true,
+          }}
         />
       )}
-
-      <TouchableOpacity style={styles.createButton} onPress={handleCreateSign}>
-        <Plus size={60} color={colors.white} weight="bold" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -474,6 +592,9 @@ const createStyles = (theme: Theme) =>
       fontSize: 15,
       fontWeight: "400",
       color: colors.lightBlue,
+    },
+    activeFilterText: {
+      fontWeight: "600",
     },
     createButton: {
       position: "absolute",
