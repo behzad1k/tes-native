@@ -244,3 +244,182 @@ export type FilterMaintenance = {
 };
 
 export type SortMaintenance = { key: string; dir: "ASC" | "DESC" };
+
+export interface CollisionImage extends BaseImage {
+	collisionId: string;
+}
+
+// ─── Collision Field Configuration ─────────────────────────────────
+
+export interface CollisionFieldValue {
+	id: string;
+	name: string;
+}
+
+export enum CollisionFieldType {
+	TEXT = 1,
+	NUMBER = 2,
+	SWITCH = 3,
+	DATE = 4,
+	TIME = 5,
+	DATETIME = 6,
+	SELECT = 7,
+	AUTO_GENERATE = 8,
+	TEXTAREA = 9,
+	INTEGRATION = 10,
+}
+
+export interface CollisionField {
+	name: string;
+	labelText: string;
+	fieldType: CollisionFieldType;
+	isRequired: boolean;
+	validationRule?: string;
+	description?: string;
+	isUpperCase?: boolean;
+	fieldValues?: CollisionFieldValue[];
+	integrationAddress?: string;
+}
+
+export interface CollisionFields {
+	generalFields: CollisionField[];
+	roadFields: CollisionField[];
+	vehicleFields: CollisionField[];
+	driverFields: CollisionField[];
+	passengerFields: CollisionField[];
+	pedestrianFields: CollisionField[];
+	personFields: CollisionField[];
+	remarkFields: CollisionField[];
+}
+
+// ─── Division ──────────────────────────────────────────────────────
+
+export interface CollisionDivision {
+	id: string;
+	name: string;
+}
+
+// ─── Map Location ──────────────────────────────────────────────────
+
+export interface CollisionMapLocation {
+	latitude: number;
+	longitude: number;
+	latitudeDelta?: number;
+	longitudeDelta?: number;
+}
+
+// ─── Road ──────────────────────────────────────────────────────────
+
+export interface CollisionRoad {
+	id: string;
+	index: string;
+	[key: string]: any;
+}
+
+// ─── Vehicle ───────────────────────────────────────────────────────
+
+export interface CollisionVehicle {
+	id: string;
+	index: string;
+	[key: string]: any;
+}
+
+// ─── Person Involved ───────────────────────────────────────────────
+
+export enum InvolvedAsType {
+	OTHER_PEOPLE = 1,
+	PEDESTRIAN = 2,
+	DRIVER = 3,
+	PASSENGER = 4,
+}
+
+export interface CollisionPerson {
+	id: string;
+	involvedAs: InvolvedAsType;
+	vehicleId?: string;
+	[key: string]: any;
+}
+
+// ─── General Data ──────────────────────────────────────────────────
+
+export interface CollisionGeneral {
+	[key: string]: any;
+}
+
+// ─── Remark ────────────────────────────────────────────────────────
+
+export interface CollisionRemark {
+	[key: string]: any;
+}
+
+// ─── Main Collision Model ──────────────────────────────────────────
+
+export interface Collision {
+	id: string;
+	localId?: string;
+	serverId?: string;
+
+	customerId: string;
+	userId: string;
+	divisionId: string;
+
+	status: number;
+	syncStatus: SyncStatus;
+	isNew: boolean;
+	isSynced: boolean;
+
+	submissionDT: string;
+	editedSubmissionDT?: string;
+
+	mapLocation: CollisionMapLocation;
+	submissionMapLocation?: CollisionMapLocation;
+	editedSubmissionMapLocation?: CollisionMapLocation;
+
+	general: CollisionGeneral;
+	roads: CollisionRoad[];
+	vehicles: CollisionVehicle[];
+	persons: CollisionPerson[];
+	remark: CollisionRemark;
+	images: CollisionImage[];
+}
+
+// ─── Draft ─────────────────────────────────────────────────────────
+
+export interface CollisionDraft extends Collision {
+	isDraft: boolean;
+}
+
+// ─── Form Data Types ───────────────────────────────────────────────
+
+export interface CollisionFormData {
+	id: string;
+	customerId: string;
+	userId: string;
+	divisionId: string;
+
+	latitude: number;
+	longitude: number;
+
+	general: CollisionGeneral;
+	roads: CollisionRoad[];
+	vehicles: CollisionVehicle[];
+	persons: CollisionPerson[];
+	remark: CollisionRemark;
+	images: CollisionImage[];
+}
+
+// ─── Filter Types ──────────────────────────────────────────────────
+
+export interface CollisionFilter {
+	divisionId?: string;
+	syncStatus?: SyncStatus;
+	dateFrom?: string;
+	dateTo?: string;
+}
+
+// ─── Sort Types ────────────────────────────────────────────────────
+
+export interface CollisionSort {
+	key: "submissionDT" | "divisionId" | "syncStatus";
+	dir: "ASC" | "DESC";
+}

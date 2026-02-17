@@ -442,3 +442,179 @@ export interface BActiveCount {
 	slot: number;
 	movements: BMovements;
 }
+
+export interface BCollisionFieldValue {
+	id: string;
+	name: string;
+}
+
+export interface BCollisionField {
+	name: string;
+	labelText: string;
+	fieldType: CollisionFieldType;
+	isRequired: boolean;
+	validationRule?: string;
+	description?: string;
+	isUpperCase?: boolean;
+	fieldValues?: BCollisionFieldValue[];
+	integrationAddress?: string;
+}
+
+export enum CollisionFieldType {
+	TEXT = 1,
+	NUMBER = 2,
+	SWITCH = 3,
+	DATE = 4,
+	TIME = 5,
+	DATETIME = 6,
+	SELECT = 7,
+	AUTO_GENERATE = 8,
+	TEXTAREA = 9,
+	INTEGRATION = 10,
+}
+
+// ─── Collision Setup Types ─────────────────────────────────────────
+
+export interface BCollisionFields {
+	generalFields: BCollisionField[];
+	roadFields: BCollisionField[];
+	vehicleFields: BCollisionField[];
+	driverFields: BCollisionField[];
+	passengerFields: BCollisionField[];
+	pedestrianFields: BCollisionField[];
+	personFields: BCollisionField[];
+	remarkFields: BCollisionField[];
+}
+
+export interface BCollisionDivision {
+	id: string;
+	name: string;
+}
+
+export interface BCollisionSetups {
+	collisionFields: BCollisionFields;
+	divisions: BCollisionDivision[];
+}
+
+// ─── Collision Image Types ─────────────────────────────────────────
+
+export interface BCollisionImage {
+	id?: string;
+	collisionId: string;
+	uri: string;
+	url?: string;
+	thumbnailUrl?: string;
+	isNew?: boolean;
+	isSynced?: boolean;
+}
+
+// ─── Road Types ────────────────────────────────────────────────────
+
+export interface BCollisionRoad {
+	Id: string;
+	Index: string;
+	[key: string]: any; // Dynamic fields from backend
+}
+
+// ─── Vehicle Types ─────────────────────────────────────────────────
+
+export interface BCollisionVehicle {
+	Id: string;
+	Index: string;
+	[key: string]: any; // Dynamic fields from backend
+}
+
+// ─── Person Types ──────────────────────────────────────────────────
+
+export enum InvolvedAsType {
+	OTHER_PEOPLE = 1,
+	PEDESTRIAN = 2,
+	DRIVER = 3,
+	PASSENGER = 4,
+}
+
+export interface BCollisionPerson {
+	Id: string;
+	InvolvedAs: InvolvedAsType;
+	VehicleId?: string;
+	[key: string]: any; // Dynamic fields from backend
+}
+
+// ─── Map Location Types ────────────────────────────────────────────
+
+export interface BMapLocation {
+	latitude: number;
+	longitude: number;
+	latitudeDelta?: number;
+	longitudeDelta?: number;
+}
+
+// ─── General Collision Data ────────────────────────────────────────
+
+export interface BCollisionGeneral {
+	[key: string]: any; // Dynamic fields from backend
+}
+
+// ─── Remark Types ──────────────────────────────────────────────────
+
+export interface BCollisionRemark {
+	[key: string]: any; // Dynamic fields from backend
+}
+
+// ─── Main Collision Type ───────────────────────────────────────────
+
+export interface BCollision {
+	Id: string;
+	status: number;
+	syncStatus: CollisionSyncStatus;
+	userId: string;
+	customerId: string;
+	submissionDT: string;
+	editedSubmissionDT?: string;
+	mapLocation: BMapLocation;
+	submissionMapLocation?: BMapLocation;
+	editedSubmissionMapLocation?: BMapLocation;
+	divisionId: string;
+	general: BCollisionGeneral;
+	roads: BCollisionRoad[];
+	vehicles: BCollisionVehicle[];
+	persons: BCollisionPerson[];
+	remark: BCollisionRemark;
+	pictures: BCollisionImage[];
+}
+
+export enum CollisionSyncStatus {
+	IN_DEVICE = 0,
+	DATA_SENT = 1,
+	PICS_SENT = 2,
+}
+
+// ─── Sync Request Types ────────────────────────────────────────────
+
+export interface BCollisionSyncRequest {
+	collisions: BCollision[];
+}
+
+export interface BCollisionAttachmentRequest {
+	file: FormData;
+	collisionId: string;
+}
+
+// ─── API Response Types ────────────────────────────────────────────
+
+export interface BCollisionSetupsResponse {
+	collisionFields: BCollisionFields;
+	divisions: BCollisionDivision[];
+}
+
+export interface BCollisionSyncResponse {
+	success: boolean;
+	syncedIds?: string[];
+	errorMessage?: string;
+}
+
+// ─── Draft Types ───────────────────────────────────────────────────
+
+export interface BCollisionDraft extends BCollision {
+	isDraft: boolean;
+}

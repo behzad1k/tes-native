@@ -1,0 +1,332 @@
+{
+  "schedules": [
+    {
+      "id": "1",
+      "taskNumber": "1040-1",
+      "studyType": "TMC",
+      "status": "TO_DO",
+      "startDate": "10 Feb 2026",
+      "endDate": "14 Feb 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3894,
+      "longitude": -79.6903,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "2",
+      "taskNumber": "1040-1",
+      "studyType": "Speed",
+      "status": "IN_PROGRESS",
+      "startDate": "10 Feb 2026",
+      "endDate": "14 Feb 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3904,
+      "longitude": -79.6913,
+      "isSynced": true,
+      "syncStatus": "SYNCED",
+      "inspectionTasks": [
+        {
+          "id": "2-1",
+          "taskId": "2",
+          "inspectionTaskNumber": "1040-01-1-01",
+          "status": "IN_PROGRESS",
+          "startDate": "10 Feb 2026",
+          "endDate": "10 Feb 2026",
+          "startTime": "07:30",
+          "endTime": "17:30",
+          "timePeriods": [
+            { "id": "1", "from": "06:00", "to": "06:00" },
+            { "id": "2", "from": "06:00", "to": "06:00" }
+          ],
+          "note": "You are about to export the data for",
+          "dataCollectors": [
+            {
+              "id": "dc1",
+              "name": "Martin Kain",
+              "region": "Region of York"
+            },
+            {
+              "id": "dc2",
+              "name": "Martin Kain",
+              "region": "Region of York"
+            }
+          ],
+          "equipments": [
+            {
+              "id": "eq1",
+              "name": "Equipment No 1",
+              "description": "No Description"
+            },
+            {
+              "id": "eq2",
+              "name": "Equipment No 1",
+              "description": "No Description"
+            }
+          ],
+          "attachments": [],
+          "isSynced": false,
+          "syncStatus": "NOT_SYNCED"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "taskNumber": "1042-0...",
+      "studyType": "Speed",
+      "status": "DONE",
+      "startDate": "10 Feb 2026",
+      "endDate": "14 Feb 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3884,
+      "longitude": -79.6893,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "4",
+      "taskNumber": "1040-...",
+      "studyType": "Speed",
+      "status": "IN_PROGRESS",
+      "startDate": "10 Feb 2026",
+      "endDate": "14 Feb 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3874,
+      "longitude": -79.6923,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "5",
+      "taskNumber": "1040-...",
+      "studyType": "Speed",
+      "status": "TO_DO",
+      "startDate": "10 Feb 2026",
+      "endDate": "14 Feb 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3914,
+      "longitude": -79.6883,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "6",
+      "taskNumber": "1040-...",
+      "studyType": "Speed",
+      "status": "DONE",
+      "startDate": "10 Feb 2026",
+      "endDate": "14 Feb 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3864,
+      "longitude": -79.6943,
+      "isSynced": true,
+      "syncStatus": "SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "7",
+      "taskNumber": "1040-1",
+      "studyType": "TMC",
+      "status": "IN_PROGRESS",
+      "startDate": "29 Mar 2026",
+      "endDate": "04 Apr 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3894,
+      "longitude": -79.6903,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "8",
+      "taskNumber": "1402-1",
+      "studyType": "Speed",
+      "status": "TO_DO",
+      "startDate": "06 Jun 2026",
+      "endDate": "10 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3904,
+      "longitude": -79.6913,
+      "isSynced": true,
+      "syncStatus": "SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "9",
+      "taskNumber": "1401-01-1",
+      "studyType": "Speed",
+      "status": "IN_PROGRESS",
+      "startDate": "11 Jun 2026",
+      "endDate": "17 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3884,
+      "longitude": -79.6893,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "10",
+      "taskNumber": "1402-1",
+      "studyType": "TMC",
+      "status": "DONE",
+      "startDate": "11 Jun 2026",
+      "endDate": "17 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3874,
+      "longitude": -79.6923,
+      "isSynced": true,
+      "syncStatus": "SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "11",
+      "taskNumber": "1400-01",
+      "studyType": "Volume",
+      "status": "IN_PROGRESS",
+      "startDate": "15 Jun 2026",
+      "endDate": "16 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3914,
+      "longitude": -79.6883,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "12",
+      "taskNumber": "1401-01-1",
+      "studyType": "Speed",
+      "status": "TO_DO",
+      "startDate": "18 Jun 2026",
+      "endDate": "24 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3864,
+      "longitude": -79.6943,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "13",
+      "taskNumber": "1402-1",
+      "studyType": "TMC",
+      "status": "IN_PROGRESS",
+      "startDate": "19 Jun 2026",
+      "endDate": "24 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3854,
+      "longitude": -79.6933,
+      "isSynced": true,
+      "syncStatus": "SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "14",
+      "taskNumber": "1401-07-1",
+      "studyType": "Speed",
+      "status": "DONE",
+      "startDate": "30 Jun 2026",
+      "endDate": "30 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3844,
+      "longitude": -79.6953,
+      "isSynced": false,
+      "syncStatus": "NOT_SYNCED",
+      "inspectionTasks": []
+    },
+    {
+      "id": "15",
+      "taskNumber": "1402-1",
+      "studyType": "TMC",
+      "status": "TO_DO",
+      "startDate": "30 Jun 2026",
+      "endDate": "30 Jun 2026",
+      "timePeriods": [
+        { "id": "1", "from": "06:00", "to": "06:00" },
+        { "id": "2", "from": "06:00", "to": "06:00" }
+      ],
+      "note": "You are about to export the data for",
+      "location": "RAINBOW DR @ STAR AV",
+      "latitude": 44.3834,
+      "longitude": -79.6963,
+      "isSynced": true,
+      "syncStatus": "SYNCED",
+      "inspectionTasks": []
+    }
+  ]
+}

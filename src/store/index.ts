@@ -15,6 +15,7 @@ import signsReducer from "./slices/signSlice";
 import supportReducer from "./slices/supportSlice";
 import syncReducer from "./slices/syncSlice";
 import maintenanceReducer from "./slices/maintenanceSlice";
+import collisionReducer from "./slices/collisionSlice";
 import trafficCountReducer from "./slices/trafficCountSlice";
 
 const signsPersistConfig = {
@@ -65,7 +66,11 @@ const authPersistConfig = {
 	storage: AsyncStorage,
 	whitelist: ["user", "isAuthenticated"],
 };
-
+const collisionConfig = {
+	key: "collision",
+	storage: AsyncStorage,
+	whitelist: ["collision"],
+};
 const trafficCountPersistConfig = {
 	key: "trafficCount",
 	storage: AsyncStorage,
@@ -78,6 +83,7 @@ const rootReducer = combineReducers({
 	supports: persistReducer(supportsPersistConfig, supportReducer),
 	maintenance: persistReducer(maintenancePersistConfig, maintenanceReducer),
 	trafficCount: persistReducer(trafficCountPersistConfig, trafficCountReducer),
+	collision: persistReducer(collisionConfig, collisionReducer),
 	sync: syncReducer,
 });
 

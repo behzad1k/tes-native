@@ -20,7 +20,7 @@ import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { MapPin, ListBullets } from "phosphor-react-native";
 import { router } from "expo-router";
 import { ROUTES } from "@/src/constants/navigation";
-import { useSiteTypeSelector } from "./SiteTypeSelector";
+import { SITE_TYPES, useSiteTypeSelector } from "./SiteTypeSelector";
 import { useAppSelector } from "@/src/store/hooks";
 import EntriesDrawerContent from "./EntriesDrawerContent";
 
@@ -127,7 +127,8 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
       },
     );
   };
-
+  console.log(workOrder);
+  console.log();
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -146,7 +147,9 @@ const WorkOrderDetail = ({ workOrder, onClaim }: WorkOrderDetailProps) => {
           <TextView style={styles.label}>Site Name :</TextView>
           <View style={styles.fieldValue}>
             <TextView style={styles.valueText}>
-              {workOrder.locationName}
+              {workOrder.locationName ||
+                SITE_TYPES.find((e) => e.backendType == workOrder.siteType)
+                  ?.label}
             </TextView>
           </View>
         </View>

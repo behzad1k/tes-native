@@ -22,6 +22,12 @@ export const PROTECTED_ROUTES = {
 	PROFILE_SETTINGS: "/(protected)/profile/settings",
 	DASHBOARD: "/(protected)/dashboard",
 	NOTIFICATIONS: "/(protected)/notifications",
+	//collision
+	COLLISION_LIST: "/(protected)/collision",
+	COLLISION_MANAGE: "/(protected)/collision/manage",
+
+	// Schedule
+	SCHEDULE_LIST: "/(protected)/schedule",
 } as const;
 
 export const ROUTES = {

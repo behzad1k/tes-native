@@ -14,6 +14,10 @@ import {
 	BSign,
 	BSupport,
 	BAttachment,
+	BCollision,
+	BCollisionSetupsResponse,
+	BCollisionSyncResponse,
+	BCollisionImage,
 } from "../types/api";
 import {
 	MaintenanceJob,
@@ -26,6 +30,10 @@ import {
 	SupportImage,
 	ChangeLog,
 	ChangeLogType,
+	Collision,
+	CollisionFields,
+	CollisionDivision,
+	CollisionImage,
 } from "../types/models";
 import { SYNC_STATUS } from "../constants/global";
 import { TokenStorage, ImageStorage } from "./persistence";
@@ -774,3 +782,296 @@ export const downloadJobAttachments = createAsyncThunk<
 		}
 	},
 );
+
+const transformBackendCollision = (backendCollision: BCollision): Collision => {
+	return {
+		id: backendCollision.Id,
+		serverId: backendCollision.Id,
+		customerId: backendCollision.customerId,
+		userId: backendCollision.userId,
+		divisionId: backendCollision.divisionId,
+		status: backendCollision.status,
+		syncStatus: SYNC_STATUS.SYNCED,
+		isNew: false,
+		isSynced: true,
+		submissionDT: backendCollision.submissionDT,
+		editedSubmissionDT: backendCollision.editedSubmissionDT,
+		mapLocation: backendCollision.mapLocation,
+		submissionMapLocation: backendCollision.submissionMapLocation,
+		editedSubmissionMapLocation: backendCollision.editedSubmissionMapLocation,
+		general: backendCollision.general,
+		roads: backendCollision.roads.map((road) => ({
+			...road,
+			id: road.Id,
+			index: road.Index,
+		})),
+		vehicles: backendCollision.vehicles.map((vehicle) => ({
+			...vehicle,
+			id: vehicle.Id,
+			index: vehicle.Index,
+		})),
+		persons: backendCollision.persons.map((person) => ({
+			...person,
+			id: person.Id,
+			involvedAs: person.InvolvedAs,
+			vehicleId: person.VehicleId,
+		})),
+		remark: backendCollision.remark,
+		images: backendCollision.pictures.map((pic) => ({
+			imageId: pic.id,
+			collisionId: backendCollision.Id,
+			uri: pic.url || pic.uri || "",
+			localPath: undefined,
+			isNew: false,
+			isSynced: true,
+		})),
+	};
+};
+
+const transformCollisionToBackend = (collision: Collision): BCollision => {
+	return {
+		Id: collision.serverId || collision.id,
+		status: collision.status,
+		syncStatus: collision.syncStatus === SYNC_STATUS.NOT_SYNCED ? 0 : 1,
+		userId: collision.userId,
+		customerId: collision.customerId,
+		submissionDT: collision.submissionDT,
+		editedSubmissionDT: collision.editedSubmissionDT,
+		mapLocation: collision.mapLocation,
+		submissionMapLocation: collision.submissionMapLocation,
+		editedSubmissionMapLocation: collision.editedSubmissionMapLocation,
+		divisionId: collision.divisionId,
+		general: collision.general,
+		roads: collision.roads.map((road) => ({
+			...road,
+			Id: road.id,
+			Index: road.index,
+		})),
+		vehicles: collision.vehicles.map((vehicle) => ({
+			...vehicle,
+			Id: vehicle.id,
+			Index: vehicle.index,
+		})),
+		persons: collision.persons.map((person) => ({
+			...person,
+			Id: person.id,
+			InvolvedAs: person.involvedAs,
+			VehicleId: person.vehicleId,
+		})),
+		remark: collision.remark,
+		pictures: collision.images.map((img) => ({
+			id: img.imageId,
+			collisionId: collision.id,
+			uri: img.uri,
+			url: img.uri,
+		})),
+	};
+};
+
+// ─── Fetch Collision Setups ────────────────────────────────────────
+
+export const fetchCollisionSetups = createAsyncThunk<
+	{ collisionFields: CollisionFields; divisions: CollisionDivision[] },
+	string,
+	{ rejectValue: string }
+>("collision/fetchSetups", async (customerId, { rejectWithValue }) => {
+	try {
+		const response: BCollisionSetupsResponse = await apiClient.get(
+			ENDPOINTS.COLLISION.SETUPS(customerId),
+		);
+
+		return {
+			collisionFields: response.collisionFields,
+			divisions: response.divisions,
+		};
+	} catch (error: any) {
+		return rejectWithValue(error.message || "Failed to fetch collision setups");
+	}
+});
+
+// ─── Fetch Collisions ──────────────────────────────────────────────
+
+export const fetchCollisions = createAsyncThunk<
+	{ collisions: Collision[] },
+	string,
+	{ rejectValue: string }
+>("collision/fetchCollisions", async (customerId, { rejectWithValue }) => {
+	try {
+		const response: BCollision[] = await apiClient.get(
+			ENDPOINTS.COLLISION.LIST(customerId),
+		);
+		const collisions = response.map(transformBackendCollision);
+
+		return { collisions };
+	} catch (error: any) {
+		return rejectWithValue(error.message || "Failed to fetch collisions");
+	}
+});
+
+// ─── Sync Collision Data ───────────────────────────────────────────
+
+export const syncCollisionData = createAsyncThunk<
+	{
+		syncedCollisionIds: string[];
+		syncedImageIds: string[];
+		timestamp: number;
+	},
+	void,
+	{ state: RootState; rejectValue: string }
+>("collision/syncData", async (_, { getState, rejectWithValue }) => {
+	try {
+		const state = getState();
+		const { collisions } = state.collision;
+
+		// Get unsynced collisions
+		const unsyncedCollisions = collisions.filter(
+			(c) => c.syncStatus === SYNC_STATUS.NOT_SYNCED || !c.isSynced,
+		);
+
+		if (unsyncedCollisions.length === 0) {
+			return {
+				syncedCollisionIds: [],
+				syncedImageIds: [],
+				timestamp: Date.now(),
+			};
+		}
+
+		const syncedCollisionIds: string[] = [];
+		const syncedImageIds: string[] = [];
+
+		// Sync collision data first
+		const collisionsToSync = unsyncedCollisions.map(
+			transformCollisionToBackend,
+		);
+
+		const syncResponse: BCollisionSyncResponse = await apiClient.post(
+			ENDPOINTS.COLLISION.SYNC,
+			collisionsToSync,
+		);
+
+		if (syncResponse.success) {
+			syncedCollisionIds.push(...unsyncedCollisions.map((c) => c.id));
+
+			// Now upload images for each collision
+			for (const collision of unsyncedCollisions) {
+				const newImages = collision.images.filter(
+					(img) => img.isNew && !img.isSynced && img.localPath,
+				);
+
+				if (newImages.length > 0) {
+					const formData = new FormData();
+
+					for (const image of newImages) {
+						if (image.localPath) {
+							formData.append("file", {
+								uri: image.localPath,
+								name:
+									image.localPath.split("/").pop() || `image_${Date.now()}.jpg`,
+								type: "image/jpg",
+							} as any);
+						}
+					}
+
+					formData.append(collision.id, collision.id);
+
+					try {
+						await apiClient.post(
+							ENDPOINTS.COLLISION.ADD_ATTACHMENTS,
+							formData,
+							{
+								headers: {
+									"Content-Type": "multipart/form-data",
+								},
+							},
+						);
+
+						syncedImageIds.push(
+							...newImages.map((img) => img.imageId || img.uri),
+						);
+					} catch (imageError) {
+						console.error("Error uploading collision images:", imageError);
+					}
+				}
+			}
+		}
+
+		return {
+			syncedCollisionIds,
+			syncedImageIds,
+			timestamp: Date.now(),
+		};
+	} catch (error: any) {
+		return rejectWithValue(error.message || "Failed to sync collision data");
+	}
+});
+
+// ─── Download Collision Attachments ────────────────────────────────
+
+export const downloadCollisionAttachments = createAsyncThunk<
+	{ collisionId: string; images: CollisionImage[] },
+	string,
+	{ state: RootState; rejectValue: string }
+>(
+	"collision/downloadAttachments",
+	async (collisionId, { getState, rejectWithValue }) => {
+		try {
+			const state = getState();
+			const customerName = state.auth.user?.defaultCustomerName || "default";
+
+			const response: BCollisionImage[] = await apiClient.get(
+				ENDPOINTS.COLLISION.DOWNLOAD_ATTACHMENTS(collisionId),
+			);
+
+			const downloadedImages: CollisionImage[] = [];
+
+			for (const attachment of response) {
+				if (attachment.url) {
+					try {
+						const localPath = await ImageStorage.downloadImage(
+							attachment.url,
+							customerName,
+							`collision_${collisionId}_${attachment.id}.jpg`,
+						);
+
+						downloadedImages.push({
+							imageId: attachment.id,
+							collisionId,
+							uri: attachment.url,
+							localPath,
+							isNew: false,
+							isSynced: true,
+						});
+					} catch (downloadError) {
+						console.error("Error downloading collision image:", downloadError);
+					}
+				}
+			}
+
+			return { collisionId, images: downloadedImages };
+		} catch (error: any) {
+			return rejectWithValue(
+				error.message || "Failed to download collision attachments",
+			);
+		}
+	},
+);
+
+// ─── Initialize Collision Module ───────────────────────────────────
+
+export const initializeCollisionModule = createAsyncThunk<
+	void,
+	string,
+	{ rejectValue: string }
+>("collision/initialize", async (customerId, { dispatch, rejectWithValue }) => {
+	try {
+		// Fetch setups first
+		await dispatch(fetchCollisionSetups(customerId)).unwrap();
+
+		// Then fetch existing collisions
+		await dispatch(fetchCollisions(customerId)).unwrap();
+	} catch (error: any) {
+		return rejectWithValue(
+			error.message || "Failed to initialize collision module",
+		);
+	}
+});

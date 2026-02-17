@@ -96,6 +96,32 @@ const ENDPOINTS = {
 		UPDATE_WORK_ORDER: (studyId: string) =>
 			formatUrl(baseUrl, `traffic/api/WorkOrders/Update/${studyId}`),
 	},
+	COLLISION: {
+		SETUPS: (customerId: string) =>
+			formatUrl(baseUrl, `collision/api/sync/GetSetups/${customerId}`),
+
+		DIVISIONS: (customerId: string) =>
+			formatUrl(baseUrl, `collision/api/Divisions/${customerId}`),
+
+		SYNC: formatUrl(baseUrl, "collision/api/sync/addCollisionsApp"),
+
+		ADD_ATTACHMENTS: formatUrl(
+			baseUrl,
+			"collision/api/Collisions/AddAttachments",
+		),
+
+		LIST: (customerId: string) =>
+			formatUrl(baseUrl, `collision/api/Collisions/${customerId}`),
+
+		DETAIL: (id: string) =>
+			formatUrl(baseUrl, `collision/api/Collisions/${id}`),
+
+		DOWNLOAD_ATTACHMENTS: (collisionId: string) =>
+			formatUrl(
+				baseUrl,
+				`collision/api/Attachments/DownloadAttachments/${collisionId}`,
+			),
+	},
 } as const;
 
 export default ENDPOINTS;

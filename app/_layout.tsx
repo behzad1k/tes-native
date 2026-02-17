@@ -28,7 +28,12 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import ToastManager from "toastify-react-native";
 import { ToastManagerProps } from "toastify-react-native/utils/interfaces";
-import { fetchJobs, fetchSignSupportSetups } from "@/src/store/thunks";
+import {
+  fetchCollisions,
+  fetchCollisionSetups,
+  fetchJobs,
+  fetchSignSupportSetups,
+} from "@/src/store/thunks";
 import { BUser } from "@/src/types/api";
 import ENDPOINTS from "@/src/services/api/endpoints";
 import { apiClient } from "@/src/services/api/apiClient";
@@ -87,6 +92,8 @@ function AppContent() {
           await Promise.all([
             store.dispatch(fetchSignSupportSetups(user.defaultCustomerId)),
             store.dispatch(fetchJobs(user.defaultCustomerId)),
+            store.dispatch(fetchCollisionSetups(user.defaultCustomerId)),
+            store.dispatch(fetchCollisions(user.defaultCustomerId)),
             // store.dispatch(fetchVehicleClassifications(user.defaultCustomerId)),
             store.dispatch(fetchWorkOrders()),
           ]);

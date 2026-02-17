@@ -292,7 +292,6 @@ const SiteTypeDrawerContent = ({
 }: SiteTypeDrawerContentProps) => {
   const styles = useThemedStyles(createStyles);
   const { closeDrawer } = useDrawer();
-  const [step, setStep] = useState<1 | 2>(1);
   const [selectedType, setSelectedType] = useState(currentSiteType);
 
   // Parse location name to get default street names
@@ -318,14 +317,6 @@ const SiteTypeDrawerContent = ({
     return names;
   });
 
-  const handleNext = () => {
-    setStep(2);
-  };
-
-  const handleBack = () => {
-    setStep(1);
-  };
-
   const handleStart = () => {
     const finalNames: Record<string, string> = {};
     activeDirections.forEach((d) => {
@@ -343,67 +334,10 @@ const SiteTypeDrawerContent = ({
   };
 
   // Step 1: Select site type
-  if (step === 1) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TextView style={styles.title}>Site Type</TextView>
-          <TouchableOpacity onPress={handleCancel}>
-            <X size={24} color={colors.lightGreen} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.divider} />
-
-        <TextView style={styles.subtitle}>
-          Choose the intersection type for this site:
-        </TextView>
-
-        <View style={styles.grid}>
-          {availableSiteTypes.map((siteType) => (
-            <TouchableOpacity
-              key={siteType.type}
-              style={[
-                styles.siteOption,
-                selectedType === siteType.type && styles.siteOptionSelected,
-              ]}
-              onPress={() => setSelectedType(siteType.type)}
-              activeOpacity={0.7}
-            >
-              <IntersectionPreview
-                siteType={siteType.type}
-                size={70}
-                selected={selectedType === siteType.type}
-              />
-              <TextView
-                style={[
-                  styles.siteLabel,
-                  selectedType === siteType.type && styles.siteLabelSelected,
-                ]}
-              >
-                {siteType.label}
-              </TextView>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-            <TextView style={styles.cancelText}>Cancel</TextView>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <TextView style={styles.nextText}>Next</TextView>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  // Step 2: Name each direction
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TextView style={styles.title}>Name Each Side</TextView>
+        <TextView style={styles.title}>Site Type</TextView>
         <TouchableOpacity onPress={handleCancel}>
           <X size={24} color={colors.lightGreen} />
         </TouchableOpacity>
@@ -412,42 +346,40 @@ const SiteTypeDrawerContent = ({
       <View style={styles.divider} />
 
       <TextView style={styles.subtitle}>
-        Enter a street name for each direction of the intersection:
+        Choose the intersection type for this site:
       </TextView>
 
-      <ScrollView
-        style={styles.namesContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Preview of selected intersection */}
-        <View style={styles.previewRow}>
-          <IntersectionPreview siteType={selectedType} size={90} selected />
-        </View>
-
-        {activeDirections.map((dir) => (
-          <View key={dir} style={styles.nameField}>
-            <View style={styles.nameLabel}>
-              <View style={styles.dirBadge}>
-                <TextView style={styles.dirBadgeText}>{dir}</TextView>
-              </View>
-              <TextView style={styles.dirFullName}>
-                {DIRECTION_FULL_NAMES[dir]}
-              </TextView>
-            </View>
-            <TextInput
-              style={styles.nameInput}
-              value={streetNames[dir]}
-              onChangeText={(v) => updateStreetName(dir, v)}
-              placeholder={`e.g. ${dir === "N" || dir === "S" ? "Main St" : "Cross Ave"}`}
-              placeholderTextColor="rgba(109, 119, 122, 0.4)"
+      <View style={styles.grid}>
+        {availableSiteTypes.map((siteType) => (
+          <TouchableOpacity
+            key={siteType.type}
+            style={[
+              styles.siteOption,
+              selectedType === siteType.type && styles.siteOptionSelected,
+            ]}
+            onPress={() => setSelectedType(siteType.type)}
+            activeOpacity={0.7}
+          >
+            <IntersectionPreview
+              siteType={siteType.type}
+              size={70}
+              selected={selectedType === siteType.type}
             />
-          </View>
+            <TextView
+              style={[
+                styles.siteLabel,
+                selectedType === siteType.type && styles.siteLabelSelected,
+              ]}
+            >
+              {siteType.label}
+            </TextView>
+          </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
-          <TextView style={styles.cancelText}>Back</TextView>
+        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+          <TextView style={styles.cancelText}>Cancel</TextView>
         </TouchableOpacity>
         <TouchableOpacity style={styles.nextButton} onPress={handleStart}>
           <TextView style={styles.nextText}>Start Counting</TextView>

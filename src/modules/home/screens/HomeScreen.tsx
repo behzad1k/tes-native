@@ -52,15 +52,15 @@ export default function HomeScreen() {
           onPress={() => router.push(ROUTES.SIGNS_LIST)}
         />
         <ModuleCard
-          title="Collision"
+          title={t("collision.menuTitle")}
           description="You can count the number of vehicles and determine the direction of each one."
-          onPress={() => {}}
+          onPress={() => router.push(ROUTES.COLLISION_LIST)}
           backgroundImage={LOCAL_IMAGES.COLLISION_CARD}
         />
         <ModuleCard
-          title="Schedule"
+          title={t("schedule")}
           description="You can count the number of vehicles and determine the direction of each one."
-          onPress={() => {}}
+          onPress={() => router.push(ROUTES.SCHEDULE_LIST)}
           backgroundImage={LOCAL_IMAGES.SCHEDULE_CARD}
         />
       </ScrollView>

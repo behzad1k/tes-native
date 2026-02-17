@@ -17,7 +17,6 @@ import {
 } from "@/src/types/api";
 import ENDPOINTS from "@/src/services/api/endpoints";
 import { RootState } from "@/src/store";
-import mockData from "../../data/mockTrafficCountData.json";
 
 // ─── State Interface ───────────────────────────────────────────────
 
@@ -182,7 +181,7 @@ export const fetchWorkOrders = createAsyncThunk<
 			ENDPOINTS.TRAFFIC_COUNTER.SYNC_MOBILE_APP,
 			syncRequest,
 		);
-
+		console.log("traffic: ", response);
 		if (response.responseCode !== 200) {
 			return rejectWithValue(
 				response.errorMessages?.join(", ") || "Failed to fetch work orders",
@@ -203,9 +202,9 @@ export const fetchWorkOrders = createAsyncThunk<
 		const vehicleClassifications = backendClassifications.map((vc, index) =>
 			transformVehicleClassification(vc, index),
 		);
-		if (response.results?.workOrders?.length === 0) {
-			return mockData;
-		}
+		// if (response.results?.workOrders?.length === 0) {
+		// 	return mockData;
+		// }
 		return {
 			workOrders: mergedWorkOrders,
 			vehicleClassifications,
@@ -267,6 +266,8 @@ export const syncTrafficCountData = createAsyncThunk<
 			ENDPOINTS.TRAFFIC_COUNTER.SYNC_MOBILE_APP,
 			syncRequest,
 		);
+
+		console.log("Result Syncing traffic count data:", response);
 
 		if (response.responseCode !== 200) {
 			return rejectWithValue(
