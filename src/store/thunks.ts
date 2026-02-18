@@ -900,6 +900,7 @@ export const fetchCollisions = createAsyncThunk<
 		const response: BCollision[] = await apiClient.get(
 			ENDPOINTS.COLLISION.LIST(customerId),
 		);
+
 		const collisions = response.map(transformBackendCollision);
 
 		return { collisions };

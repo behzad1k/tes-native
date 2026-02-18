@@ -40,7 +40,6 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
   const supports = useAppSelector((state) => state.supports.supports);
   const signs = useAppSelector((state) => state.signs.signs);
 
-  // Use maintenance operations hook
   const {
     editJob,
     getJobImages,
@@ -50,19 +49,16 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
     isSyncing,
   } = useMaintenanceOperations();
 
-  // Local state
   const [editedJob, setEditedJob] = useState<MaintenanceJob>({ ...job });
   const [images, setImages] = useState<MaintenanceImage[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Load images on mount
   useEffect(() => {
     const existingImages = getJobImages(job.id || "");
     setImages(existingImages);
   }, [job.id, getJobImages]);
 
-  // Track changes
   useEffect(() => {
     const jobChanged =
       editedJob.statusId !== job.statusId ||
@@ -76,7 +72,6 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
     setHasChanges(jobChanged || imagesChanged);
   }, [editedJob, images, job, getJobImages]);
 
-  // Handle cancel with unsaved changes warning
   const handleCancel = () => {
     if (hasChanges) {
       Alert.alert(t("cancel"), "Discard unsaved changes?", [
@@ -92,19 +87,16 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
     }
   };
 
-  // Handle save
   const onSubmit = async () => {
     if (!job.id) return;
 
     try {
-      // Update job data
       const result = await editJob(job.id, {
         statusId: editedJob.statusId,
         duration: editedJob.duration,
         note: editedJob.note,
       });
 
-      // Save images
       saveJobImages(job.id, images);
 
       if (result.success) {
@@ -119,7 +111,6 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
     }
   };
 
-  // Handle downloading attachments from server
   const handleFetchFromServer = async () => {
     if (!job.id) return;
 
@@ -127,13 +118,11 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
     try {
       const result = await fetchJobAttachments(job.id);
       if (result.success && result.images) {
-        // Merge downloaded images with existing local images
         const existingLocalImages = images.filter(
           (img) => img.isNew && !img.isSynced,
         );
         const downloadedImages = result.images || [];
 
-        // Combine: downloaded images + new local images
         setImages([...downloadedImages, ...existingLocalImages]);
         Toast.success(`Downloaded ${downloadedImages.length} images`);
       } else {
@@ -146,14 +135,10 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
       setIsDownloading(false);
     }
   };
-
-  // Render asset (sign or support)
   const renderSignSupport = (asset: JobAsset, index: number) => {
-    // Find in signs or supports
     const allSigns = [...signs, ...supports.flatMap((s) => s.signs || [])];
     const allItems = [...allSigns, ...supports];
-
-    const item = allItems.find((s) => s.id === asset.assetId);
+    const item = allItems.find((s) => s.id == asset.assetId);
     if (!item) return null;
 
     return <SignSupportCard key={`asset-${index}`} item={item as any} />;
@@ -182,10 +167,8 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
         )}
       </View>
 
-      {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          {/* Job Name (read-only) */}
           <TextInputView
             label={`${t("name")} :`}
             value={editedJob.name}
@@ -193,7 +176,6 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
             editable={false}
           />
 
-          {/* Job Type (read-only) */}
           <TextInputView
             label={`${t("type")} :`}
             value={editedJob.typeName}
@@ -201,7 +183,6 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
             editable={false}
           />
 
-          {/* Assets */}
           {editedJob.assets.length > 0 && (
             <View style={styles.assetsSection}>
               <TextView style={styles.sectionLabel}>Assets:</TextView>
@@ -213,11 +194,10 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
             </View>
           )}
 
-          {/* Assign Date & Duration */}
           <View style={styles.inputGroup}>
             <TextInputView
               label={`${t("assignDate")} :`}
-              value={editedJob.assignDate}
+              value={new Date(editedJob.assignDate).toDateString()}
               containerStyle={{ width: "60%" }}
               editable={false}
             />
@@ -273,10 +253,10 @@ const JobDetailForm = ({ job }: JobDetailFormProps) => {
           <TextView style={styles.label}>{t("notes")} :</TextView>
           <TextInputView
             style={styles.notesInput}
-            containerStyle={styles.formInput}
+            containerStyle={styles.noteInput}
             value={editedJob.note || ""}
             onChangeText={(text) => setEditedJob({ ...editedJob, note: text })}
-            multiline
+            multiline={true}
             numberOfLines={4}
             placeholder="Add notes..."
             textAlignVertical="top"
@@ -392,6 +372,11 @@ const createStyles = (theme: Theme) =>
       paddingHorizontal: spacing.sm,
       flex: 1,
     },
+    noteInput: {
+      marginVertical: 20,
+      paddingHorizontal: spacing.sm,
+      flex: 1,
+    },
     inputGroup: {
       flexDirection: "row",
       paddingHorizontal: spacing.sm,
@@ -430,8 +415,8 @@ const createStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.border,
       borderRadius: 4,
-      padding: spacing.sm,
-      minHeight: 80,
+      padding: spacing.xs,
+      minHeight: 70,
       flex: 1,
     },
     imagesSection: {

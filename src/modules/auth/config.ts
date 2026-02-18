@@ -34,7 +34,7 @@ export const AuthConfig = {
 	/** Logout endpoint */
 	logoutUrl: optional(
 		"EXPO_PUBLIC_AUTH_LOGOUT_URL",
-		`${process.env.EXPO_PUBLIC_AUTH_API_URL || ""}Account/Logout`,
+		`${process.env.EXPO_PUBLIC_AUTH_ISSUER_URL || ""}Account/Logout`,
 	),
 } as const;
 

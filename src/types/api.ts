@@ -300,6 +300,10 @@ export interface BVehicleClassification {
 	isPedestrian: boolean;
 	applicationClassification: number; // 1=Car, 2=Truck, 3=Car, 4=Cyclist
 	sortOrder?: number;
+	order?: string;
+	fromLength?: number;
+	toLength?: number;
+	nameInImport?: string | null;
 	icon?: string;
 }
 
@@ -340,16 +344,6 @@ export interface BTrafficCount {
 export type BMovements = Record<string, Record<string, number>>;
 
 // ─── Sync Request/Response Types ───────────────────────────────────
-
-export interface BTrafficCountSyncRequest {
-	WorkOrderData: BWorkOrderSyncData[];
-}
-
-export interface BWorkOrderSyncData {
-	studyId: string;
-	counts: BTrafficCount[];
-	isCompleted?: boolean;
-}
 
 export interface BTrafficCountSyncResponse {
 	responseCode: number;
@@ -617,4 +611,35 @@ export interface BCollisionSyncResponse {
 
 export interface BCollisionDraft extends BCollision {
 	isDraft: boolean;
+}
+
+// Add these new types
+export interface BCountMapLocation {
+	startDT: string;
+	latitude: number;
+	longitude: number;
+}
+export interface BClassificationData {
+	VehicleClassIn: number; // Changed from string to number
+	LaneData: number[];
+}
+
+export interface BRawData {
+	movement: number;
+	startDT: string;
+	aggregation: number;
+	data: BClassificationData[];
+}
+
+// Update BWorkOrderSyncData to match old app format
+export interface BWorkOrderSyncData {
+	studyId: string;
+	isCompleted?: boolean;
+	rawData?: BRawData[];
+	countMapLocations?: BCountMapLocation[];
+}
+
+export interface BTrafficCountSyncRequest {
+	WorkOrderData: BWorkOrderSyncData[];
+	VehicleClassifications: BVehicleClassification[];
 }

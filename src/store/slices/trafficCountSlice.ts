@@ -8,6 +8,8 @@ import {
 	WorkOrderStatus,
 	transformWorkOrder,
 	transformVehicleClassification,
+	transformWorkOrdersToSyncFormat,
+	transformVehicleClassificationToBackend,
 } from "@/src/modules/traffic-count/types";
 import {
 	BTrafficCountSyncRequest,
@@ -175,13 +177,14 @@ export const fetchWorkOrders = createAsyncThunk<
 		// This mirrors old app's postAppData which both sends and receives data
 		const syncRequest: BTrafficCountSyncRequest = {
 			WorkOrderData: [],
+			VehicleClassifications: [],
 		};
 
 		const response: BTrafficCountSyncResponse = await apiClient.post(
 			ENDPOINTS.TRAFFIC_COUNTER.SYNC_MOBILE_APP,
 			syncRequest,
 		);
-		console.log("traffic: ", response);
+		// console.log("traffic: ", response.results.vehicleClassifications);
 		if (response.responseCode !== 200) {
 			return rejectWithValue(
 				response.errorMessages?.join(", ") || "Failed to fetch work orders",
@@ -232,34 +235,22 @@ export const syncTrafficCountData = createAsyncThunk<
 >("trafficCount/sync", async (_, { getState, rejectWithValue }) => {
 	try {
 		const state = getState();
-		const { workOrders } = state.trafficCount;
+		const { workOrders, vehicleClassifications } = state.trafficCount;
+		const workOrdersToSync = workOrders.filter(
+			(wo) => wo.counts.some((c) => !c.isSynced) || wo.isEdited,
+		);
 
-		// Prepare work orders with unsynced counts for sync
-		const workOrdersToSync = workOrders
-			.filter((wo) => wo.counts.some((c) => !c.isSynced) || wo.isEdited)
-			.map((wo) => ({
-				studyId: wo.studyId,
-				counts: wo.counts
-					.filter((c) => !c.isSynced)
-					.map((c) => ({
-						id: c.id,
-						siteId: c.siteId,
-						isSynced: c.isSynced,
-						videoId: c.videoId,
-						lat: c.lat,
-						long: c.long,
-						userId: c.userId,
-						dateTime: c.dateTime,
-						slot: c.slot,
-						movements: c.movements,
-					})),
-				isCompleted: wo.isCompleted,
-			}));
-
+		// Transform to backend format using the old app's structure
+		const transformedWorkOrders = transformWorkOrdersToSyncFormat(
+			workOrdersToSync,
+			vehicleClassifications, // Pass classifications for ID to 'in' mapping
+		);
 		const syncRequest: BTrafficCountSyncRequest = {
-			WorkOrderData: workOrdersToSync,
+			WorkOrderData: transformedWorkOrders,
+			VehicleClassifications: vehicleClassifications.map(
+				transformVehicleClassificationToBackend,
+			),
 		};
-
 		console.log("Syncing traffic count data:", JSON.stringify(syncRequest));
 
 		const response: BTrafficCountSyncResponse = await apiClient.post(
@@ -314,8 +305,8 @@ export const syncTrafficCountData = createAsyncThunk<
 		}
 
 		// Transform classifications
-		const vehicleClassifications = backendClassifications.map((vc, index) =>
-			transformVehicleClassification(vc, index),
+		const vehicleClassificationsTransform = backendClassifications.map(
+			(vc, index) => transformVehicleClassification(vc, index),
 		);
 
 		// Count how many items were synced
@@ -326,7 +317,7 @@ export const syncTrafficCountData = createAsyncThunk<
 
 		return {
 			workOrders: updatedWorkOrders,
-			vehicleClassifications,
+			vehicleClassifications: vehicleClassificationsTransform,
 			syncedCount,
 			timestamp: Date.now(),
 		};

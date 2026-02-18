@@ -219,30 +219,15 @@ async function fetchSetupDataInBackground(
 
 	try {
 		await Promise.allSettled([
-			safeGet(`${ApiUrls.sign}sync/GetSetups/${customerId}`, "SignSetups"),
+			safeGet(ENDPOINTS.SIGNS.SETUPS(customerId), "SignSetups"),
+			safeGet(ENDPOINTS.GLOBAL.GENERAL_FIELDS(customerId), "CollisionFields"),
+			safeGet(ENDPOINTS.COLLISION.DIVISIONS(customerId), "Divisions"),
 			safeGet(
-				`${ApiUrls.field}TesFields/AppCollisionFields/${customerId}`,
-				"CollisionFields",
-			),
-			safeGet(
-				`${ApiUrls.auth}api/divisions/GetUserDivisionUI/${customerId}`,
-				"Divisions",
-			),
-			safeGet(
-				`${ApiUrls.trafficStudy}Setups/GetCustomerVehicleClassification/${customerId}`,
+				ENDPOINTS.TRAFFIC_COUNTER.VEHICLE_CLASSIFICATIONS(customerId),
 				"VehicleClassification",
 			),
-			safeGet(
-				`${ApiUrls.setting}ClientGeneralSettings/${customerId}`,
-				"GeneralSettings",
-			),
-			apiClient
-				.post(
-					`${ApiUrls.moduleOfModule}Sync/MobileApplication`,
-					{ ClientModule: [] },
-					{ headers },
-				)
-				.catch((e) => console.warn("[ModuleOfModule]", e)),
+			safeGet(ENDPOINTS.GLOBAL.GENERAL_SETTING(customerId), "GeneralSettings"),
+			safeGet(`${ENDPOINTS.MAINTENANCE.USER_JOBS}/${customerId}`, "UserJobs"),
 		]);
 	} catch (error) {
 		console.warn("Background setup fetch error:", error);

@@ -13,6 +13,15 @@ const ENDPOINTS = {
 		VERIFY: formatUrl(authUrl, "connect/verify"),
 		LOGOUT: formatUrl(authUrl, "connect/logout"),
 	},
+	GLOBAL: {
+		GENERAL_SETTING: (customerId: string) =>
+			formatUrl(baseUrl, `setting/api/ClientGeneralSettings/${customerId}`),
+		GENERAL_FIELDS: (customerId: string) =>
+			formatUrl(
+				baseUrl,
+				`field/api/TesFields/AppCollisionFields/${customerId}`,
+			),
+	},
 	USER: {
 		PROFIlE: formatUrl(authUrl, "api/user/UserProfileMobileApp"),
 		UPDATE: formatUrl(authUrl, "api/user"),
@@ -37,7 +46,6 @@ const ENDPOINTS = {
 		DETAIL: (id: string) => formatUrl(baseUrl, `sign/api/Support/${id}`),
 		UPDATE: (id: string) => formatUrl(baseUrl, `sign/api/Support/Update/${id}`),
 		DELETE: (id: string) => formatUrl(baseUrl, `sign/api/Support/Delete/${id}`),
-		// Image upload: PUT with FormData, isNew indicates if support is new
 		ADD_IMAGES: (isNew: boolean) =>
 			formatUrl(baseUrl, `sign/api/Attachments/Support/${isNew}`),
 		DOWNLOAD_ATTACHMENTS: (supportId: string) =>

@@ -40,7 +40,7 @@ const SortForm = ({ sort, setSort, params }: SortFormProps) => {
       </View>
       <View style={styles.content}>
         {Object.keys(params || {}).map((key) => (
-          <>
+          <View key={`option${key}`} style={styles.rowContainer}>
             <TextView style={styles.SortTitleText}>{params[key]}</TextView>
             <View style={styles.SortButtons}>
               <ButtonView
@@ -84,7 +84,7 @@ const SortForm = ({ sort, setSort, params }: SortFormProps) => {
                 {t("descending")}
               </ButtonView>
             </View>
-          </>
+          </View>
         ))}
       </View>
     </View>
@@ -93,6 +93,9 @@ const SortForm = ({ sort, setSort, params }: SortFormProps) => {
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
+    rowContainer: {
+      gap: 20,
+    },
     container: {
       width: "100%",
       backgroundColor: theme.background,

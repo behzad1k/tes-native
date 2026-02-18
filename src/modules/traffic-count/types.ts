@@ -4,6 +4,8 @@ import {
 	BTrafficCountWorkOrder,
 	BTrafficCount,
 	BMovements,
+	BWorkOrderSyncData,
+	BRawData,
 } from "@/src/types/api";
 
 // ─── Local Work Order Type ─────────────────────────────────────────
@@ -276,4 +278,127 @@ export interface TrafficCountClassification {
 	name: string;
 	isPedestrian: boolean;
 	applicationClassification: number;
+}
+
+/**
+ * Movement direction mapping to backend movement IDs
+ * Based on old app's getMovmentName function (reversed)
+ */
+export const DIRECTION_TO_MOVEMENT_ID: Record<string, number> = {
+	// North movements
+	N_S: 1, // North Through (NT)
+	N_W: 2, // North Left (NL)
+	N_E: 12, // North Right (NR)
+	N_N: 21, // North U-turn (NU)
+	// East movements
+	E_N: 3, // East Right (ER)
+	E_W: 4, // East Through (ET)
+	E_S: 5, // East Left (EL)
+	E_E: 24, // East U-turn (EU)
+	// South movements
+	S_E: 6, // South Right (SR)
+	S_N: 7, // South Through (ST)
+	S_W: 8, // South Left (SL)
+	S_S: 27, // South U-turn (SU)
+	// West movements
+	W_S: 9, // West Right (WR)
+	W_E: 10, // West Through (WT)
+	W_N: 11, // West Left (WL)
+	W_W: 30, // West U-turn (WU)
+	// Pedestrian movements
+	N_P: 13, // North Pedestrian
+	E_P: 15, // East Pedestrian
+	S_P: 17, // South Pedestrian
+	W_P: 19, // West Pedestrian
+};
+
+/**
+ * Convert direction-based movement key to backend movement ID
+ */
+export function getMovementId(movementKey: string): number {
+	return DIRECTION_TO_MOVEMENT_ID[movementKey] || 0;
+}
+
+/**
+ * Transform work orders to backend sync format
+ * Mirrors old app's convertWorkOrders2WebFormat function
+ */
+
+export function transformWorkOrdersToSyncFormat(
+	workOrders: TrafficCountWorkOrder[],
+	vehicleClassifications: VehicleClassification[], // Add this parameter
+): BWorkOrderSyncData[] {
+	// Create a map from classification ID to its 'in' value
+	const classIdToIn = new Map<string, number>();
+	vehicleClassifications.forEach((vc) => {
+		classIdToIn.set(
+			vc.id,
+			typeof vc.in === "string" ? parseInt(vc.in, 10) : vc.in,
+		);
+	});
+
+	const finalData: BWorkOrderSyncData[] = [];
+
+	workOrders.forEach((workOrder) => {
+		const finalWO: BWorkOrderSyncData = {
+			studyId: workOrder.studyId,
+			isCompleted: workOrder.isCompleted,
+			rawData: [],
+			countMapLocations: [],
+		};
+
+		// Filter unsynced counts
+		const unsyncedCounts = workOrder.counts?.filter((c) => !c.isSynced) || [];
+
+		unsyncedCounts.forEach((workOrderCount) => {
+			// Add map location
+			finalWO.countMapLocations!.push({
+				startDT: workOrderCount.dateTime,
+				latitude: workOrderCount.lat,
+				longitude: workOrderCount.long,
+			});
+
+			// Process movements
+			Object.entries(workOrderCount.movements).forEach(
+				([movementKey, movementValue]) => {
+					const rawData: BRawData = {
+						movement: getMovementId(movementKey),
+						startDT: workOrderCount.dateTime,
+						aggregation: workOrderCount.slot,
+						data: [],
+					};
+
+					// Process classifications within this movement
+					Object.entries(movementValue).forEach(([classificationId, count]) => {
+						// Convert UUID to 'in' integer value
+						const vehicleClassIn = classIdToIn.get(classificationId) || 0;
+
+						rawData.data.push({
+							VehicleClassIn: vehicleClassIn, // Now sending integer
+							LaneData: [count],
+						});
+					});
+
+					finalWO.rawData!.push(rawData);
+				},
+			);
+		});
+
+		finalData.push(finalWO);
+	});
+
+	return finalData;
+}
+
+export function transformVehicleClassificationToBackend(
+	vc: VehicleClassification,
+): BVehicleClassification {
+	return {
+		id: vc.id,
+		in: vc.in,
+		name: vc.name,
+		isPedestrian: vc.isPedestrian,
+		applicationClassification: vc.applicationClassification,
+		sortOrder: vc.sortOrder,
+	};
 }
