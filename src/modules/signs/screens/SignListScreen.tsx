@@ -1,4 +1,4 @@
-import FilterForm from '@/src/components/layouts/FilterForm';
+import FilterForm from "@/src/components/layouts/FilterForm";
 import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
@@ -20,10 +20,11 @@ import {
   Plus,
   Warning,
   Wrench,
+  ArrowsClockwise,
 } from "phosphor-react-native";
 import { colors } from "@/src/styles/theme/colors";
 import Tabs from "@/src/components/layouts/Tabs";
-import { ActiveFilter, TabsType } from '@/src/types/layouts';
+import { ActiveFilter, TabsType } from "@/src/types/layouts";
 import { useTranslation } from "react-i18next";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import { useAppSelector, useAppDispatch } from "@/src/store/hooks";
@@ -38,8 +39,9 @@ import CustomMapView, {
   MapLegendItem,
 } from "@/src/components/layouts/MapView";
 import { syncSignSupportData } from "@/src/store/thunks";
-import NewSignType from "./components/NewSignType";
-import SignSupportList from "./components/SignList";
+import NewSignType from "../components/NewSignType";
+import SignSupportList from "../components/SignList";
+import ButtonView from "@/src/components/ui/ButtonView";
 
 type FilterType = "all" | "signs" | "supports";
 
@@ -68,7 +70,6 @@ export default function SignsListScreen() {
   const [tab, setTab] = useState(Object.keys(TABS)[0]);
   const { openDrawer, closeDrawer } = useDrawer();
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
-  const [filterType, setFilterType] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const [sort, setSort] = useState<{ key: string; dir: "ASC" | "DESC" }>({
@@ -91,26 +92,29 @@ export default function SignsListScreen() {
   const syncProgress = useAppSelector((state) => state.sync.syncProgress);
 
   // Filter fields configuration
-  const filterFields = useMemo(() => [
-    {
-      key: "type",
-      label: t("type"),
-      operator: "EQUAL",
-      options: [
-        { label: t("sign"), value: "sign" },
-        { label: t("support"), value: "support" },
-      ],
-    },
-    {
-      key: "isSynced",
-      label: t("syncStatus"),
-      operator: "EQUAL",
-      options: [
-        { label: t("synced"), value: "true" },
-        { label: t("unsynced"), value: "false" },
-      ],
-    },
-  ], [t]);
+  const filterFields = useMemo(
+    () => [
+      {
+        key: "type",
+        label: t("type"),
+        operator: "EQUAL",
+        options: [
+          { label: t("sign"), value: "sign" },
+          { label: t("support"), value: "support" },
+        ],
+      },
+      {
+        key: "isSynced",
+        label: t("syncStatus"),
+        operator: "EQUAL",
+        options: [
+          { label: t("synced"), value: "true" },
+          { label: t("unsynced"), value: "false" },
+        ],
+      },
+    ],
+    [t],
+  );
 
   // Transform and filter data
   const listItems: ListItem[] = useMemo(() => {
@@ -161,8 +165,8 @@ export default function SignsListScreen() {
         const matchesSearch =
           !searchQuery ||
           support.supportId
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
           supportCode?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
         if (matchesSearch) {
@@ -246,40 +250,40 @@ export default function SignsListScreen() {
   // Transform filtered items to map pins for CustomMapView
   const mapPins: MapPinData[] = useMemo(() => {
     return filteredSigns
-    .filter(
-      (item) =>
-        item.latitude &&
-        item.longitude &&
-        item.latitude !== 0 &&
-        item.longitude !== 0,
-    )
-    .map((item) => {
-      // Determine pin color based on sync status and type
-      let pinColor: string;
-      if (!item.isSynced) {
-        pinColor = colors.warning;
-      } else {
-        pinColor = item.type === "sign" ? colors.primary : colors.success;
-      }
+      .filter(
+        (item) =>
+          item.latitude &&
+          item.longitude &&
+          item.latitude !== 0 &&
+          item.longitude !== 0,
+      )
+      .map((item) => {
+        // Determine pin color based on sync status and type
+        let pinColor: string;
+        if (!item.isSynced) {
+          pinColor = colors.warning;
+        } else {
+          pinColor = item.type === "sign" ? colors.primary : colors.success;
+        }
 
-      return {
-        id: item.id,
-        coordinate: {
-          latitude: item.latitude!,
-          longitude: item.longitude!,
-        },
-        title: item.title,
-        description: item.subtitle,
-        color: pinColor,
-        icon:
-          item.type === "sign" ? (
-            <Warning size={20} color={colors.white} weight="fill" />
-          ) : (
-            <Wrench size={20} color={colors.white} weight="fill" />
-          ),
-        onPress: () => handleItemPress(item),
-      };
-    });
+        return {
+          id: item.id,
+          coordinate: {
+            latitude: item.latitude!,
+            longitude: item.longitude!,
+          },
+          title: item.title,
+          description: item.subtitle,
+          color: pinColor,
+          icon:
+            item.type === "sign" ? (
+              <Warning size={20} color={colors.white} weight="fill" />
+            ) : (
+              <Wrench size={20} color={colors.white} weight="fill" />
+            ),
+          onPress: () => handleItemPress(item),
+        };
+      });
   }, [filteredSigns]);
 
   // Legend items for the map
@@ -360,7 +364,11 @@ export default function SignsListScreen() {
   const handleSortPress = () => {
     openDrawer(
       "sort-sign",
-      <SortForm sort={sort} setSort={setSort} params={{ "status": t("status") }} />,
+      <SortForm
+        sort={sort}
+        setSort={setSort}
+        params={{ status: t("status") }}
+      />,
       {
         drawerHeight: "auto",
       },
@@ -416,34 +424,26 @@ export default function SignsListScreen() {
           <TouchableOpacity key="search">
             <MagnifyingGlass size={24} color={theme.secondary} />
           </TouchableOpacity>,
-          <TouchableOpacity
+          <ButtonView
             key="sync"
             onPress={handleSync}
             disabled={isSyncing || totalPending === 0}
+            loading={isSyncing}
+            style={styles.syncButton}
           >
-            <View style={styles.syncButton}>
-              {isSyncing ? (
-                <ActivityIndicator size="small" color={colors.lightGreen} />
-              ) : (
-                <>
-                  <Repeat
-                    size={24}
-                    color={
-                      totalPending === 0 ? colors.placeholder : theme.secondary
-                    }
-                    weight="regular"
-                  />
-                  {totalPending > 0 && (
-                    <View style={styles.badge}>
-                      <TextView style={styles.badgeText}>
-                        {totalPending}
-                      </TextView>
-                    </View>
-                  )}
-                </>
-              )}
-            </View>
-          </TouchableOpacity>,
+            <ArrowsClockwise
+              size={24}
+              color={totalPending > 0 ? colors.lightGreen : theme.secondary}
+              weight={isSyncing ? "bold" : "regular"}
+            />
+            {totalPending > 0 && (
+              <View style={styles.badge}>
+                <TextView style={styles.badgeText}>
+                  {totalPending > 99 ? "99+" : totalPending}
+                </TextView>
+              </View>
+            )}
+          </ButtonView>,
         ]}
       />
 
@@ -531,6 +531,9 @@ const createStyles = (theme: Theme) =>
     },
     syncButton: {
       position: "relative",
+      backgroundColor: theme.background,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
     },
     badge: {
       position: "absolute",

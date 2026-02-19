@@ -8,54 +8,87 @@ import { scale, spacing } from "@/src/styles/theme/spacing";
 import { useAppSelector } from "@/src/store/hooks";
 import CustomMapView from "@/src/components/layouts/MapView";
 import { colors } from "@/src/styles/theme/colors";
-import { SupportFormData } from "../../../types";
 import { useTranslation } from "react-i18next";
 import FormSelectBox from "@/src/components/ui/FormSelectBox";
 import { LatLng } from "react-native-maps";
+import { SignFormData, SupportFormData } from "../types";
 
-interface LocationStepProps {
-  control: Control<SupportFormData>;
-  errors: any;
-  trigger: any;
-  getValues: () => SupportFormData;
+// Minimum shape this component requires from any form data
+interface LocationFormValues {
+  latitude?: number;
+  longitude?: number;
+  locationTypeId: string;
+  supportId?: string;
 }
 
-export default function LocationStep({
-  control,
-  errors,
-  trigger,
-  getValues,
-}: LocationStepProps) {
+interface BaseLocationStepProps<T extends LocationFormValues> {
+  control: Control<T>;
+  errors: any;
+  trigger: any;
+  getValues: () => T;
+}
+
+interface SignLocationStepProps extends BaseLocationStepProps<SignFormData> {
+  variant: "sign";
+}
+
+interface SupportLocationStepProps extends BaseLocationStepProps<SupportFormData> {
+  variant: "support";
+}
+
+type LocationStepProps = SignLocationStepProps | SupportLocationStepProps;
+
+export default function LocationStep(props: LocationStepProps) {
+  const { variant, trigger, getValues } = props;
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
 
-  // Get setup options from Redux store
-  const locationTypes = useAppSelector((state) => state.supports.locationTypes);
+  const signLocationTypes = useAppSelector((state) =>
+    variant === "sign" ? state.signs.locationTypes : [],
+  );
+  const supportLocationTypes = useAppSelector((state) =>
+    variant === "support" ? state.supports.locationTypes : [],
+  );
+  const locationTypes =
+    variant === "sign" ? signLocationTypes : supportLocationTypes;
 
-  // Transform to select options
+  const supports = useAppSelector((state) =>
+    variant === "sign" ? state.supports.supports : [],
+  );
+
   const locationTypeOptions = locationTypes.map((type) => ({
     label: type.name,
     value: type.id,
   }));
 
-  const handleLocationSelect = (coordinate: LatLng) => {
-    // Update form values with selected coordinates
-    control._formValues.latitude = coordinate.latitude;
-    control._formValues.longitude = coordinate.longitude;
+  const supportOptions = supports.map((support) => ({
+    label: `${support.supportId} - ${support.supportCodeId}`,
+    value: support.id,
+  }));
 
+  const handleLocationSelect = (coordinate: LatLng) => {
+    if (variant === "sign") {
+      (props.control._formValues as SignFormData).latitude =
+        coordinate.latitude;
+      (props.control._formValues as SignFormData).longitude =
+        coordinate.longitude;
+    } else {
+      (props.control._formValues as SupportFormData).latitude =
+        coordinate.latitude;
+      (props.control._formValues as SupportFormData).longitude =
+        coordinate.longitude;
+    }
     trigger(["latitude", "longitude"]);
   };
 
   const currentLatitude = getValues().latitude;
   const currentLongitude = getValues().longitude;
 
-  // Build selected location if coordinates exist
   const selectedLocation: LatLng | undefined =
     currentLatitude && currentLongitude
       ? { latitude: currentLatitude, longitude: currentLongitude }
       : undefined;
 
-  // Build initial region based on current coordinates or default
   const initialRegion = {
     latitude: currentLatitude || 37.78825,
     longitude: currentLongitude || -122.4324,
@@ -70,10 +103,23 @@ export default function LocationStep({
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.section}>
+        {variant === "sign" && (
+          <FormSelectBox
+            id="supportId"
+            label={`${t("signs.assignToSupport")} :`}
+            control={props.control as unknown as Control<SignFormData>}
+            name="supportId"
+            options={supportOptions}
+            placeholder={t("signs.noSupport")}
+            title={t("signs.assignToSupport")}
+            searchable={true}
+          />
+        )}
+
         <FormSelectBox
           id="location-type"
           label={`${t("locationType")} :`}
-          control={control}
+          control={props.control as unknown as Control<SupportFormData>}
           name="locationTypeId"
           options={locationTypeOptions}
           placeholder={t("pressToSelect")}
@@ -83,7 +129,6 @@ export default function LocationStep({
 
         <TextView style={styles.sectionTitle}>{t("location")}</TextView>
 
-        {/* Map View */}
         <View style={styles.mapContainer}>
           <CustomMapView
             mode="picker"
@@ -103,7 +148,6 @@ export default function LocationStep({
           />
         </View>
 
-        {/* Validation Message */}
         {!currentLatitude && !currentLongitude && (
           <View style={styles.validationMessage}>
             <TextView style={styles.validationText}>
@@ -112,10 +156,16 @@ export default function LocationStep({
           </View>
         )}
 
-        {/* Hidden Controllers for latitude/longitude */}
-        <Controller control={control} name="latitude" render={() => null} />
-
-        <Controller control={control} name="longitude" render={() => null} />
+        <Controller
+          control={props.control as unknown as Control<SignFormData>}
+          name="latitude"
+          render={() => null}
+        />
+        <Controller
+          control={props.control as unknown as Control<SignFormData>}
+          name="longitude"
+          render={() => null}
+        />
       </View>
     </ScrollView>
   );
@@ -123,16 +173,12 @@ export default function LocationStep({
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-    },
+    container: { flex: 1 },
     contentContainer: {
       padding: spacing.md,
       paddingBottom: 100,
     },
-    section: {
-      gap: spacing.sm,
-    },
+    section: { gap: spacing.sm },
     sectionTitle: {
       fontSize: 18,
       fontWeight: "600",

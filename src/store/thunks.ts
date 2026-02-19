@@ -403,12 +403,10 @@ export const syncSignSupportData = createAsyncThunk<
 						} as any);
 						formData.append(support.id, support.id);
 
-						console.log(formData);
-						await apiClient.put(
+						const res = await apiClient.put(
 							ENDPOINTS.SUPPORTS.ADD_IMAGES(support.isNew),
 							formData,
 						);
-
 						syncedImageIds.push(image.imageId || image.uri);
 					} catch (imageError) {
 						console.error("Error uploading support image:", imageError);
@@ -432,7 +430,6 @@ export const syncSignSupportData = createAsyncThunk<
 							type: "image/jpg",
 						} as any);
 						formData.append(sign.id, sign.id);
-						console.log(formData);
 						await apiClient.put(
 							ENDPOINTS.SIGNS.ADD_IMAGES(sign.isNew),
 							formData,

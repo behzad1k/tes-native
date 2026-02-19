@@ -27,10 +27,11 @@ import JobDetailForm from "../components/JobDetailForm";
 import TaskMapView from "../components/TaskMapView";
 import FilterForm from "@/src/components/layouts/FilterForm";
 import Tabs from "@/src/components/layouts/Tabs";
-import { ActiveFilter, FilterField, Sort, TabsType } from '@/src/types/layouts';
+import { ActiveFilter, FilterField, Sort, TabsType } from "@/src/types/layouts";
 import MaintenanceCard from "../components/MaintenanceCard";
 import SortForm from "@/src/components/layouts/SortForm";
 import { useMaintenanceOperations } from "../hooks/useMaintenanceOperations";
+import ButtonView from "@/src/components/ui/ButtonView";
 
 export default function MaintenanceListScreen() {
   const { t } = useTranslation();
@@ -68,7 +69,7 @@ export default function MaintenanceListScreen() {
   const [sort, setSort] = useState<Sort>({ key: "assignDate", dir: "DESC" });
 
   // Calculate pending count
-  const pendingCount = getUnsyncedJobsCount() + getUnsyncedImagesCount();
+  const pendingCount = getUnsyncedJobsCount();
 
   // Build filter fields from jobStatuses and jobTypes
   const filterFields: FilterField[] = useMemo(() => {
@@ -207,9 +208,9 @@ export default function MaintenanceListScreen() {
 
   // Render job item
   const renderJobItem = ({
-                           item,
-                           index,
-                         }: {
+    item,
+    index,
+  }: {
     item: MaintenanceJob;
     index: number;
   }) => (
@@ -261,10 +262,12 @@ export default function MaintenanceListScreen() {
           <TouchableOpacity key="search">
             <MagnifyingGlass size={24} color={theme.secondary} />
           </TouchableOpacity>,
-          <TouchableOpacity
+
+          <ButtonView
             key="sync"
             onPress={handleSync}
             disabled={isSyncing || pendingCount === 0}
+            loading={isSyncing}
             style={styles.syncButton}
           >
             <ArrowsClockwise
@@ -279,7 +282,7 @@ export default function MaintenanceListScreen() {
                 </TextView>
               </View>
             )}
-          </TouchableOpacity>,
+          </ButtonView>,
         ]}
       />
 
@@ -354,6 +357,9 @@ const createStyles = (theme: Theme) =>
     },
     syncButton: {
       position: "relative",
+      backgroundColor: theme.background,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
     },
     badge: {
       position: "absolute",

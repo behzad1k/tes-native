@@ -50,23 +50,24 @@ export const calculatePendingOperations = createAsyncThunk(
 
 		// Signs
 		const unsyncedSigns = state.signs.signs.filter(
-			(s: any) => s.status === SYNC_STATUS.NOT_SYNCED || !s.isSynced
+			(s: any) => s.status === SYNC_STATUS.NOT_SYNCED || !s.isSynced,
 		);
 
 		// Supports
 		const unsyncedSupports = state.supports.supports.filter(
-			(s: any) => s.status === SYNC_STATUS.NOT_SYNCED || !s.isSynced
+			(s: any) => s.status === SYNC_STATUS.NOT_SYNCED || !s.isSynced,
 		);
 
 		// Jobs (if maintenance exists)
-		const unsyncedJobs = state.maintenance?.jobs?.filter(
-			(j: any) => j.isEdited && !j.isSynced
-		) || [];
+		const unsyncedJobs =
+			state.maintenance?.jobs?.filter((j: any) => j.isEdited && !j.isSynced) ||
+			[];
 
 		// Job images (if maintenance exists)
-		const unsyncedJobImages = state.maintenance?.jobImages?.filter(
-			(img: any) => !img.isSynced && img.isNew
-		) || [];
+		const unsyncedJobImages =
+			state.maintenance?.jobImages?.filter(
+				(img: any) => !img.isSynced && img.isNew,
+			) || [];
 
 		const creates = [
 			...unsyncedSigns.filter((s: any) => s.isNew),
@@ -81,10 +82,10 @@ export const calculatePendingOperations = createAsyncThunk(
 
 		const images = [
 			...unsyncedSigns.flatMap((s: any) =>
-				s.images.filter((img: any) => img.isNew && !img.isSynced)
+				s.images.filter((img: any) => img.isNew && !img.isSynced),
 			),
 			...unsyncedSupports.flatMap((s: any) =>
-				s.images.filter((img: any) => img.isNew && !img.isSynced)
+				s.images.filter((img: any) => img.isNew && !img.isSynced),
 			),
 			...unsyncedJobImages,
 		].length;
@@ -95,7 +96,7 @@ export const calculatePendingOperations = createAsyncThunk(
 			deletes: 0,
 			images,
 		};
-	}
+	},
 );
 
 // Start full sync (signs, supports, maintenance)
@@ -131,7 +132,9 @@ export const startSync = createAsyncThunk(
 
 			// Sync maintenance data if there's maintenance state
 			if (state.maintenance) {
-				const maintenanceResult = await dispatch(syncMaintenanceData()).unwrap();
+				const maintenanceResult = await dispatch(
+					syncMaintenanceData(),
+				).unwrap();
 				syncedCount +=
 					maintenanceResult.syncedJobIds.length +
 					maintenanceResult.syncedImageIds.length;
@@ -145,7 +148,7 @@ export const startSync = createAsyncThunk(
 		} catch (error: any) {
 			return rejectWithValue(error.message || "Sync failed");
 		}
-	}
+	},
 );
 
 const syncSlice = createSlice({
@@ -165,7 +168,7 @@ const syncSlice = createSlice({
 				toValue: string;
 				supportId?: string;
 				signId?: string;
-			}>
+			}>,
 		) => {
 			const changeLog: ChangeLog = {
 				id: generateUUID(),
@@ -191,7 +194,7 @@ const syncSlice = createSlice({
 		// Remove specific change logs
 		removeChangeLogs: (state, action: PayloadAction<string[]>) => {
 			state.changeLogs = state.changeLogs.filter(
-				(log) => !action.payload.includes(log.id)
+				(log) => !action.payload.includes(log.id),
 			);
 		},
 
@@ -210,7 +213,7 @@ const syncSlice = createSlice({
 				updates: number;
 				deletes: number;
 				images: number;
-			}>
+			}>,
 		) => {
 			state.pendingOperations = action.payload;
 		},
@@ -254,6 +257,7 @@ const syncSlice = createSlice({
 			})
 			.addCase(syncSignSupportData.fulfilled, (state, action) => {
 				state.currentOperation = null;
+				state.isSyncing = false;
 				state.lastSyncTime = action.payload.timestamp;
 			})
 			.addCase(syncSignSupportData.rejected, (state, action) => {
@@ -266,6 +270,7 @@ const syncSlice = createSlice({
 				state.currentOperation = "Syncing maintenance data...";
 			})
 			.addCase(syncMaintenanceData.fulfilled, (state, action) => {
+				state.isSyncing = false;
 				state.currentOperation = null;
 				state.lastSyncTime = action.payload.timestamp;
 			})

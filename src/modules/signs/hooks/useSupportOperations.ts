@@ -3,7 +3,7 @@ import {
 	addSupport,
 	updateSupport,
 	addImageToSupport,
-	removeImage,
+	removeImageFromSupport,
 	markSupportForDeletion,
 } from "@/src/store/slices/supportSlice";
 import { Support, SupportImage } from "@/src/types/models";
@@ -174,8 +174,7 @@ export function useSupportImages() {
 					dispatch(
 						addImageToSupport({
 							supportId,
-							imageUri,
-							isNew: true, // Mark as new for syncing
+							image: { isNew: true, isSynced: false, uri: imageUri },
 						}),
 					);
 
@@ -216,8 +215,7 @@ export function useSupportImages() {
 					dispatch(
 						addImageToSupport({
 							supportId,
-							imageUri,
-							isNew: true, // Mark as new for syncing
+							image: { isNew: true, isSynced: false, uri: imageUri },
 						}),
 					);
 
@@ -237,7 +235,7 @@ export function useSupportImages() {
 		async (supportId: string, imageId: string) => {
 			try {
 				dispatch(
-					removeImage({
+					removeImageFromSupport({
 						supportId,
 						imageId,
 					}),

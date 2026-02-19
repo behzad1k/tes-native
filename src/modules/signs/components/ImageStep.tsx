@@ -1,21 +1,23 @@
 import React from "react";
 import { StyleSheet, ScrollView } from "react-native";
-import { SignImage } from "@/src/types/models";
+import { SignImage, SupportImage } from "@/src/types/models";
 import ImagePicker from "@/src/components/ui/ImagePicker";
 
 interface ImageStepProps {
-  signId: string;
-  images: SignImage[];
-  onImagesChange: (images: SignImage[]) => void;
+  itemId: string;
+  images: Array<SupportImage | SignImage>;
+  onImagesChange: React.Dispatch<
+    React.SetStateAction<Array<SignImage | SupportImage>>
+  >;
 }
 
-const ImageStep = ({ signId, images, onImagesChange }: ImageStepProps) => {
+const ImageStep = ({ itemId, images, onImagesChange }: ImageStepProps) => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <ImagePicker<SignImage>
         images={images}
         onChange={onImagesChange}
-        extraImageFields={{ signId }}
+        extraImageFields={{ itemId }}
         emptyLabel="Add images to this sign"
       />
     </ScrollView>

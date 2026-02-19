@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import FormInput from "@/src/components/ui/FormInput";
 import FormSelectBox from "@/src/components/ui/FormSelectBox";
 import { Control } from "react-hook-form";
-import { SignFormData } from "../../../types";
+import { SignFormData } from "../types";
 import { useAppSelector } from "@/src/store/hooks";
 
 interface DetailsStepProps {
@@ -17,7 +17,7 @@ interface DetailsStepProps {
   getValues: () => SignFormData;
 }
 
-const DetailsStep = ({ control }: DetailsStepProps) => {
+const SignDetailsStep = ({ control }: DetailsStepProps) => {
   const styles = useThemedStyles(createStyles);
   const { t } = useTranslation();
 
@@ -201,4 +201,4 @@ const createStyles = (theme: Theme) =>
     },
   });
 
-export default DetailsStep;
+export default SignDetailsStep;

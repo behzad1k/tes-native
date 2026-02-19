@@ -6,20 +6,20 @@ import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import DetailsStep from "./components/DetailsStep";
+import SupportDetailsStep from "../components/SupportDetailsStep";
 import ButtonView from "@/src/components/ui/ButtonView";
-import LocationStep from "./components/LocationStep";
-import SignSelectionStep from "./components/SignSelectionStep";
-import ImageStep from "./components/ImageStep";
+import LocationStep from "../components/LocationStep";
+import SignSelectionStep from "../components/SignSelectionStep";
+import ImageStep from "../components/ImageStep";
 import { ROUTES } from "@/src/constants/navigation";
 import {
   SupportFormData,
   getDefaultSupportFormData,
   supportToFormData,
-} from "../../types";
+} from "../types";
 import { useForm } from "react-hook-form";
-import StepHeader from "./components/StepHeader";
-import { useSupportOperations } from "../../hooks/useSupportOperations";
+import StepHeader from "../components/StepHeader";
+import { useSupportOperations } from "../hooks/useSupportOperations";
 import { Toast } from "toastify-react-native";
 import { Support, SupportImage } from "@/src/types/models";
 import { useAppSelector } from "@/src/store/hooks";
@@ -40,6 +40,7 @@ export default function ManageSupportScreen() {
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { createSupport, editSupport } = useSupportOperations();
+  const STEP_TITLES = [t("details"), t("location"), t("sign"), t("image")];
 
   const isEditMode = !!id;
 
@@ -262,10 +263,10 @@ export default function ManageSupportScreen() {
       <Header
         title={isEditMode ? t("signs.editSupport") : t("signs.addNewSupport")}
       />
-      <StepHeader step={step} />
+      <StepHeader steps={STEP_TITLES} step={step} />
       <View style={styles.content}>
         {step === 0 && (
-          <DetailsStep
+          <SupportDetailsStep
             control={control}
             errors={errors}
             trigger={trigger}
@@ -274,6 +275,7 @@ export default function ManageSupportScreen() {
         )}
         {step === 1 && (
           <LocationStep
+            variant="support"
             control={control}
             errors={errors}
             trigger={trigger}
@@ -289,7 +291,7 @@ export default function ManageSupportScreen() {
         )}
         {step === 3 && (
           <ImageStep
-            supportId={getValues().id}
+            itemId={getValues().id}
             images={images}
             onImagesChange={setImages}
           />

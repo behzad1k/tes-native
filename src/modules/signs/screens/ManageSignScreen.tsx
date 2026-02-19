@@ -6,19 +6,15 @@ import { Theme } from "@/src/types/theme";
 import { Header } from "@/src/components/layouts/Header";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
-import DetailsStep from "./components/DetailsStep";
 import ButtonView from "@/src/components/ui/ButtonView";
-import LocationStep from "./components/LocationStep";
+import DetailsStep from "../components/SignDetailsStep";
+import LocationStep from "../components/LocationStep";
+import ImageStep from "../components/ImageStep";
+import StepHeader from "../components/StepHeader";
 import { ROUTES } from "@/src/constants/navigation";
-import ImageStep from "./components/ImageStep";
-import {
-  SignFormData,
-  getDefaultSignFormData,
-  signToFormData,
-} from "../../types";
+import { SignFormData, getDefaultSignFormData, signToFormData } from "../types";
 import { useForm } from "react-hook-form";
-import StepHeader from "./components/StepHeader";
-import { useSignOperations } from "../../hooks/useSignOperations";
+import { useSignOperations } from "../hooks/useSignOperations";
 import { Toast } from "toastify-react-native";
 import { SignImage } from "@/src/types/models";
 import { scale } from "@/src/styles/theme/spacing";
@@ -45,6 +41,8 @@ export default function ManageSignScreen() {
   const { createSign, editSign } = useSignOperations();
   const isEditMode = !!id;
   const preselectedSupportId = params?.preselectedSupportId?.toString();
+  const STEP_TITLES = [t("details"), t("location"), t("image")];
+
   // Get existing sign data if editing
   const existingSign = useAppSelector((state) =>
     state.signs.signs.find((s) => s.id === id),
@@ -254,7 +252,7 @@ export default function ManageSignScreen() {
       <Header
         title={isEditMode ? t("signs.editSign") : t("signs.addNewSign")}
       />
-      <StepHeader step={step} />
+      <StepHeader steps={STEP_TITLES} step={step} />
       <View style={styles.content}>
         {step === 0 && (
           <DetailsStep
@@ -266,6 +264,7 @@ export default function ManageSignScreen() {
         )}
         {step === 1 && (
           <LocationStep
+            variant="sign"
             control={control}
             errors={errors}
             trigger={trigger}
@@ -274,7 +273,7 @@ export default function ManageSignScreen() {
         )}
         {step === 2 && (
           <ImageStep
-            signId={isEditMode ? id! : getValues().signId}
+            itemId={isEditMode ? id! : getValues().signId}
             images={images}
             onImagesChange={setImages}
           />

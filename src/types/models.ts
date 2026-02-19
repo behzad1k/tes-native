@@ -30,7 +30,7 @@ export interface BaseImage {
 // ─── Sign Types ────────────────────────────────────────────────────
 
 export interface SignImage extends BaseImage {
-	signId: string;
+	signId?: string;
 }
 
 export interface Sign {
@@ -82,7 +82,7 @@ export interface SystemOption {
 // ─── Support Types ─────────────────────────────────────────────────
 
 export interface SupportImage extends BaseImage {
-	supportId: string;
+	supportId?: string;
 }
 
 export interface Support {

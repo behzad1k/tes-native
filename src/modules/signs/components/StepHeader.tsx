@@ -9,20 +9,24 @@ import { StyleSheet, View } from "react-native";
 
 interface StepHeaderProps {
   step: number;
+  steps: string[];
 }
-const StepHeader = ({ step }: StepHeaderProps) => {
+const StepHeader = ({ step, steps }: StepHeaderProps) => {
   const { t } = useTranslation();
-  const STEP_TITLES = [t("details"), t("location"), t("image")];
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.stepsContainer}>
-      {STEP_TITLES.map((st, index: number) => {
+      {steps.map((st, index: number) => {
         const isSelected = index <= step;
         return (
           <View style={styles.stepContainer} key={st}>
             {index > 0 && (
               <View
-                style={[styles.stepLine, isSelected && styles.selectedStepLine]}
+                style={[
+                  styles.stepLine,
+                  { width: 100 - steps.length * 12 },
+                  isSelected && styles.selectedStepLine,
+                ]}
               ></View>
             )}
             <View style={styles.step}>
@@ -64,6 +68,7 @@ const createStyles = (theme: Theme) =>
       padding: spacing.xxxl,
     },
     step: {
+      marginHorizontal: 2,
       alignItems: "center",
       gap: 4,
     },
@@ -71,7 +76,6 @@ const createStyles = (theme: Theme) =>
       borderTopWidth: 2,
       borderColor: theme.textSecondary,
       marginBottom: 20,
-      width: 100,
       height: 2,
     },
     stepSubText: {
