@@ -52,7 +52,7 @@ Thumbs.db
 # Logs
 logs
 *.log
-
+.claude
 # Build
 dist/
 build/
